@@ -22,7 +22,8 @@ key: str = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
 # Xác định đường dẫn thư mục frontend (Lùi ra 1 cấp từ backend)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__)) # Thư mục Backend
+BASE_DIR = os.path.abspath(os.path.join(CURRENT_DIR, "..")) # Thư mục gốc KNNN
 FRONTEND_DIR = os.path.join(BASE_DIR, "Frontend")
 
 # --- PHẦN 1: PHỤC VỤ CÁC TRANG GIAO DIỆN (HTML) ---
