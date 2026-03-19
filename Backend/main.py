@@ -23,7 +23,7 @@ supabase: Client = create_client(url, key)
 
 # Xác định đường dẫn thư mục frontend (Lùi ra 1 cấp từ backend)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
+FRONTEND_DIR = os.path.join(BASE_DIR, "Frontend")
 
 # --- PHẦN 1: PHỤC VỤ CÁC TRANG GIAO DIỆN (HTML) ---
 
