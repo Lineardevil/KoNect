@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "Backend/main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "Backend/main.py"
+    },
+    {
+      "src": "/main",
+      "dest": "Backend/main.py"
+    },
+    {
+      "src": "/reset-password",
+      "dest": "Backend/main.py"
+    },
+    {
+      "src": "/profile",
+      "dest": "Backend/main.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "Backend/main.py"
+    }
+  ]
+}

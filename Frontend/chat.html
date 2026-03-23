@@ -1,0 +1,32 @@
+// 1. Lắng nghe tin nhắn mới "đập" vào bảng messages
+const channel = supabase
+  .channel('room_1') // 'room_1' có thể thay bằng ID của nhóm chat
+  .on(
+    'postgres_changes',
+    {
+      event: 'INSERT',     // Chỉ bắt sự kiện khi có tin nhắn mới được thêm vào
+      schema: 'public',
+      table: 'messages'
+    },
+    (payload) => {
+      console.log('Phát hiện tin nhắn mới:', payload.new);
+
+      // 2. Gọi hàm để hiển thị tin nhắn này lên giao diện HTML
+      displayNewMessage(payload.new);
+    }
+  )
+  .subscribe();
+
+// 3. Hàm hiển thị tin nhắn (Nhóm Frontend sẽ tùy chỉnh giao diện ở đây)
+function displayNewMessage(msg) {
+    const chatContainer = document.getElementById('chat-box'); // ID của khung chat
+    const messageElement = document.createElement('div');
+
+    messageElement.classList.add('message');
+    messageElement.innerText = `${msg.content}`; // Hiển thị nội dung tin nhắn
+
+    chatContainer.appendChild(messageElement);
+
+    // Tự động cuộn xuống cuối cùng khi có tin nhắn mới
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
