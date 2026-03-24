@@ -991,45 +991,183 @@ nav {
 /* ============================================================
    9. create.html
    Phạm vi: Trang tạo nhóm mới
-   Class riêng: .create-layout, .create-card
-   → Tái sử dụng: .card, .form-group, .btn-primary, .status-msg
+   Scope: body.create-page — tránh đụng class chung
+   Class riêng: .container, .section, .label, .upload-box,
+                .remove-img, .privacy-wrapper, .privacy-option,
+                .tag-box, .category, .category-title,
+                .tags-container, .tag, .btn, .toast, shake
 ============================================================ */
 
-/* Layout căn giữa form */
-.create-layout {
+/* Scope toàn bộ CSS create dưới body.create-page */
+body.create-page {
+    padding: 24px;
+}
+
+body.create-page .header {
     display: flex;
-    justify-content: center;
-    padding: 32px 20px;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
 }
 
-/* Box form tạo nhóm */
-.create-card {
-    width: 100%;
-    max-width: 520px;
-}
-
-.create-card h2 {
-    font-size: 20px;
-    margin-bottom: 24px;
-}
-
-/* Select dropdown — chọn chủ đề nhóm */
-select {
-    width: 100%;
-    padding: 12px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border);
-    background: var(--input-bg);
-    color: var(--text);
-    font-size: 14px;
-    font-family: inherit;
-    outline: none;
+body.create-page .logo {
+    font-size: 28px;
+    font-weight: bold;
     cursor: pointer;
-    transition: border-color 0.2s;
-    appearance: none;
+    color: var(--primary);
 }
 
-select:focus { border-color: var(--primary); }
+/* Box form chính */
+body.create-page .container {
+    max-width: 720px;
+    margin: auto;
+    background: var(--card);
+    padding: 28px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+
+/* Section từng phần */
+body.create-page .section { margin-bottom: 22px; }
+
+/* Label */
+body.create-page .label {
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* Upload ảnh bìa */
+.upload-box {
+    width: 100%;
+    height: 160px;
+    border: 2px dashed var(--border);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--input-bg);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, background 0.2s;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.upload-box:hover {
+    border-color: #4ade80;
+    background: #1f2f1f;
+}
+
+.upload-box img { width: 100%; height: 100%; object-fit: cover; }
+
+.remove-img {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: var(--error);
+    color: white; border-radius: 50%;
+    width: 24px; height: 24px;
+    text-align: center; line-height: 24px;
+    cursor: pointer; font-size: 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+/* Quyền riêng tư */
+.privacy-wrapper { display: flex; gap: 10px; }
+
+.privacy-option {
+    flex: 1; padding: 12px;
+    border-radius: var(--radius-md);
+    text-align: center;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    cursor: pointer; font-size: 14px;
+    font-weight: 500; transition: all 0.2s;
+    color: var(--text-muted);
+}
+
+.privacy-option.active {
+    background: #4ade80;
+    border-color: #4ade80;
+    color: #000; font-weight: 700;
+}
+
+/* Box chọn tag */
+.tag-box {
+    background: var(--bg);
+    padding: 16px; border-radius: 15px;
+    border: 1px solid var(--border);
+}
+
+.category { margin-bottom: 14px; }
+
+.category-title {
+    margin-bottom: 8px;
+    font-size: 13px; color: var(--text-muted);
+    font-weight: 600;
+}
+
+.tags-container { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Tag */
+.tag {
+    padding: 6px 14px; border-radius: 999px;
+    background: #333;
+    border: 1px solid transparent;
+    cursor: pointer; font-size: 13px;
+    color: var(--text); transition: all 0.15s;
+}
+
+.tag:hover { border-color: #4ade80; color: #4ade80; }
+
+.tag.active {
+    background: #4ade80;
+    color: #000; font-weight: 700;
+}
+
+.tag.disabled { opacity: 0.4; cursor: not-allowed; }
+.tag .remove  { margin-left: 6px; color: var(--error); cursor: pointer; }
+
+/* Custom tag input */
+.custom-container { margin-top: 14px; }
+#customInput      { margin-top: 10px; border-radius: 999px; }
+
+/* Nút tạo nhóm */
+body.create-page .btn {
+    width: 100%; padding: 14px;
+    background: #4ade80; color: #000;
+    border: none; border-radius: var(--radius-md);
+    font-weight: bold; font-size: 15px;
+    cursor: pointer; transition: background 0.2s, transform 0.15s;
+}
+
+body.create-page .btn:hover  { background: #22c55e; transform: translateY(-1px); }
+body.create-page .btn:active { transform: translateY(0); }
+
+/* Toast thông báo */
+.toast {
+    position: fixed; top: 20px; right: 20px;
+    padding: 12px 18px; color: white;
+    border-radius: var(--radius-md);
+    opacity: 0; transition: opacity 0.3s;
+    font-size: 14px; font-weight: 500; z-index: 999;
+}
+
+.toast.show    { opacity: 1; }
+.toast.success { background: var(--success); }
+.toast.error   { background: var(--error); }
+
+/* Shake khi nhập sai */
+@keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25%,75%  { transform: translateX(-5px); }
+    50%      { transform: translateX(5px); }
+}
+
+.shake { animation: shake 0.3s; border: 2px solid var(--error) !important; }
 
 
 /* ============================================================
