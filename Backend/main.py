@@ -233,7 +233,7 @@ async def join_group(group_id: str, user_id: str):
     return {"message": "Tham gia nhóm thành công!"}
 
 
-# POST /api/groups/{group_id}/leave —Rời nhóm
+# POST /api/groups/{group_id}/leave—Rời nhóm
 @app.post("/api/groups/{group_id}/leave")
 async def leave_group(group_id: str, user_id: str):
     supabase.table("group_members").delete() \
