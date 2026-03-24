@@ -410,7 +410,7 @@ function toast(msg,type){
 }
 
 // CREATE
-function create(){
+async function create(){
     let name=document.getElementById("name");
     let desc=document.getElementById("desc");
     let member=document.getElementById("maxMember");
@@ -431,7 +431,42 @@ function create(){
         return;
     }
 
-    toast("Tạo nhóm thành công!","success");
+    // LẤY TAGS
+    let tags = Array.from(document.querySelectorAll(".tag.active"))
+        .map(t => t.innerText.replace("×","").trim());
+
+    // TẠO FORM DATA (để gửi cả ảnh)
+    let formData = new FormData();
+
+    formData.append("name", name.value);
+    formData.append("description", desc.value);
+    formData.append("maxMember", member.value);
+    formData.append("privacy", privacy);
+    formData.append("tags", JSON.stringify(tags));
+
+    let fileInput = document.getElementById("coverInput");
+    if(fileInput && fileInput.files[0]){
+        formData.append("image", fileInput.files[0]);
+    }
+
+    try {
+        let res = await fetch("/api/groups", {
+            method: "POST",
+            body: formData
+        });
+
+        let data = await res.json();
+
+        if(res.ok){
+            toast("Tạo nhóm thành công!","success");
+        } else {
+            toast(data.message || "Tạo nhóm thất bại","error");
+        }
+
+    } catch(err){
+        console.error(err);
+        toast("Không kết nối được server","error");
+    }
 }
 
 function goHome(){
