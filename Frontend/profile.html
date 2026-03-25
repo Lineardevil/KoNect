@@ -12,71 +12,201 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
     <style>
-    /* Smooth transition base for all animated buttons */
-    .hover-btn {
-        transition: all 0.1s ease-in-out;
+:root {
+    --primary: #007bff;
+    --bg: #121212;
+    --bg-2: #1e1e1e;
+    --text: #ffffff;
+    --text-muted: #b0b0b0;
+    --border: #333;
+    --card: #252525;
+}
+
+/* --- BASE DESKTOP LAYOUT --- */
+.profile-container {
+    display: flex;
+    flex-wrap: wrap; 
+    gap: 24px;
+    padding: 0 20px;
+    align-items: flex-start; 
+}
+
+.profile-avatar { 
+    margin-top: -60px; 
+    z-index: 5; 
+    flex-shrink: 0; 
+    order: 1; /* Explicitly set for reordering later */
+}
+
+.profile-info {
+    flex: 1 1 250px; 
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 15px; 
+    padding-top: 0 !important;
+    order: 2; /* Stays in the middle on desktop */
+}
+
+.profile-actions { 
+    display: flex; 
+    justify-content: flex-end; 
+    align-items: flex-start; 
+    gap: 15px; 
+    padding-top: 15px; 
+    flex-shrink: 0; 
+    margin-left: auto; 
+    order: 3; /* Stays on the right on desktop */
+}
+
+/* --- MOBILE LAYOUT OVERRIDE --- */
+/* When the screen hits 650px, we forcefully swap the elements */
+@media (max-width: 850px) {
+    .profile-container {
+        gap: 15px 24px; /* Reduces the vertical gap so the name isn't too far below */
+    }
+    
+    .profile-actions {
+        order: 2; /* Forces the boxes up next to the avatar */
+        margin-left: auto; /* Keeps them glued to the right edge */
+        padding-top: 5px; /* Aligns them nicely with the top half of the avatar */
+    }
+    
+    .profile-info {
+        order: 3; /* Forces the text to the bottom */
+        flex-basis: 100%; /* Forces the text to take the full width, preventing it from creeping up */
+        margin-top: -30px; /* Pulls the display name tight underneath the avatar and boxes */
+    }
+}
+
+@media (max-width: 550px) {
+    .profile-container {
+        gap: 15px; /* Tightens the layout for small phone screens */
     }
 
-    /* 1. Quay lại Trang chính (Back Button) */
-    .btn-back {
-        position: absolute; top: 20px; right: 20px; padding: 8px 16px; 
-        background: rgba(0, 0, 0, 0.6); color: var(--text); 
-        border: 1px solid var(--border); border-radius: 20px; 
-        cursor: pointer; font-weight: bold; backdrop-filter: blur(4px);
-    }
-    .btn-back:hover {
-        background: rgba(0, 0, 0, 0.9);
-        border-color: var(--primary);
-        color: var(--primary);
-        transform: translateY(-2px); /* Lifts up slightly */
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    .profile-info {
+        order: 2; /* Pulls text back up to sit next to the avatar */
+        flex-basis: auto; /* Allows it to sit side-by-side with the avatar again */
+        flex: 1 1 150px; /* Allows text to squeeze dynamically */
+        margin-top: 15px; /* Resets the negative margin from the 650px query */
     }
 
-    /* 2. Đổi tên & Sửa (Small Text Buttons) */
-    .btn-text {
-        cursor: pointer; border-radius: var(--radius-sm); 
-        border: 1px solid var(--border); background: transparent; 
-        color: var(--text-muted); 
+    .profile-actions {
+        order: 3; /* Pushes the buttons/boxes to the very bottom */
+        width: 100%; /* Forces the actions to take up an entire new row */
+        justify-content: flex-start; /* Aligns boxes to the left underneath the bio */
+        margin-top: 5px; 
+        padding-top: 0;
     }
-    .btn-text:hover {
-        color: var(--primary);
-        border-color: var(--primary);
-        background: rgba(0, 123, 255, 0.1); /* Light blue tint */
-    }
+}
 
-    /* 3. Message Button */
-    .btn-msg {
-        margin-top: 4px; padding: 10px 24px; 
-        background: var(--bg-2); color: var(--primary); 
-        font-weight: 600; border: 1px solid transparent; 
-        border-radius: 20px; cursor: pointer; 
-        font-size: 0.95rem; white-space: nowrap;
-    }
-    .btn-msg:hover {
-        background: var(--primary);
-        color: #ffffff;
-        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4); /* Glowing shadow */
-        transform: scale(1.05); /* Pops out slightly */
-    }
-/* 4. Lưu (Save Buttons) */
-    .btn-save {
-        background: transparent; 
-        color: var(--text-muted); /* Muted text by default */
-        border: 1px solid var(--border); /* Gray border by default */
-        cursor: pointer;
-        font-weight: bold;
-        transition: all 0.2s ease-in-out;
-    }
-    .btn-save:hover {
-        color: var(--primary); /* Turns blue on hover! */
-        border-color: var(--primary);
-        background: rgba(0, 123, 255, 0.1); 
-        transform: translateY(-1px); 
-        box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15); 
-    }
-    .btn-save:active {
-        transform: translateY(1px); 
-    }
+/* 1. Push the Message button UP */
+.btn-msg {
+    align-self: flex-start; /* Pulls it toward the top of the container */
+    margin-top: 10px;       /* Adjust this value to get it exactly where you want */
+}
+
+/* 2. Push the Stats boxes DOWN */
+.profile-stats {
+    align-self: flex-end;   /* Pushes it toward the bottom */
+    margin-top: 5px;       /* Creates the gap from the banner you're looking for */
+}
+
+/* Ensure headings don't have invisible top margins */
+.profile-info h1 {
+    margin: 0;
+    line-height: 1;
+    font-size: 2rem;
+}
+
+/* Stats Cards Styling */
+.profile-stats {
+    display: flex;
+    gap: 10px;
+    background: var(--bg-2);
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+.stat-card {
+    width: 80px;
+    text-align: center;
+    padding: 5px;
+    background: var(--card);
+    border-radius: 8px;
+}
+.stat-num { font-weight: bold; color: var(--primary); font-size: 1.1rem; }
+.stat-label { font-size: 0.7rem; color: var(--text-muted); line-height: 1.1; }
+
+/* Elements */
+h1 { font-size: 1.8rem; margin: 0; }
+.email { color: var(--text-muted); font-size: 0.9rem; }
+#user-bio { margin: 0; font-size: 0.95rem; line-height: 1.5; }
+#bio-fade {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 20px;
+    background: linear-gradient(transparent, var(--bg)); display: none;
+}
+
+
+/* Buttons */
+.btn-msg { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; }
+.btn-text { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+.btn-save { background: rgba(0, 123, 255, 0.1); color: var(--primary); border: 1px solid var(--primary); padding: 5px 15px; border-radius: 4px; cursor: pointer; }
+#see-more-btn { color: var(--primary); font-size: 0.85rem; text-decoration: none; font-weight: bold; display: none; }
+
+/* --- BUTTON STYLES & HOVER EFFECTS --- */
+
+/* 1. The Back Button (Pinned to top-right of the banner) */
+.btn-back {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.6); /* Semi-transparent dark background for readability */
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 20px; /* Matches the pill shape of your Message button */
+    font-weight: bold;
+    cursor: pointer;
+    backdrop-filter: blur(4px); /* Blurs the banner behind the button */
+    transition: all 0.2s ease; /* Required for a smooth hover effect */
+    z-index: 10; /* Ensures it stays clickable above the banner */
+}
+
+.btn-back:hover {
+    background: rgba(0, 0, 0, 0.9);
+    border-color: white;
+    transform: translateY(-1px);
+}
+
+/* 2. Hover effect for the main Message button */
+.btn-msg {
+    transition: all 0.2s ease;
+}
+.btn-msg:hover {
+    background: #0056b3; /* A darker shade of your primary blue */
+    transform: translateY(-2px); /* Slight lift effect */
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+/* 3. Hover effect for the Edit (Sửa / Đổi tên) buttons */
+.btn-text {
+    transition: all 0.2s ease;
+}
+.btn-text:hover {
+    background: var(--card);
+    color: var(--text);
+    border-color: var(--text-muted);
+}
+
+/* 4. Hover effect for the Save (Lưu) buttons */
+.btn-save {
+    transition: all 0.2s ease;
+}
+.btn-save:hover {
+    background: var(--primary);
+    color: white;
+}
 </style>
 </head>
 <body style="background: var(--bg); color: var(--text); margin: 0;">
@@ -85,65 +215,63 @@
     
     <div id="profile-banner" 
          style="position: relative; width: 100%; height: 220px; background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2000&auto=format&fit=crop'); background-size: cover; background-position: center; border-radius: var(--radius-lg); cursor: pointer;"
-         onclick="document.getElementById('banner-upload').click()"
-         title="Nhấn để đổi ảnh bìa">
+         onclick="document.getElementById('banner-upload').click()">
         
         <button class="hover-btn btn-back" onclick="event.stopPropagation(); window.location.href='/main'">Quay lại Trang chính</button>  
-
         <input type="file" id="banner-upload" accept="image/*" style="display: none;" onchange="uploadBanner(event)">
     </div>
+    
+    <div class="profile-container">
+      
+      <div class="profile-avatar">
+          <div class="avatar" id="user-avatar" 
+               style="cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; background-size: cover; background-position: center; width: 140px; height: 140px; border-radius: 50%; border: 6px solid var(--bg); background-color: var(--border);" 
+               onclick="document.getElementById('avatar-upload').click()">
+          </div>
+          <input type="file" id="avatar-upload" accept="image/*" style="display: none;" onchange="uploadAvatar(event)">
+      </div>
+      
+      <div class="profile-info">
+        <div class="name-row" style="display: flex; align-items: center; gap: 10px;">
+            <h1 id="user-name">placeholder</h1>
+            <input type="text" id="edit-name-input" maxlength="36" oninput="updateNameCounter()" style="display: none;" />
+            <span id="name-counter" style="display: none; font-size: 0.85rem; color: var(--text-muted);">36</span>
+            <button id="edit-name-btn" class="hover-btn btn-text" onclick="toggleEditName()">Đổi tên</button>
+            <button id="save-name-btn" class="btn-save" onclick="saveName()" style="display: none;">Lưu</button>
+        </div>
 
-    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; padding: 0 20px; margin-top: -50px; position: relative; z-index: 2;">
-        
-        <div style="display: flex; flex-wrap: wrap; gap: 24px; flex-grow: 1;">
-            
-            <div style="flex-shrink: 0;">
-                <div class="avatar" id="user-avatar" 
-                     style="cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; background-size: cover; background-position: center; width: 140px; height: 140px; border-radius: 50%; border: 6px solid var(--bg); background-color: var(--border);" 
-                     onclick="document.getElementById('avatar-upload').click()" 
-                     title="Nhấn để đổi ảnh đại diện">
-                </div>
-                <input type="file" id="avatar-upload" accept="image/*" style="display: none;" onchange="uploadAvatar(event)">
-            </div>
-            
-            <div class="profile-info" style="padding-top: 60px; min-width: 300px; display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <h2 id="user-name" style="margin: 0; font-size: 2rem; font-weight: 700; color: var(--text);">Đang tải...</h2>
-                    <input type="text" id="edit-name-input" style="display: none; padding: 5px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--input-bg); color: var(--text); max-width: 150px;" />
-                    <button id="edit-name-btn" class="hover-btn btn-text" onclick="toggleEditName()" style="padding: 4px 10px; font-size: 0.8rem;">Đổi tên</button>                    
-                    <button id="save-name-btn" class="btn-save" onclick="saveName()" style="display: none; padding: 4px 12px; border-radius: var(--radius-sm); font-size: 0.8rem;">Lưu</button>
-                </div>
-                
-                <p id="user-email" style="margin: 0; color: var(--text-muted); font-size: 0.95rem;">Đang tải...</p>
+        <textarea id="edit-bio-input" maxlength="160" oninput="updateBioCounter()" style="display: none; width: 100%; min-height: 60px; background: var(--bg-2); color: var(--text); border: 1px solid var(--border); padding: 8px; border-radius: 8px;"></textarea>
 
-                <div id="bio-container" style="position: relative; max-width: 600px; margin-top: 4px;">
-                    <div id="bio-text-wrapper" style="max-height: 4.5em; overflow: hidden; transition: max-height 0.3s ease; position: relative;">
-                        <p id="user-bio" style="margin: 0; color: var(--text); font-size: 0.95rem; white-space: pre-wrap; word-break: break-word; line-height: 1.5;">Đang tải tiểu sử...</p>
-                        <div id="bio-fade" style="position: absolute; bottom: 0; left: 0; width: 100%; height: 20px; background: linear-gradient(transparent, var(--bg)); display: none;"></div>
-                    </div>
-                    
-                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                        <a href="javascript:void(0)" id="see-more-btn" onclick="toggleSeeMore()" style="color: var(--primary); font-size: 0.85rem; text-decoration: none; display: none; font-weight: bold;">See more</a>
-                        <button id="edit-bio-btn" class="hover-btn btn-text" onclick="toggleEditBio()" style="padding: 2px 8px; font-size: 0.75rem;">Sửa</button>
-                    </div>
-                </div>
-                <textarea id="edit-bio-input" maxlength="160" rows="2" oninput="updateBioCounter()" style="display: none; width: 100%; max-width: 600px; box-sizing: border-box; padding: 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--input-bg); color: var(--text); margin-top: 5px;"></textarea>
-                
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 600px; margin-top: 6px;">
-                    <button id="save-bio-btn" class="btn-save" onclick="saveBio()" style="display: none; padding: 4px 12px; border-radius: var(--radius-sm); font-size: 0.8rem;">Lưu</button>
-                    <div id="bio-counter" style="display: none; font-size: 0.75rem; color: var(--text-muted);">160</div>
-                </div>
+        <span id="user-email" class="email">placeholder@example.com</span>
 
-            </div> </div> <div id="right-actions" style="display: flex; align-items: flex-start; gap: 20px; margin-top: 65px; flex-wrap: wrap;">
+          <div id="bio-container">
+              <div id="bio-text-wrapper" style="max-height: 3em; overflow: hidden; position: relative;">
+                  <p id="user-bio">No bio</p>
+                  <div id="bio-fade"></div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                  <a href="javascript:void(0)" id="see-more-btn" onclick="toggleSeeMore()">See more</a>
+                  <button id="edit-bio-btn" class="hover-btn btn-text" onclick="toggleEditBio()">Sửa</button>
+              </div>
+          </div>
+
+          <textarea id="edit-bio-input" maxlength="160" style="display: none;"></textarea>
+          <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+              <button id="save-bio-btn" class="btn-save" onclick="saveBio()" style="display: none;">Lưu</button>
+              <div id="bio-counter" style="display: none;">160</div>
+          </div>
+      </div>
+
+        <div id="right-actions" class="profile-actions">
             <button class="hover-btn btn-msg" onclick="window.location.href='/chat'">Message</button>
-            <div class="profile-stats" style="display: flex; gap: 10px; background: var(--bg-2); padding: 15px; border-radius: var(--radius-md); border: 1px solid var(--border);">
-                <div class="stat-card" style="width: 85px; box-sizing: border-box; text-align: center; padding: 10px 5px; background: var(--card); border-radius: var(--radius-sm);">
-                    <div class="stat-num" style="font-size: 1.2rem; font-weight: bold; color: var(--primary);">0</div>
-                    <div class="stat-label" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Nhóm đã tạo</div>
+            <div class="profile-stats">
+                <div class="stat-card">
+                    <div class="stat-num">0</div>
+                    <div class="stat-label">Nhóm đã tạo</div>
                 </div>
-                <div class="stat-card" style="width: 85px; box-sizing: border-box; text-align: center; padding: 10px 5px; background: var(--card); border-radius: var(--radius-sm);">
-                    <div class="stat-num" style="font-size: 1.2rem; font-weight: bold; color: var(--primary);">0</div>
-                    <div class="stat-label" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Nhóm đang tham gia</div>
+                <div class="stat-card">
+                    <div class="stat-num">0</div>
+                    <div class="stat-label">Nhóm tham gia</div>
                 </div>
             </div>
         </div>
@@ -160,16 +288,6 @@
         <p style="color: var(--text-muted); font-style: italic; margin: 0;">Đang tải danh sách nhóm...</p>
     </div>
 </div>
-
-<div id="groups-section" style="width: 100%; max-width: 1400px; margin: 40px auto 60px; padding: 0 20px;">
-        <h3 style="color: var(--primary); font-size: 1.3rem; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-            Nhóm của tôi
-        </h3>
-        
-        <div id="groups-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
-            <p style="color: var(--text-muted); font-style: italic; margin: 0;">Đang tải danh sách nhóm...</p>
-        </div>
-    </div>
 
 <div id="crop-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
     <div style="background: var(--bg); padding: 20px; border-radius: var(--radius-lg); width: 90%; max-width: 600px; border: 1px solid var(--border);">
@@ -258,9 +376,13 @@
     function toggleEditName() {
         document.getElementById('user-name').style.display = 'none';
         document.getElementById('edit-name-btn').style.display = 'none';
+        
         document.getElementById('edit-name-input').style.display = 'inline-block';
+        document.getElementById('name-counter').style.display = 'inline-block'; // Shows the counter
         document.getElementById('save-name-btn').style.display = 'inline-block';
+        
         document.getElementById('edit-name-input').focus();
+        updateNameCounter(); // Sets the initial number when opened
     }
 
     async function saveName() {
@@ -287,13 +409,19 @@
         }
 
         document.getElementById('user-name').innerText = newName;
-        document.getElementById('user-avatar').innerText = newName.charAt(0).toUpperCase();
+    
+        // Only update the letter if the user hasn't uploaded a background image
+        const avatarDiv = document.getElementById('user-avatar');
+        if (!avatarDiv.style.backgroundImage || avatarDiv.style.backgroundImage === 'none') {
+            avatarDiv.innerText = newName.charAt(0).toUpperCase();
+        }
         
         document.getElementById('user-name').style.display = 'block';
         document.getElementById('edit-name-btn').style.display = 'inline-block';
         document.getElementById('edit-name-input').style.display = 'none';
+        document.getElementById('name-counter').style.display = 'none'; // Hides the counter
         document.getElementById('save-name-btn').style.display = 'none';
-    }
+    }   
 
 function toggleEditBio() {
         document.getElementById('user-bio').style.display = 'none';
@@ -314,6 +442,20 @@ function toggleEditBio() {
         
         // Make it turn red if they are running out of space
         if (remaining <= 10) {
+            counter.style.color = 'red';
+        } else {
+            counter.style.color = 'var(--text-muted)';
+        }
+    }
+    function updateNameCounter() {
+        const input = document.getElementById('edit-name-input');
+        const counter = document.getElementById('name-counter');
+        const remaining = 36 - input.value.length;
+        
+        counter.innerText = remaining;
+        
+        // Turns red when 5 or fewer characters remain
+        if (remaining <= 5) {
             counter.style.color = 'red';
         } else {
             counter.style.color = 'var(--text-muted)';
@@ -504,34 +646,45 @@ function toggleSeeMore() {
     const btn = document.getElementById('see-more-btn');
     const fade = document.getElementById('bio-fade');
 
-    if (wrapper.style.maxHeight === '4.5em') {
+    if (wrapper.style.maxHeight === '3em') {
+        // Expand fully
         wrapper.style.maxHeight = 'none'; 
         btn.innerText = 'Show less';
         fade.style.display = 'none';
     } else {
-        wrapper.style.maxHeight = '4.5em'; 
+        // Collapse back to 2 lines
+        wrapper.style.maxHeight = '3em'; 
         btn.innerText = 'See more';
         fade.style.display = 'block';
     }
 }
 
 function checkBioLength() {
-    const wrapper = document.getElementById('bio-text-wrapper');
-    const bioText = document.getElementById('user-bio');
-    const btn = document.getElementById('see-more-btn');
-    const fade = document.getElementById('bio-fade');
+    // We use setTimeout to let the browser finish resizing the text before we do the math
+    setTimeout(() => {
+        const wrapper = document.getElementById('bio-text-wrapper');
+        const bioText = document.getElementById('user-bio');
+        const btn = document.getElementById('see-more-btn');
+        const fade = document.getElementById('bio-fade');
 
-    if (bioText.scrollHeight > wrapper.clientHeight) {
-        btn.style.display = 'inline-block';
-        fade.style.display = 'block';
-    } else {
-        btn.style.display = 'none';
-        fade.style.display = 'none';
-    }
+        // Only hide/show if it's in the collapsed state
+        if (wrapper.style.maxHeight === '3em') {
+            // Compare the actual text height to the wrapper's 3em height
+            if (bioText.scrollHeight > wrapper.clientHeight) {
+                btn.style.display = 'inline-block';
+                fade.style.display = 'block';
+            } else {
+                btn.style.display = 'none';
+                fade.style.display = 'none';
+            }
+        }
+    }, 50); // 50ms delay gives the browser time to paint the new layout
 }
 
     loadProfile();
     loadUserGroups();
+    // This tells the browser to re-check the bio height every time the window is resized!
+    window.addEventListener('resize', checkBioLength);
     
 </script>
 </body>
