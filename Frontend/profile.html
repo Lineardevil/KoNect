@@ -9,57 +9,455 @@
 </head>
 <body>
 
-<div class="profile-layout">
-    <div class="profile-header">
-        <div class="avatar" id="user-avatar">?</div>
-        <div class="profile-info">
-            <h2 id="user-name">Đang tải...</h2>
-            <p id="user-email">Đang tải...</p>
-        </div>
+<div class="profile-layout" style="width: 100%; max-width: 1400px; margin: 0 auto;">
+    
+    <div id="profile-banner" 
+         style="position: relative; width: 100%; height: 220px; background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2000&auto=format&fit=crop'); background-size: cover; background-position: center; border-radius: 16px; cursor: pointer;"
+         onclick="document.getElementById('banner-upload').click()"
+         title="Nhấn để đổi ảnh bìa">
+        
+        <button onclick="event.stopPropagation(); window.location.href='/main'" style="position: absolute; top: 20px; right: 20px; padding: 8px 16px; background: rgba(0, 0, 0, 0.6); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; cursor: pointer; font-weight: bold; backdrop-filter: blur(4px);">Quay lại Trang chính</button>
+        
+        <input type="file" id="banner-upload" accept="image/*" style="display: none;" onchange="uploadBanner(event)">
     </div>
 
-    <div class="profile-stats">
-        <div class="stat-card">
-            <div class="stat-num">0</div>
-            <div class="stat-label">Nhóm đã tham gia</div>
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; padding: 0 20px; margin-top: -50px; position: relative; z-index: 2;">
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 24px; flex-grow: 1;">
+            
+            <div style="flex-shrink: 0;">
+                <div class="avatar" id="user-avatar" 
+                     style="cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; background-size: cover; background-position: center; width: 140px; height: 140px; border-radius: 50%; border: 6px solid #121212; background-color: #333;" 
+                     onclick="document.getElementById('avatar-upload').click()" 
+                     title="Nhấn để đổi ảnh đại diện">
+                </div>
+                <input type="file" id="avatar-upload" accept="image/*" style="display: none;" onchange="uploadAvatar(event)">
+            </div>
+            
+            <div class="profile-info" style="padding-top: 60px; min-width: 300px; display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <h2 id="user-name" style="margin: 0; font-size: 2rem; font-weight: 700;">Đang tải...</h2>
+                    <input type="text" id="edit-name-input" style="display: none; padding: 5px; border-radius: 4px; border: 1px solid #ccc; max-width: 150px;" />
+                    <button id="edit-name-btn" onclick="toggleEditName()" style="padding: 4px 10px; cursor: pointer; border-radius: 4px; border: 1px solid #555; background: transparent; color: #ccc; font-size: 0.8rem;">Đổi tên</button>
+                    <button id="save-name-btn" onclick="saveName()" style="display: none; padding: 4px 10px; cursor: pointer; background: var(--primary, #007bff); color: white; border: none; border-radius: 4px; font-size: 0.8rem;">Lưu</button>
+                </div>
+                
+                <p id="user-email" style="margin: 0; color: #aaa; font-size: 0.95rem;">Đang tải...</p>
+
+                <div id="bio-container" style="position: relative; max-width: 600px; margin-top: 4px;">
+                    <div id="bio-text-wrapper" style="max-height: 4.5em; overflow: hidden; transition: max-height 0.3s ease; position: relative;">
+                        <p id="user-bio" style="margin: 0; color: #ddd; font-size: 0.95rem; white-space: pre-wrap; word-break: break-word; line-height: 1.5;">Đang tải tiểu sử...</p>
+                        <div id="bio-fade" style="position: absolute; bottom: 0; left: 0; width: 100%; height: 20px; background: linear-gradient(transparent, #121212); display: none;"></div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                        <a href="javascript:void(0)" id="see-more-btn" onclick="toggleSeeMore()" style="color: #007bff; font-size: 0.85rem; text-decoration: none; display: none; font-weight: bold;">See more</a>
+                        <button id="edit-bio-btn" onclick="toggleEditBio()" style="padding: 2px 8px; cursor: pointer; border-radius: 4px; border: 1px solid #555; background: transparent; color: #aaa; font-size: 0.75rem;">Sửa</button>
+                    </div>
+                </div>
+
+                <textarea id="edit-bio-input" rows="2" style="display: none; width: 100%; max-width: 400px; padding: 8px; border-radius: 4px; border: 1px solid #555; background: #222; color: #fff; margin-top: 5px;"></textarea>
+                <button id="save-bio-btn" onclick="saveBio()" style="display: none; margin-top: 8px; padding: 4px 10px; cursor: pointer; background: var(--primary, #007bff); color: white; border: none; border-radius: 4px; font-size: 0.9rem; width: fit-content;">Lưu</button>
+            </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-num">0</div>
-            <div class="stat-label">Bài viết</div>
+
+        <div id="right-actions" style="display: flex; align-items: center; gap: 20px; margin-top: 60px; flex-wrap: wrap;">
+            
+            <button onclick="window.location.href='/chat'" style="padding: 10px 24px; background: #222; color: #007bff; font-weight: 600; border: none; border-radius: 20px; cursor: pointer; font-size: 0.95rem; white-space: nowrap;">Message</button>
+
+            <div class="profile-stats" style="display: flex; gap: 10px; background: #1a1a1a; padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                <div class="stat-card" style="width: 85px; box-sizing: border-box; text-align: center; padding: 10px 5px; background: #222; border-radius: 8px;">
+                    <div class="stat-num" style="font-size: 1.2rem; font-weight: bold; color: #007bff;">0</div>
+                    <div class="stat-label" style="font-size: 0.8rem; color: #aaa; margin-top: 4px;">Nhóm đã tạo</div>
+                </div>
+                <div class="stat-card" style="width: 85px; box-sizing: border-box; text-align: center; padding: 10px 5px; background: #222; border-radius: 8px;">
+                    <div class="stat-num" style="font-size: 1.2rem; font-weight: bold; color: #007bff;">0</div>
+                    <div class="stat-label" style="font-size: 0.8rem; color: #aaa; margin-top: 4px;">Nhóm đang tham gia</div>
+                </div>
+            </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-num">0</div>
-            <div class="stat-label">Đang theo dõi</div>
-        </div>
+        
     </div>
-    
-    <button onclick="window.location.href='/main.html'" style="padding: 10px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer;">Quay lại Trang chính</button>
 </div>
 
+<div id="groups-section"style="width: 100%; max-width: 1400px; margin: 40px auto 60px; padding: 0 20px;">
+        <h3 style="color: #007bff; font-size: 1.3rem; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+            Nhóm của tôi
+        </h3>
+        
+        <div id="groups-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+            <p style="color: #aaa; font-style: italic; margin: 0;">Đang tải danh sách nhóm...</p>
+        </div>
+    </div>
+
 <script>
+    
     const SUPABASE_URL = 'https://dfbklcbregcxzngpiorx.supabase.co';
-    const SUPABASE_KEY = 'YOUR_ANON_KEY_HERE'; // DO NOT LEAVE THIS EXPOSED IN PRODUCTION
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYmtsY2JyZWdjeHpuZ3Bpb3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTI2MTIsImV4cCI6MjA4OTQyODYxMn0.3EOOOodNiaa46ptAksdTY43_vknTIxhejcJCbVN441w'; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  async function loadProfile() {
-          const { data: { user }, error } = await supabaseClient.auth.getUser();
+    async function loadProfile() {
+        const { data: { user }, error } = await supabaseClient.auth.getUser();
 
-          if (error || !user) {
-              console.warn("Bouncer: No user found.");
-              // Tell the UI why it's stuck:
-              document.getElementById('user-email').innerText = "Guest (No session found)";
-              document.getElementById('user-name').innerText = "Chưa đăng nhập";
-              return; 
-          }
+        if (error || !user) {
+            console.warn("Bouncer: No user found.");
+            document.getElementById('user-email').innerText = "Guest (No session found)";
+            document.getElementById('user-name').innerText = "Chưa đăng nhập";
+            
+            // Hide inline edit buttons
+            document.getElementById('edit-name-btn').style.display = 'none'; 
+            document.getElementById('edit-bio-btn').style.display = 'none'; 
+            document.getElementById('user-bio').innerText = "Vui lòng đăng nhập để xem thông tin chi tiết."; 
+            
+            // NEW: Hide the right actions (Message/Stats) and the bottom groups section entirely
+            document.getElementById('right-actions').style.display = 'none';
+            document.getElementById('groups-section').style.display = 'none';
 
-          // If it gets past the 'return', it will fill this in:
-          document.getElementById('user-email').innerText = user.email;
-          const username = user.email.split('@')[0];
-          document.getElementById('user-name').innerText = username;
-          document.getElementById('user-avatar').innerText = username.charAt(0).toUpperCase();
-      }
+            // NEW: Disable Avatar and Banner clicks so guests cannot trigger the file uploader
+            const banner = document.getElementById('profile-banner');
+            banner.onclick = null;
+            banner.style.cursor = 'default';
+            banner.title = "";
+
+            const avatar = document.getElementById('user-avatar');
+            avatar.onclick = null;
+            avatar.style.cursor = 'default';
+            avatar.title = "";
+
+            return; 
+        }
+
+        document.getElementById('user-email').innerText = user.email;
+        
+        // 1. Check if they have a saved display name. If not, fallback to email prefix.
+        const fallbackName = user.email.split('@')[0];
+        const displayName = user.user_metadata?.display_name || fallbackName;
+
+        // 2. Populate the UI
+        document.getElementById('user-name').innerText = displayName;
+        document.getElementById('edit-name-input').value = displayName; 
+        
+        // NEW: Check if they have an avatar URL saved
+        const avatarUrl = user.user_metadata?.avatar_url;
+        const avatarDiv = document.getElementById('user-avatar');
+        const bannerUrl = user.user_metadata?.banner_url;
+
+        if (bannerUrl) {
+            document.getElementById('profile-banner').style.backgroundImage = `url(${bannerUrl})`;
+        }
+
+        if (avatarUrl) {
+            avatarDiv.innerText = ''; // Remove the text letter
+            avatarDiv.style.backgroundImage = `url(${avatarUrl})`; // Set the image as background
+        } else {
+            avatarDiv.innerText = displayName.charAt(0).toUpperCase();
+            avatarDiv.style.backgroundImage = 'none';
+        }
+
+        const bioText = user.user_metadata?.bio;
+        const bioDisplay = document.getElementById('user-bio');
+        const bioInput = document.getElementById('edit-bio-input');
+        
+        // Quick check to make sure the HTML elements exist before updating them
+        if (bioDisplay && bioInput) {
+            bioDisplay.innerText = bioText || "Chưa có tiểu sử...";
+            bioInput.value = bioText || "";
+            checkBioLength();
+        }
+    }
+
+// --- NEW FUNCTIONS FOR EDITING NAME ---
+
+    function toggleEditName() {
+        // Hide the text and "Edit" button
+        document.getElementById('user-name').style.display = 'none';
+        document.getElementById('edit-name-btn').style.display = 'none';
+        
+        // Show the input box and "Save" button
+        document.getElementById('edit-name-input').style.display = 'inline-block';
+        document.getElementById('save-name-btn').style.display = 'inline-block';
+        
+        // Put the cursor inside the input box automatically
+        document.getElementById('edit-name-input').focus();
+    }
+
+    async function saveName() {
+        const newName = document.getElementById('edit-name-input').value.trim();
+        
+        if (!newName) {
+            alert("Tên không được để trống! (Name cannot be empty!)");
+            return;
+        }
+
+        // Show loading state
+        const saveBtn = document.getElementById('save-name-btn');
+        saveBtn.innerText = "Đang lưu...";
+        saveBtn.disabled = true;
+
+        // Save the new name into Supabase's user_metadata
+        const { data, error } = await supabaseClient.auth.updateUser({
+            data: { display_name: newName }
+        });
+
+        saveBtn.innerText = "Lưu";
+        saveBtn.disabled = false;
+
+        if (error) {
+            alert("Lỗi khi lưu tên: " + error.message);
+            return;
+        }
+
+        // Update the UI with the new name
+        document.getElementById('user-name').innerText = newName;
+        document.getElementById('user-avatar').innerText = newName.charAt(0).toUpperCase();
+        
+        // Switch back to "view" mode
+        document.getElementById('user-name').style.display = 'block';
+        document.getElementById('edit-name-btn').style.display = 'inline-block';
+        document.getElementById('edit-name-input').style.display = 'none';
+        document.getElementById('save-name-btn').style.display = 'none';
+    }
+
+// --- NEW FUNCTIONS FOR EDITING BIO ---
+
+    function toggleEditBio() {
+        document.getElementById('user-bio').style.display = 'none';
+        document.getElementById('edit-bio-btn').style.display = 'none';
+        
+        document.getElementById('edit-bio-input').style.display = 'block';
+        document.getElementById('save-bio-btn').style.display = 'inline-block';
+        
+        document.getElementById('edit-bio-input').focus();
+    }
+
+    async function saveBio() {
+        const newBio = document.getElementById('edit-bio-input').value.trim();
+        const saveBtn = document.getElementById('save-bio-btn');
+        
+        saveBtn.innerText = "Đang lưu...";
+        saveBtn.disabled = true;
+
+        // Save the new bio into Supabase's user_metadata
+        const { data, error } = await supabaseClient.auth.updateUser({
+            data: { bio: newBio }
+        });
+
+        saveBtn.innerText = "Lưu tiểu sử";
+        saveBtn.disabled = false;
+
+        if (error) {
+            alert("Lỗi khi lưu tiểu sử: " + error.message);
+            return;
+        }
+
+        // Update UI
+        document.getElementById('user-bio').innerText = newBio || "Chưa có tiểu sử...";
+        checkBioLength();
+        
+        // Switch back to view mode
+        document.getElementById('user-bio').style.display = 'block';
+        document.getElementById('edit-bio-btn').style.display = 'inline-block';
+        document.getElementById('edit-bio-input').style.display = 'none';
+        document.getElementById('save-bio-btn').style.display = 'none';
+    }
+
+    async function uploadAvatar(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Safety check: Base64 strings get very long, so let's limit file size to 2MB
+        if (file.size > 2 * 1024 * 1024) {
+            alert("Ảnh quá lớn! Vui lòng chọn ảnh dưới 2MB. (Image must be under 2MB)");
+            return;
+        }
+
+        const avatarDiv = document.getElementById('user-avatar');
+        const originalText = avatarDiv.innerText;
+        const originalBg = avatarDiv.style.backgroundImage;
+        
+        // Show a quick loading state
+        avatarDiv.innerText = '⏳';
+        avatarDiv.style.backgroundImage = 'none';
+
+        // Read the image file and convert it
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const base64Image = e.target.result; // This is the image converted to text
+
+            // Save the Base64 string to Supabase metadata
+            const { data, error } = await supabaseClient.auth.updateUser({
+                data: { avatar_url: base64Image }
+            });
+
+            if (error) {
+                alert("Lỗi khi tải ảnh lên: " + error.message);
+                avatarDiv.innerText = originalText;
+                avatarDiv.style.backgroundImage = originalBg;
+                return;
+            }
+
+            // Success! Update the UI with the new image
+            avatarDiv.innerText = '';
+            avatarDiv.style.backgroundImage = `url(${base64Image})`;
+        };
+        
+        reader.readAsDataURL(file); // Triggers the onload function above
+    }
+    
+// --- NEW FUNCTION: Upload Banner ---
+
+async function uploadBanner(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Banners are bigger, let's allow up to 4MB
+    if (file.size > 4 * 1024 * 1024) {
+        alert("Ảnh bìa quá lớn! Vui lòng chọn ảnh dưới 4MB. (Image must be under 4MB)");
+        return;
+    }
+
+    const bannerDiv = document.getElementById('profile-banner');
+    const originalBg = bannerDiv.style.backgroundImage;
+    
+    // Quick loading state: dim the banner
+    bannerDiv.style.opacity = '0.5';
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const base64Image = e.target.result;
+
+        // Save to Supabase metadata as 'banner_url'
+        const { data, error } = await supabaseClient.auth.updateUser({
+            data: { banner_url: base64Image }
+        });
+
+        if (error) {
+            alert("Lỗi khi tải ảnh bìa lên: " + error.message);
+            bannerDiv.style.backgroundImage = originalBg;
+            bannerDiv.style.opacity = '1';
+            return;
+        }
+
+        // Success! Update UI
+        bannerDiv.style.backgroundImage = `url(${base64Image})`;
+        bannerDiv.style.opacity = '1';
+    };
+    
+    reader.readAsDataURL(file);
+}
+   
+// --- NEW FUNCTION: Load User Groups ---
+
+async function loadUserGroups() {
+    const groupsContainer = document.getElementById('groups-container');
+    
+    // 1. Show loading state first
+    groupsContainer.innerHTML = '<p style="color: #aaa; font-style: italic; margin: 0;">Đang tải danh sách nhóm...</p>';
+
+    /* // --- REAL SUPABASE LOGIC (Uncomment when ready) ---
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) {
+        groupsContainer.innerHTML = '<p style="color: red;">Vui lòng đăng nhập để xem nhóm.</p>';
+        return;
+    }
+    
+    // Fetch groups
+    let { data: groups, error } = await supabaseClient
+        .from('group_members')
+        .select('groups(id, name, description)')
+        .eq('user_id', user.id);
+        
+    if (error) {
+        console.error("Lỗi tải nhóm:", error);
+        groupsContainer.innerHTML = '<p style="color: red;">Đã xảy ra lỗi khi tải danh sách nhóm.</p>';
+        return;
+    }
+    */
+
+    // --- DUMMY DATA FOR TESTING ---
+    // Try setting this to [] to see the empty state, or add objects to see the cards!
+    const groups = [];
+    
+    // 2. Clear the loading text
+    groupsContainer.innerHTML = ''; 
+
+    // 3. THE EMPTY STATE CHECK (If no groups returned from DB)
+    if (!groups || groups.length === 0) {
+        groupsContainer.innerHTML = `
+            <div style="grid-column: 1 / -1; padding: 20px 0; text-align: center;">
+                <p style="color: #aaa; font-size: 1.05rem; margin: 0;">
+                    Người dùng này chưa tham gia hoặc tạo nhóm nào :( 
+                </p>
+            </div>
+        `;
+        return; // Stop the function here so it doesn't try to draw cards
+    }
+
+    // 4. Render group cards if they DO exist
+    groups.forEach(group => {
+        const groupName = group.name || group.groups?.name || "Tên nhóm";
+        const groupDesc = group.description || group.groups?.description || "Chưa có mô tả cho nhóm này.";
+        
+        const groupCard = document.createElement('div');
+        groupCard.style.cssText = "background: #1a1a1a; border-radius: 12px; padding: 16px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 15px; cursor: pointer; transition: background 0.2s;";
+        
+        groupCard.onmouseover = () => groupCard.style.background = '#222';
+        groupCard.onmouseout = () => groupCard.style.background = '#1a1a1a';
+        groupCard.onclick = () => window.location.href = `/group.html?id=${group.id || 1}`;
+
+        groupCard.innerHTML = `
+            <div style="width: 50px; height: 50px; border-radius: 10px; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; color: #3ea6ff; flex-shrink: 0;">
+                ${groupName.charAt(0).toUpperCase()}
+            </div>
+            <div>
+                <h4 style="margin: 0 0 4px 0; color: #fff; font-size: 1.05rem;">${groupName}</h4>
+                <p style="margin: 0; color: #888; font-size: 0.85rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${groupDesc}</p>
+            </div>
+        `;
+        
+        groupsContainer.appendChild(groupCard);
+    });
+}
+
+// --- NEW: Toggle Bio Expansion ---
+function toggleSeeMore() {
+    const wrapper = document.getElementById('bio-text-wrapper');
+    const btn = document.getElementById('see-more-btn');
+    const fade = document.getElementById('bio-fade');
+
+    if (wrapper.style.maxHeight === '4.5em') {
+        wrapper.style.maxHeight = 'none'; // Expand
+        btn.innerText = 'Show less';
+        fade.style.display = 'none';
+    } else {
+        wrapper.style.maxHeight = '4.5em'; // Collapse
+        btn.innerText = 'See more';
+        fade.style.display = 'block';
+    }
+}
+
+// --- NEW: Check if bio is long enough to need "See more" ---
+function checkBioLength() {
+    const wrapper = document.getElementById('bio-text-wrapper');
+    const bioText = document.getElementById('user-bio');
+    const btn = document.getElementById('see-more-btn');
+    const fade = document.getElementById('bio-fade');
+
+    // If text height is greater than the 4.5em container height
+    if (bioText.scrollHeight > wrapper.clientHeight) {
+        btn.style.display = 'inline-block';
+        fade.style.display = 'block';
+    } else {
+        btn.style.display = 'none';
+        fade.style.display = 'none';
+    }
+}
+
+// Run on load
 
     loadProfile();
+    loadUserGroups();
+    
 </script>
 </body>
 </html>
