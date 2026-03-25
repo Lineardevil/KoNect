@@ -59,6 +59,12 @@
     order: 3; /* Stays on the right on desktop */
 }
 
+/* Pushes text down on desktop for guests */
+.profile-info.not-logged-in {
+    margin-top: -9px;
+    flex-basis: 100%;
+}
+
 /* --- MOBILE LAYOUT OVERRIDE --- */
 /* When the screen hits 650px, we forcefully swap the elements */
 @media (max-width: 850px) {
@@ -76,6 +82,12 @@
         order: 3; /* Forces the text to the bottom */
         flex-basis: 100%; /* Forces the text to take the full width, preventing it from creeping up */
         margin-top: -30px; /* Pulls the display name tight underneath the avatar and boxes */
+    }
+
+        /* Removes the extra gap at the first checkpoint */
+    .profile-info.not-logged-in {
+        margin-top: 0px;
+        flex-basis: 100%;
     }
 }
 
@@ -97,6 +109,11 @@
         justify-content: flex-start; /* Aligns boxes to the left underneath the bio */
         margin-top: 5px; 
         padding-top: 0;
+    }
+    /* Resets to normal mobile spacing */
+    .profile-info.not-logged-in {
+        margin-top: 0px;
+        flex-basis: 100%;
     }
 }
 
@@ -207,6 +224,16 @@ h1 { font-size: 1.8rem; margin: 0; }
     background: var(--primary);
     color: white;
 }
+
+/* GUEST LOOK: Linear (No overlap) */
+/* This "if statement" triggers only when JS adds the class */
+.profile-container.not-logged-in .profile-info {
+    margin-top: 20px; /* Aligns text linearly with the avatar */
+}
+
+.profile-container.not-logged-in .profile-actions {
+    display: none; /* Hides the message/stats entirely for guests */
+}
 </style>
 </head>
 <body style="background: var(--bg); color: var(--text); margin: 0;">
@@ -315,6 +342,7 @@ h1 { font-size: 1.8rem; margin: 0; }
 
         if (error || !user) {
             console.warn("Bouncer: No user found.");
+            document.querySelector('.profile-info').classList.add('not-logged-in');
             document.getElementById('user-email').innerText = "Guest (No session found)";
             document.getElementById('user-name').innerText = "Chưa đăng nhập";
             
@@ -338,6 +366,7 @@ h1 { font-size: 1.8rem; margin: 0; }
             return; 
         }
 
+        document.querySelector('.profile-info').classList.remove('not-logged-in');
         document.getElementById('user-email').innerText = user.email;
         
         const fallbackName = user.email.split('@')[0];
