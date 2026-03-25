@@ -62,7 +62,12 @@
             return;
         }
 
-        document.getElementById('user-display').innerText = "Chào, " + user.email;
+        // 1. Try to get the saved display name.
+        // 2. If it doesn't exist yet, fall back to the first part of their email.
+        const fallbackName = user.email.split('@')[0];
+        const displayName = user.user_metadata?.display_name || fallbackName;
+
+        document.getElementById('user-display').innerText = "Chào, " + displayName;
 
         // Lấy danh sách nhóm từ bảng 'groups'
         const { data: groups, error } = await supabaseClient

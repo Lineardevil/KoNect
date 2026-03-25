@@ -6,6 +6,78 @@
     <title>KoNect - Hồ sơ cá nhân</title>
     <link rel="stylesheet" href="/assets/style.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <style>
+    /* Smooth transition base for all animated buttons */
+    .hover-btn {
+        transition: all 0.1s ease-in-out;
+    }
+
+    /* 1. Quay lại Trang chính (Back Button) */
+    .btn-back {
+        position: absolute; top: 20px; right: 20px; padding: 8px 16px; 
+        background: rgba(0, 0, 0, 0.6); color: var(--text); 
+        border: 1px solid var(--border); border-radius: 20px; 
+        cursor: pointer; font-weight: bold; backdrop-filter: blur(4px);
+    }
+    .btn-back:hover {
+        background: rgba(0, 0, 0, 0.9);
+        border-color: var(--primary);
+        color: var(--primary);
+        transform: translateY(-2px); /* Lifts up slightly */
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    /* 2. Đổi tên & Sửa (Small Text Buttons) */
+    .btn-text {
+        cursor: pointer; border-radius: var(--radius-sm); 
+        border: 1px solid var(--border); background: transparent; 
+        color: var(--text-muted); 
+    }
+    .btn-text:hover {
+        color: var(--primary);
+        border-color: var(--primary);
+        background: rgba(0, 123, 255, 0.1); /* Light blue tint */
+    }
+
+    /* 3. Message Button */
+    .btn-msg {
+        margin-top: 4px; padding: 10px 24px; 
+        background: var(--bg-2); color: var(--primary); 
+        font-weight: 600; border: 1px solid transparent; 
+        border-radius: 20px; cursor: pointer; 
+        font-size: 0.95rem; white-space: nowrap;
+    }
+    .btn-msg:hover {
+        background: var(--primary);
+        color: #ffffff;
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4); /* Glowing shadow */
+        transform: scale(1.05); /* Pops out slightly */
+    }
+/* 4. Lưu (Save Buttons) */
+    .btn-save {
+        background: transparent; 
+        color: var(--text-muted); /* Muted text by default */
+        border: 1px solid var(--border); /* Gray border by default */
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.2s ease-in-out;
+    }
+    .btn-save:hover {
+        color: var(--primary); /* Turns blue on hover! */
+        border-color: var(--primary);
+        background: rgba(0, 123, 255, 0.1); 
+        transform: translateY(-1px); 
+        box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15); 
+    }
+    .btn-save:active {
+        transform: translateY(1px); 
+    }
+</style>
 </head>
 <body style="background: var(--bg); color: var(--text); margin: 0;">
 
@@ -16,8 +88,8 @@
          onclick="document.getElementById('banner-upload').click()"
          title="Nhấn để đổi ảnh bìa">
         
-        <button onclick="event.stopPropagation(); window.location.href='/main'" style="position: absolute; top: 20px; right: 20px; padding: 8px 16px; background: rgba(0, 0, 0, 0.6); color: var(--text); border: 1px solid var(--border); border-radius: 20px; cursor: pointer; font-weight: bold; backdrop-filter: blur(4px);">Quay lại Trang chính</button>
-        
+        <button class="hover-btn btn-back" onclick="event.stopPropagation(); window.location.href='/main'">Quay lại Trang chính</button>  
+
         <input type="file" id="banner-upload" accept="image/*" style="display: none;" onchange="uploadBanner(event)">
     </div>
 
@@ -38,8 +110,8 @@
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <h2 id="user-name" style="margin: 0; font-size: 2rem; font-weight: 700; color: var(--text);">Đang tải...</h2>
                     <input type="text" id="edit-name-input" style="display: none; padding: 5px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--input-bg); color: var(--text); max-width: 150px;" />
-                    <button id="edit-name-btn" onclick="toggleEditName()" style="padding: 4px 10px; cursor: pointer; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-size: 0.8rem;">Đổi tên</button>
-                    <button id="save-name-btn" onclick="saveName()" style="display: none; padding: 4px 10px; cursor: pointer; background: var(--primary); color: var(--text); border: none; border-radius: var(--radius-sm); font-size: 0.8rem;">Lưu</button>
+                    <button id="edit-name-btn" class="hover-btn btn-text" onclick="toggleEditName()" style="padding: 4px 10px; font-size: 0.8rem;">Đổi tên</button>                    
+                    <button id="save-name-btn" class="btn-save" onclick="saveName()" style="display: none; padding: 4px 12px; border-radius: var(--radius-sm); font-size: 0.8rem;">Lưu</button>
                 </div>
                 
                 <p id="user-email" style="margin: 0; color: var(--text-muted); font-size: 0.95rem;">Đang tải...</p>
@@ -52,19 +124,18 @@
                     
                     <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
                         <a href="javascript:void(0)" id="see-more-btn" onclick="toggleSeeMore()" style="color: var(--primary); font-size: 0.85rem; text-decoration: none; display: none; font-weight: bold;">See more</a>
-                        <button id="edit-bio-btn" onclick="toggleEditBio()" style="padding: 2px 8px; cursor: pointer; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-size: 0.75rem;">Sửa</button>
+                        <button id="edit-bio-btn" class="hover-btn btn-text" onclick="toggleEditBio()" style="padding: 2px 8px; font-size: 0.75rem;">Sửa</button>
                     </div>
                 </div>
+                <textarea id="edit-bio-input" maxlength="160" rows="2" oninput="updateBioCounter()" style="display: none; width: 100%; max-width: 600px; box-sizing: border-box; padding: 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--input-bg); color: var(--text); margin-top: 5px;"></textarea>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 600px; margin-top: 6px;">
+                    <button id="save-bio-btn" class="btn-save" onclick="saveBio()" style="display: none; padding: 4px 12px; border-radius: var(--radius-sm); font-size: 0.8rem;">Lưu</button>
+                    <div id="bio-counter" style="display: none; font-size: 0.75rem; color: var(--text-muted);">160</div>
+                </div>
 
-                <textarea id="edit-bio-input" rows="2" style="display: none; width: 100%; max-width: 400px; padding: 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--input-bg); color: var(--text); margin-top: 5px;"></textarea>
-                <button id="save-bio-btn" onclick="saveBio()" style="display: none; margin-top: 8px; padding: 4px 10px; cursor: pointer; background: var(--primary); color: var(--text); border: none; border-radius: var(--radius-sm); font-size: 0.9rem; width: fit-content;">Lưu</button>
-            </div>
-        </div>
-
-        <div id="right-actions" style="display: flex; align-items: center; gap: 20px; margin-top: 60px; flex-wrap: wrap;">
-            
-            <button onclick="window.location.href='/chat'" style="padding: 10px 24px; background: var(--bg-2); color: var(--primary); font-weight: 600; border: none; border-radius: 20px; cursor: pointer; font-size: 0.95rem; white-space: nowrap;">Message</button>
-
+            </div> </div> <div id="right-actions" style="display: flex; align-items: flex-start; gap: 20px; margin-top: 65px; flex-wrap: wrap;">
+            <button class="hover-btn btn-msg" onclick="window.location.href='/chat'">Message</button>
             <div class="profile-stats" style="display: flex; gap: 10px; background: var(--bg-2); padding: 15px; border-radius: var(--radius-md); border: 1px solid var(--border);">
                 <div class="stat-card" style="width: 85px; box-sizing: border-box; text-align: center; padding: 10px 5px; background: var(--card); border-radius: var(--radius-sm);">
                     <div class="stat-num" style="font-size: 1.2rem; font-weight: bold; color: var(--primary);">0</div>
@@ -76,7 +147,17 @@
                 </div>
             </div>
         </div>
-        
+
+    </div>
+</div>
+
+<div id="groups-section" style="width: 100%; max-width: 1400px; margin: 40px auto 60px; padding: 0 20px;">
+    <h3 style="color: var(--primary); font-size: 1.3rem; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+        Nhóm của tôi
+    </h3>
+    
+    <div id="groups-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+        <p style="color: var(--text-muted); font-style: italic; margin: 0;">Đang tải danh sách nhóm...</p>
     </div>
 </div>
 
@@ -89,6 +170,21 @@
             <p style="color: var(--text-muted); font-style: italic; margin: 0;">Đang tải danh sách nhóm...</p>
         </div>
     </div>
+
+<div id="crop-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+    <div style="background: var(--bg); padding: 20px; border-radius: var(--radius-lg); width: 90%; max-width: 600px; border: 1px solid var(--border);">
+        <h3 style="margin-top: 0; color: var(--text);">Điều chỉnh hình ảnh</h3>
+        
+        <div style="width: 100%; height: 350px; background: var(--bg-2); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 15px;">
+            <img id="image-to-crop" src="" style="display: block; max-width: 100%;">
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button onclick="closeCropModal()" style="padding: 8px 16px; background: transparent; color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer;">Hủy</button>
+            <button id="save-crop-btn" onclick="saveCroppedImage()" style="padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: bold;">Lưu thay đổi</button>
+        </div>
+    </div>
+</div>
 
 <script>
     
@@ -199,12 +295,29 @@
         document.getElementById('save-name-btn').style.display = 'none';
     }
 
-    function toggleEditBio() {
+function toggleEditBio() {
         document.getElementById('user-bio').style.display = 'none';
         document.getElementById('edit-bio-btn').style.display = 'none';
         document.getElementById('edit-bio-input').style.display = 'block';
+        document.getElementById('bio-counter').style.display = 'block'; // Show counter
         document.getElementById('save-bio-btn').style.display = 'inline-block';
         document.getElementById('edit-bio-input').focus();
+        updateBioCounter(); // Set initial number when opened
+    }
+
+    function updateBioCounter() {
+        const input = document.getElementById('edit-bio-input');
+        const counter = document.getElementById('bio-counter');
+        const remaining = 160 - input.value.length;
+        
+        counter.innerText = remaining;
+        
+        // Make it turn red if they are running out of space
+        if (remaining <= 10) {
+            counter.style.color = 'red';
+        } else {
+            counter.style.color = 'var(--text-muted)';
+        }
     }
 
     async function saveBio() {
@@ -232,81 +345,111 @@
         document.getElementById('user-bio').style.display = 'block';
         document.getElementById('edit-bio-btn').style.display = 'inline-block';
         document.getElementById('edit-bio-input').style.display = 'none';
+        document.getElementById('bio-counter').style.display = 'none'; // Hide counter
         document.getElementById('save-bio-btn').style.display = 'none';
     }
 
-    async function uploadAvatar(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+// --- NEW CROPPER LOGIC ---
+let cropper = null;
+let currentCropType = ''; // 'avatar' or 'banner'
 
-        if (file.size > 2 * 1024 * 1024) {
-            alert("Ảnh quá lớn! Vui lòng chọn ảnh dưới 2MB. (Image must be under 2MB)");
-            return;
-        }
-
-        const avatarDiv = document.getElementById('user-avatar');
-        const originalText = avatarDiv.innerText;
-        const originalBg = avatarDiv.style.backgroundImage;
-        
-        avatarDiv.innerText = '⏳';
-        avatarDiv.style.backgroundImage = 'none';
-
-        const reader = new FileReader();
-        reader.onload = async function(e) {
-            const base64Image = e.target.result; 
-
-            const { data, error } = await supabaseClient.auth.updateUser({
-                data: { avatar_url: base64Image }
-            });
-
-            if (error) {
-                alert("Lỗi khi tải ảnh lên: " + error.message);
-                avatarDiv.innerText = originalText;
-                avatarDiv.style.backgroundImage = originalBg;
-                return;
-            }
-
-            avatarDiv.innerText = '';
-            avatarDiv.style.backgroundImage = `url(${base64Image})`;
-        };
-        
-        reader.readAsDataURL(file); 
-    }
-    
-async function uploadBanner(event) {
+// 1. Intercept Avatar Upload
+function uploadAvatar(event) {
     const file = event.target.files[0];
-    if (!file) return;
+    if (file) openCropModal(file, 'avatar');
+    event.target.value = ''; // Reset input so they can pick the same file again if needed
+}
 
+// 2. Intercept Banner Upload
+function uploadBanner(event) {
+    const file = event.target.files[0];
+    if (file) openCropModal(file, 'banner');
+    event.target.value = ''; 
+}
+
+// 3. Open the Editor Modal
+function openCropModal(file, type) {
     if (file.size > 4 * 1024 * 1024) {
-        alert("Ảnh bìa quá lớn! Vui lòng chọn ảnh dưới 4MB. (Image must be under 4MB)");
+        alert("Ảnh quá lớn! Vui lòng chọn ảnh dưới 4MB.");
         return;
     }
 
-    const bannerDiv = document.getElementById('profile-banner');
-    const originalBg = bannerDiv.style.backgroundImage;
+    currentCropType = type;
+    const imageElement = document.getElementById('image-to-crop');
     
-    bannerDiv.style.opacity = '0.5';
-
+    // Read file and put it in the modal
     const reader = new FileReader();
-    reader.onload = async function(e) {
-        const base64Image = e.target.result;
+    reader.onload = function(e) {
+        imageElement.src = e.target.result;
+        document.getElementById('crop-modal').style.display = 'flex';
+        
+        // Destroy old cropper instance if it exists
+        if (cropper) cropper.destroy();
+        
+        // Set ratio: 1:1 for Avatar, ~16:3 for Banner
+        const aspectRatio = type === 'avatar' ? 1 : (1400 / 220); 
 
-        const { data, error } = await supabaseClient.auth.updateUser({
-            data: { banner_url: base64Image }
+        // Initialize Cropper.js
+        cropper = new Cropper(imageElement, {
+            aspectRatio: aspectRatio,
+            viewMode: 1, // Restrict crop box to not exceed canvas
+            background: false,
+            zoomable: true,
+            movable: true
         });
-
-        if (error) {
-            alert("Lỗi khi tải ảnh bìa lên: " + error.message);
-            bannerDiv.style.backgroundImage = originalBg;
-            bannerDiv.style.opacity = '1';
-            return;
-        }
-
-        bannerDiv.style.backgroundImage = `url(${base64Image})`;
-        bannerDiv.style.opacity = '1';
     };
-    
     reader.readAsDataURL(file);
+}
+
+// 4. Close Modal
+function closeCropModal() {
+    document.getElementById('crop-modal').style.display = 'none';
+    if (cropper) cropper.destroy();
+}
+
+// 5. Save the Cropped Image to Supabase
+async function saveCroppedImage() {
+    if (!cropper) return;
+    
+    const btn = document.getElementById('save-crop-btn');
+    btn.innerText = "Đang lưu...";
+    btn.disabled = true;
+
+    // Get the cropped result from the library
+    // We limit width to keep the Base64 string from getting too massive for Supabase
+    const canvas = cropper.getCroppedCanvas({
+        maxWidth: currentCropType === 'avatar' ? 400 : 1200,
+    });
+    
+    // Compress to JPEG to save space
+    const base64Image = canvas.toDataURL('image/jpeg', 0.8); 
+    
+    // Prepare the update payload based on what we are editing
+    const updateData = currentCropType === 'avatar' 
+        ? { avatar_url: base64Image } 
+        : { banner_url: base64Image };
+
+    // Send to Supabase
+    const { error } = await supabaseClient.auth.updateUser({ data: updateData });
+
+    btn.innerText = "Lưu thay đổi";
+    btn.disabled = false;
+
+    if (error) {
+        alert("Lỗi khi lưu ảnh: " + error.message);
+        return;
+    }
+
+    // Success! Update the UI and close modal
+    if (currentCropType === 'avatar') {
+        const avatarDiv = document.getElementById('user-avatar');
+        avatarDiv.innerText = '';
+        avatarDiv.style.backgroundImage = `url(${base64Image})`;
+    } else {
+        document.getElementById('profile-banner').style.backgroundImage = `url(${base64Image})`;
+    }
+
+    closeCropModal();
 }
    
 async function loadUserGroups() {
