@@ -1,146 +1,65 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Contact Card - KoNect Theme</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
-  
-  /* Page background (darkest gray) */
-  body { 
-    background-color: #121212; 
-    padding: 40px; 
-    display: flex; 
-    justify-content: center; 
-  }
-
-  /* Card background (lighter dark gray) */
-  .card-container {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr;
-    max-width: 900px;
-    width: 100%;
-    background-color: #222222; 
-    border-radius: 8px; /* Slightly rounded to match the login box */
-    overflow: hidden;
-  }
-
-  .panel { padding: 30px 40px; }
-  
-  /* Blue Words for Headers */
-  h3 { 
-    color: #5294e2; 
-    font-size: 1.1rem; 
-    font-weight: 600; 
-    margin-bottom: 20px; 
-    text-transform: uppercase; /* Matching the caps style in your image */
-    letter-spacing: 0.5px;
-  }
-
-  /* Borders */
-  .profile-panel { border-bottom: 1px solid #333333; border-right: 1px solid #333333; display: flex; align-items: center; gap: 20px; }
-  .email-panel { border-bottom: 1px solid #333333; }
-  .social-panel { border-right: 1px solid #333333; }
-
-  /* Avatar & Profile */
-  .avatar { 
-    width: 80px; 
-    height: 80px; 
-    background-color: #1a1a1a; 
-    color: #5294e2; /* Blue text */
-    border: 2px solid #333333;
-    border-radius: 50%; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    font-size: 1.5rem; 
-    font-weight: bold;
-  }
-  
-  .name { 
-    font-size: 1.8rem; 
-    font-weight: 500; 
-    color: #5294e2; /* Blue word */
-    margin-bottom: 10px; 
-  }
-
-  /* Styled Button mimicking the login button */
-  .message-btn { 
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-    gap: 8px; 
-    background-color: #5294e2; 
-    color: #ffffff; 
-    border: none; 
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer; 
-    transition: background-color 0.2s;
-  }
-  .message-btn:hover { background-color: #407bbf; }
-  
-  /* Text Details */
-  .detail-row { display: flex; align-items: flex-start; gap: 15px; }
-  .icon { color: #888888; margin-top: 2px; }
-  .text-stack { display: flex; flex-direction: column; gap: 4px; }
-  
-  /* Standard text kept light gray for readability */
-  .primary-text { font-size: 1rem; font-weight: 500; color: #e8e8e8; }
-  .blue-link { color: #5294e2; text-decoration: none; font-size: 1rem; font-weight: 500;}
-  .blue-link:hover { text-decoration: underline; }
-  .secondary-text { font-size: 0.85rem; color: #888888; text-transform: uppercase; letter-spacing: 0.5px;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KoNect - Hồ sơ cá nhân</title>
+    <link rel="stylesheet" href="/assets/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-<div class="card-container">
-  <div class="panel profile-panel">
-    <div class="avatar">ĐK</div>
-    <div>
-      <div class="name">Đoàn Minh Khôi</div>
-      <button class="message-btn">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-        Message
-      </button>
+<div class="profile-layout">
+    <div class="profile-header">
+        <div class="avatar" id="user-avatar">?</div>
+        <div class="profile-info">
+            <h2 id="user-name">Đang tải...</h2>
+            <p id="user-email">Đang tải...</p>
+        </div>
     </div>
-  </div>
 
-  <div class="panel email-panel">
-    <h3>Email</h3>
-    <div class="detail-row">
-      <svg class="icon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
-      <div class="text-stack">
-        <span class="primary-text">khoi04042007@gmail.com</span>
-        <span class="secondary-text">Email</span>
-      </div>
+    <div class="profile-stats">
+        <div class="stat-card">
+            <div class="stat-num">0</div>
+            <div class="stat-label">Nhóm đã tham gia</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num">0</div>
+            <div class="stat-label">Bài viết</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num">0</div>
+            <div class="stat-label">Đang theo dõi</div>
+        </div>
     </div>
-  </div>
-
-  <div class="panel social-panel">
-    <h3>Mạng xã hội</h3>
-    <div class="detail-row">
-      <svg class="icon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="4" y1="4" x2="20" y2="20"></line><line x1="20" y1="4" x2="4" y2="20"></line></svg>
-      <div class="text-stack">
-        <a href="#" class="blue-link">krm1dre4m</a>
-        <span class="secondary-text">X</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="panel">
-    <h3>Số điện thoại</h3>
-    <div class="detail-row">
-      <svg class="icon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-      <div class="text-stack">
-        <span class="primary-text">032 528 2923</span>
-        <span class="secondary-text">Di động</span>
-      </div>
-    </div>
-  </div>
+    
+    <button onclick="window.location.href='/main.html'" style="padding: 10px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer;">Quay lại Trang chính</button>
 </div>
 
+<script>
+    const SUPABASE_URL = 'https://dfbklcbregcxzngpiorx.supabase.co';
+    const SUPABASE_KEY = 'YOUR_ANON_KEY_HERE'; // DO NOT LEAVE THIS EXPOSED IN PRODUCTION
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  async function loadProfile() {
+          const { data: { user }, error } = await supabaseClient.auth.getUser();
+
+          if (error || !user) {
+              console.warn("Bouncer: No user found.");
+              // Tell the UI why it's stuck:
+              document.getElementById('user-email').innerText = "Guest (No session found)";
+              document.getElementById('user-name').innerText = "Chưa đăng nhập";
+              return; 
+          }
+
+          // If it gets past the 'return', it will fill this in:
+          document.getElementById('user-email').innerText = user.email;
+          const username = user.email.split('@')[0];
+          document.getElementById('user-name').innerText = username;
+          document.getElementById('user-avatar').innerText = username.charAt(0).toUpperCase();
+      }
+
+    loadProfile();
+</script>
 </body>
 </html>
