@@ -492,6 +492,53 @@ nav {
     to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Auth card — width riêng cho trang login */
+.auth-container .card {
+    width: 340px;
+    padding: 35px;
+}
+
+/* Tiêu đề KoNect */
+.auth-container h1 {
+    color: var(--primary);
+    margin: 0 0 25px;
+    text-align: center;
+    font-size: 26px;
+    letter-spacing: -1px;
+}
+
+/* Override tabs → dùng style gạch chân thay vì pill */
+.auth-container .tabs {
+    background: transparent;
+    padding: 0;
+    gap: 10px;
+}
+
+.auth-container .tab {
+    background: transparent;
+    border-radius: 0;
+    color: var(--text-dim);
+    border-bottom: 2px solid transparent;
+}
+
+.auth-container .tab.active {
+    background: transparent;
+    color: var(--primary);
+    border-bottom: 2px solid var(--primary);
+    box-shadow: none;
+}
+
+/* Nút đăng nhập thêm margin-top */
+.auth-container .btn-primary {
+    margin-top: 10px;
+}
+
+/* Link quên mật khẩu */
+.auth-container .link-secondary {
+    display: block;
+    margin-top: 15px;
+    text-align: center;
+}
 
 /* ============================================================
    6. main.html
