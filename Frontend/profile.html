@@ -4,384 +4,205 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KoNect - Hồ sơ cá nhân</title>
-    <link rel="stylesheet" href="/assets/style.css" />
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+    <link rel="stylesheet" href="./assets/style.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-
-    <style>
-:root {
-    --primary: #007bff;
-    --bg: #121212;
-    --bg-2: #1e1e1e;
-    --text: #ffffff;
-    --text-muted: #b0b0b0;
-    --border: #333;
-    --card: #252525;
-}
-
-/* --- BASE DESKTOP LAYOUT --- */
-.profile-container {
-    display: flex;
-    flex-wrap: wrap; 
-    gap: 24px;
-    padding: 0 20px;
-    align-items: flex-start; 
-}
-
-.profile-avatar { 
-    margin-top: -60px; 
-    z-index: 5; 
-    flex-shrink: 0; 
-    order: 1; /* Explicitly set for reordering later */
-}
-
-.profile-info {
-    flex: 1 1 250px; 
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-top: 15px; 
-    padding-top: 0 !important;
-    order: 2; /* Stays in the middle on desktop */
-}
-
-.profile-actions { 
-    display: flex; 
-    justify-content: flex-end; 
-    align-items: flex-start; 
-    gap: 15px; 
-    padding-top: 15px; 
-    flex-shrink: 0; 
-    margin-left: auto; 
-    order: 3; /* Stays on the right on desktop */
-}
-
-/* Pushes text down on desktop for guests */
-.profile-info.not-logged-in {
-    margin-top: -9px;
-    flex-basis: 100%;
-}
-
-/* --- MOBILE LAYOUT OVERRIDE --- */
-/* When the screen hits 650px, we forcefully swap the elements */
-@media (max-width: 850px) {
-    .profile-container {
-        gap: 15px 24px; /* Reduces the vertical gap so the name isn't too far below */
-    }
-    
-    .profile-actions {
-        order: 2; /* Forces the boxes up next to the avatar */
-        margin-left: auto; /* Keeps them glued to the right edge */
-        padding-top: 5px; /* Aligns them nicely with the top half of the avatar */
-    }
-    
-    .profile-info {
-        order: 3; /* Forces the text to the bottom */
-        flex-basis: 100%; /* Forces the text to take the full width, preventing it from creeping up */
-        margin-top: -30px; /* Pulls the display name tight underneath the avatar and boxes */
-    }
-
-        /* Removes the extra gap at the first checkpoint */
-    .profile-info.not-logged-in {
-        margin-top: 0px;
-        flex-basis: 100%;
-    }
-}
-
-@media (max-width: 550px) {
-    .profile-container {
-        gap: 15px; /* Tightens the layout for small phone screens */
-    }
-
-    .profile-info {
-        order: 2; /* Pulls text back up to sit next to the avatar */
-        flex-basis: auto; /* Allows it to sit side-by-side with the avatar again */
-        flex: 1 1 150px; /* Allows text to squeeze dynamically */
-        margin-top: 15px; /* Resets the negative margin from the 650px query */
-    }
-
-    .profile-actions {
-        order: 3; /* Pushes the buttons/boxes to the very bottom */
-        width: 100%; /* Forces the actions to take up an entire new row */
-        justify-content: flex-start; /* Aligns boxes to the left underneath the bio */
-        margin-top: 5px; 
-        padding-top: 0;
-    }
-    /* Resets to normal mobile spacing */
-    .profile-info.not-logged-in {
-        margin-top: 0px;
-        flex-basis: 100%;
-    }
-}
-
-/* 1. Push the Message button UP */
-.btn-msg {
-    align-self: flex-start; /* Pulls it toward the top of the container */
-    margin-top: 10px;       /* Adjust this value to get it exactly where you want */
-}
-
-/* 2. Push the Stats boxes DOWN */
-.profile-stats {
-    align-self: flex-end;   /* Pushes it toward the bottom */
-    margin-top: 5px;       /* Creates the gap from the banner you're looking for */
-}
-
-/* Ensure headings don't have invisible top margins */
-.profile-info h1 {
-    margin: 0;
-    line-height: 1;
-    font-size: 2rem;
-}
-
-/* Stats Cards Styling */
-.profile-stats {
-    display: flex;
-    gap: 10px;
-    background: var(--bg-2);
-    padding: 10px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-}
-.stat-card {
-    width: 80px;
-    text-align: center;
-    padding: 5px;
-    background: var(--card);
-    border-radius: 8px;
-}
-.stat-num { font-weight: bold; color: var(--primary); font-size: 1.1rem; }
-.stat-label { font-size: 0.7rem; color: var(--text-muted); line-height: 1.1; }
-
-/* Elements */
-h1 { font-size: 1.8rem; margin: 0; }
-.email { color: var(--text-muted); font-size: 0.9rem; }
-#user-bio { margin: 0; font-size: 0.95rem; line-height: 1.5; }
-#bio-fade {
-    position: absolute; bottom: 0; left: 0; width: 100%; height: 20px;
-    background: linear-gradient(transparent, var(--bg)); display: none;
-}
-
-
-/* Buttons */
-.btn-msg { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; }
-.btn-text { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 4px 8px; border-radius: 4px; cursor: pointer; }
-.btn-save { background: rgba(0, 123, 255, 0.1); color: var(--primary); border: 1px solid var(--primary); padding: 5px 15px; border-radius: 4px; cursor: pointer; }
-#see-more-btn { color: var(--primary); font-size: 0.85rem; text-decoration: none; font-weight: bold; display: none; }
-
-/* --- BUTTON STYLES & HOVER EFFECTS --- */
-
-/* 1. The Back Button (Pinned to top-right of the banner) */
-.btn-back {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    background: rgba(0, 0, 0, 0.6); /* Semi-transparent dark background for readability */
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 8px 16px;
-    border-radius: 20px; /* Matches the pill shape of your Message button */
-    font-weight: bold;
-    cursor: pointer;
-    backdrop-filter: blur(4px); /* Blurs the banner behind the button */
-    transition: all 0.2s ease; /* Required for a smooth hover effect */
-    z-index: 10; /* Ensures it stays clickable above the banner */
-}
-
-.btn-back:hover {
-    background: rgba(0, 0, 0, 0.9);
-    border-color: white;
-    transform: translateY(-1px);
-}
-
-/* 2. Hover effect for the main Message button */
-.btn-msg {
-    transition: all 0.2s ease;
-}
-.btn-msg:hover {
-    background: #0056b3; /* A darker shade of your primary blue */
-    transform: translateY(-2px); /* Slight lift effect */
-    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
-}
-
-/* 3. Hover effect for the Edit (Sửa / Đổi tên) buttons */
-.btn-text {
-    transition: all 0.2s ease;
-}
-.btn-text:hover {
-    background: var(--card);
-    color: var(--text);
-    border-color: var(--text-muted);
-}
-
-/* 4. Hover effect for the Save (Lưu) buttons */
-.btn-save {
-    transition: all 0.2s ease;
-}
-.btn-save:hover {
-    background: var(--primary);
-    color: white;
-}
-
-/* GUEST LOOK: Linear (No overlap) */
-/* This "if statement" triggers only when JS adds the class */
-.profile-container.not-logged-in .profile-info {
-    margin-top: 20px; /* Aligns text linearly with the avatar */
-}
-
-.profile-container.not-logged-in .profile-actions {
-    display: none; /* Hides the message/stats entirely for guests */
-}
-</style>
+    <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
 </head>
-<body style="background: var(--bg); color: var(--text); margin: 0;">
-
-<div class="profile-layout" style="width: 100%; max-width: 1400px; margin: 0 auto;">
-    
-    <div id="profile-banner" 
-         style="position: relative; width: 100%; height: 220px; background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2000&auto=format&fit=crop'); background-size: cover; background-position: center; border-radius: var(--radius-lg); cursor: pointer;"
-         onclick="document.getElementById('banner-upload').click()">
-        
-        <button class="hover-btn btn-back" onclick="event.stopPropagation(); window.location.href='/main'">Quay lại Trang chính</button>  
-        <input type="file" id="banner-upload" accept="image/*" style="display: none;" onchange="uploadBanner(event)">
+<body class="profile-page">
+<div class="app-layout">
+    <div class="left-sidebar">
+        <div class="sidebar-logo-container">
+            <a href="/" class="app-logo">KoNect</a>
+        </div>
     </div>
     
-    <div class="profile-container">
-      
-      <div class="profile-avatar">
-          <div class="avatar" id="user-avatar" 
-               style="cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; background-size: cover; background-position: center; width: 140px; height: 140px; border-radius: 50%; border: 6px solid var(--bg); background-color: var(--border);" 
-               onclick="document.getElementById('avatar-upload').click()">
-          </div>
-          <input type="file" id="avatar-upload" accept="image/*" style="display: none;" onchange="uploadAvatar(event)">
-      </div>
-      
-      <div class="profile-info">
-        <div class="name-row" style="display: flex; align-items: center; gap: 10px;">
-            <h1 id="user-name">placeholder</h1>
-            <input type="text" id="edit-name-input" maxlength="36" oninput="updateNameCounter()" style="display: none;" />
-            <span id="name-counter" style="display: none; font-size: 0.85rem; color: var(--text-muted);">36</span>
-            <button id="edit-name-btn" class="hover-btn btn-text" onclick="toggleEditName()">Đổi tên</button>
-            <button id="save-name-btn" class="btn-save" onclick="saveName()" style="display: none;">Lưu</button>
+    <div class="main-wrapper">
+        <div class="top-nav">
+            <div class="back-arrow" onclick="window.location.href='/main'">
+                <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 20px; fill: var(--text);"><g><path d="M7.414 13l5.043 5.04-1.414 1.42L3.586 12l7.457-7.46 1.414 1.42L7.414 11H21v2H7.414z"></path></g></svg>
+            </div>
+            <div class="nav-text">
+                <h2 id="nav-name">Đang tải...</h2>
+                <p>0 Nhóm</p>
+            </div>
+        </div>
+        <div class="banner-container" onclick="document.getElementById('banner-upload').click()">
+            <img id="profile-banner-img" class="banner-img" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2000&auto=format&fit=crop" alt="Banner">
+            
+            <div class="edit-overlay">
+                <svg viewBox="0 0 24 24"><path d="M12 9c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 4.5c-.827 0-1.5-.673-1.5-1.5s.673-1.5 1.5-1.5 1.5 .673 1.5 1.5-.673 1.5-1.5 1.5zM19.993 6h-2.246l-1.446-2.169A1.5 1.5 0 0 0 15.053 3H8.947a1.5 1.5 0 0 0-1.248.831L6.253 6H4.007C2.9 6 2 6.9 2 8.007v10.986C2 20.1 2.9 21 4.007 21h15.986C21.1 21 22 20.1 22 18.993V8.007C22 6.9 21.1 6 19.993 6zm-7.993 11.5c-2.481 0-4.5-2.019-4.5-4.5s2.019-4.5 4.5-4.5 4.5 2.019 4.5 4.5-2.019 4.5-4.5 4.5z"/></svg>
+                <span>Thay đổi bìa</span>
+            </div>
+            
+            <input type="file" id="banner-upload" accept="image/*" style="display: none;" onchange="uploadBanner(event)">
         </div>
 
-        <textarea id="edit-bio-input" maxlength="160" oninput="updateBioCounter()" style="display: none; width: 100%; min-height: 60px; background: var(--bg-2); color: var(--text); border: 1px solid var(--border); padding: 8px; border-radius: 8px;"></textarea>
+        <div class="setup-row">
+            <div class="avatar-wrapper" onclick="document.getElementById('avatar-upload').click()">
+                <div class="avatar-container">
+                    <div id="user-avatar" class="avatar-img"></div>
+                    
+                    <div class="edit-overlay">
+                        <svg viewBox="0 0 24 24"><path d="M12 9c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 4.5c-.827 0-1.5-.673-1.5-1.5s.673-1.5 1.5-1.5 1.5 .673 1.5 1.5-.673 1.5-1.5 1.5zM19.993 6h-2.246l-1.446-2.169A1.5 1.5 0 0 0 15.053 3H8.947a1.5 1.5 0 0 0-1.248.831L6.253 6H4.007C2.9 6 2 6.9 2 8.007v10.986C2 20.1 2.9 21 4.007 21h15.986C21.1 21 22 20.1 22 18.993V8.007C22 6.9 21.1 6 19.993 6zm-7.993 11.5c-2.481 0-4.5-2.019-4.5-4.5s2.019-4.5 4.5-4.5 4.5 2.019 4.5 4.5-2.019 4.5-4.5 4.5z"/></svg>
+                        <span>Sửa ảnh</span>
+                    </div>
 
-        <span id="user-email" class="email">placeholder@example.com</span>
-
-          <div id="bio-container">
-              <div id="bio-text-wrapper" style="max-height: 3em; overflow: hidden; position: relative;">
-                  <p id="user-bio">No bio</p>
-                  <div id="bio-fade"></div>
-              </div>
-              <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                  <a href="javascript:void(0)" id="see-more-btn" onclick="toggleSeeMore()">See more</a>
-                  <button id="edit-bio-btn" class="hover-btn btn-text" onclick="toggleEditBio()">Sửa</button>
-              </div>
-          </div>
-
-          <textarea id="edit-bio-input" maxlength="160" style="display: none;"></textarea>
-          <div style="display: flex; justify-content: space-between; margin-top: 5px;">
-              <button id="save-bio-btn" class="btn-save" onclick="saveBio()" style="display: none;">Lưu</button>
-              <div id="bio-counter" style="display: none;">160</div>
-          </div>
-      </div>
-
-        <div id="right-actions" class="profile-actions">
-            <button class="hover-btn btn-msg" onclick="window.location.href='/chat'">Message</button>
-            <div class="profile-stats">
-                <div class="stat-card">
-                    <div class="stat-num">0</div>
-                    <div class="stat-label">Nhóm đã tạo</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-num">0</div>
-                    <div class="stat-label">Nhóm tham gia</div>
-                </div>
+                <input type="file" id="avatar-upload" accept="image/*" style="display: none;" onchange="uploadAvatar(event)">
+            </div>            
+            <div id="action-buttons">
+                <button id="edit-profile-btn" class="btn-action" onclick="toggleEditMode()">Sửa hồ sơ</button>
+                <button id="cancel-profile-btn" class="btn-action" style="display: none; margin-right: 8px;" onclick="cancelEditMode()">Hủy</button>
+                <button id="save-profile-btn" class="btn-action btn-primary" style="display: none;" onclick="saveProfile()">Lưu</button>            
+                <button id="message-profile-btn" class="btn-action btn-pop" onclick="window.location.href='/chat'" style="margin-left: 8px;">
+                        KoNect!
+                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                </button>
             </div>
         </div>
 
-    </div>
-</div>
+        <div class="user-info">
+            <div class="user-name-block">
+                <div id="display-mode-name">
+                    <h1 id="user-name">Đang tải...</h1>
+                    <p id="user-email" class="user-handle">@unknown</p>
+                </div>
+                <div id="edit-mode-name" style="display: none; margin-top: 8px;">
+                    <input type="text" id="edit-name-input" class="edit-input" placeholder="Tên hiển thị">
+                    <div id="name-counter" class="char-counter">36</div>
+                </div>
+            </div>
 
-<div id="groups-section" style="width: 100%; max-width: 1400px; margin: 40px auto 60px; padding: 0 20px;">
-    <h3 style="color: var(--primary); font-size: 1.3rem; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-        Nhóm của tôi
-    </h3>
-    
-    <div id="groups-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
-        <p style="color: var(--text-muted); font-style: italic; margin: 0;">Đang tải danh sách nhóm...</p>
-    </div>
-</div>
-
-<div id="crop-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
-    <div style="background: var(--bg); padding: 20px; border-radius: var(--radius-lg); width: 90%; max-width: 600px; border: 1px solid var(--border);">
-        <h3 style="margin-top: 0; color: var(--text);">Điều chỉnh hình ảnh</h3>
-        
-        <div style="width: 100%; height: 350px; background: var(--bg-2); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 15px;">
-            <img id="image-to-crop" src="" style="display: block; max-width: 100%;">
+            <div id="display-mode-bio">
+                <div id="user-bio" class="user-bio"><span style="color: var(--text-muted);">Chưa có tiểu sử...</span></div>
+            </div>
+            <div id="edit-mode-bio" style="display: none;">
+                <textarea id="edit-bio-input" class="edit-input" rows="3" placeholder="Thêm tiểu sử vào hồ sơ của bạn"></textarea>
+                <div id="bio-counter" class="char-counter">160</div> 
+            </div>
+            <div class="stats-row">
+                <div class="stat-item"><span class="stat-val">0</span> Nhóm đã tạo</div>
+                <div class="stat-item"><span class="stat-val">0</span> Nhóm tham gia</div>
+            </div>
         </div>
         
-        <div style="display: flex; justify-content: flex-end; gap: 10px;">
-            <button onclick="closeCropModal()" style="padding: 8px 16px; background: transparent; color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer;">Hủy</button>
-            <button id="save-crop-btn" onclick="saveCroppedImage()" style="padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: bold;">Lưu thay đổi</button>
+        <div id="display-contact-info" style="margin-bottom: 28px; display: flex; flex-direction: column;">
+            <div class="contact-item" id="display-email" style="display: none;">
+                <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                <span id="user-contact-email"></span>
+            </div>
+            <div class="contact-item" id="display-phone" style="display: none;">
+                <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                <span id="user-phone"></span>
+            </div>
+        </div>
+
+        <div id="edit-contact-info" style="display: none; width: 100%; margin-bottom: 12px; flex-direction: column;">
+            <div class="input-with-icon">
+                <svg class="input-icon" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                <input type="email" id="edit-email-input" class="edit-input" placeholder="Email liên hệ">
+            </div>
+            <div class="input-with-icon">
+                <svg class="input-icon" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                <input type="tel" id="edit-phone-input" class="edit-input" placeholder="Số điện thoại">
+            </div>
+        </div>
+
+        <div class="profile-tabs">
+            <div class="tab active">Nhóm của tôi</div>
+        </div>
+
+        <div class="guest-prompt-container">
+            <div class="guest-prompt-title">Đăng nhập để xem hồ sơ</div>
+            <div class="guest-prompt-text">Đăng nhập hoặc tạo tài khoản mới để xem thông tin và các nhóm.</div>
+            <button class="guest-login-btn" onclick="window.location.href='/'">Đăng nhập</button>
+        </div>
+
+        <div id="groups-container">
+            <div style="padding: 32px; text-align: center; color: var(--text-muted);">
+                <h2 style="color: var(--text); margin-top: 0;">Chưa có nhóm nào</h2>
+                <p>Khi bạn tạo hoặc tham gia một nhóm, nhóm đó sẽ hiển thị ở đây.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="right-sidebar">
+        <div class="sidebar-widget" id="newest-groups-widget">
+            <h3 class="widget-title">Nhóm mới tạo</h3>
+        </div>
+    </div>
+</div>
+
+<div id="crop-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(91, 112, 131, 0.4); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: var(--bg); padding: 24px; border-radius: 16px; width: 90%; max-width: 600px; border: 1px solid var(--border);">
+        <h3 style="margin-top: 0; color: var(--text); font-size: 20px;">Chỉnh sửa phương tiện</h3>
+        <div style="width: 100%; height: 350px; background: var(--bg-2); border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
+            <img id="image-to-crop" src="" style="display: block; max-width: 100%;">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+            <button class="btn-action" onclick="closeCropModal()">Hủy</button>
+            <button id="save-crop-btn" class="btn-action btn-primary" onclick="saveCroppedImage()">Áp dụng</button>
         </div>
     </div>
 </div>
 
 <script>
-    
     const SUPABASE_URL = 'https://dfbklcbregcxzngpiorx.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYmtsY2JyZWdjeHpuZ3Bpb3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTI2MTIsImV4cCI6MjA4OTQyODYxMn0.3EOOOodNiaa46ptAksdTY43_vknTIxhejcJCbVN441w'; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    let cropper = null;
+    let easyMDE = null;
+    let currentCropType = ''; 
+    let originalNameText = '';
+    let originalBioText = '';
+    let originalEmailText = '';
+    let originalPhoneText = '';
+
+    function setBio(value) {
+        if (easyMDE) {
+            easyMDE.value(value || '');
+        } else {
+            document.getElementById('edit-bio-input').value = value || '';
+        }
+    }
+
+    function getBio() {
+        if (easyMDE) {
+            return easyMDE.value();
+        } else {
+            return document.getElementById('edit-bio-input').value;
+        }
+    }
     async function loadProfile() {
         const { data: { user }, error } = await supabaseClient.auth.getUser();
 
         if (error || !user) {
-            console.warn("Bouncer: No user found.");
-            document.querySelector('.profile-info').classList.add('not-logged-in');
-            document.getElementById('user-email').innerText = "Guest (No session found)";
+            document.getElementById('user-email').innerText = "@guest";
             document.getElementById('user-name').innerText = "Chưa đăng nhập";
-            
-            document.getElementById('edit-name-btn').style.display = 'none'; 
-            document.getElementById('edit-bio-btn').style.display = 'none'; 
-            document.getElementById('user-bio').innerText = "Vui lòng đăng nhập để xem thông tin chi tiết."; 
-            
-            document.getElementById('right-actions').style.display = 'none';
-            document.getElementById('groups-section').style.display = 'none';
-
-            const banner = document.getElementById('profile-banner');
-            banner.onclick = null;
-            banner.style.cursor = 'default';
-            banner.title = "";
-
-            const avatar = document.getElementById('user-avatar');
-            avatar.onclick = null;
-            avatar.style.cursor = 'default';
-            avatar.title = "";
-
+            document.getElementById('nav-name').innerText = "Chưa đăng nhập";
+            document.getElementById('action-buttons').style.display = 'none';
+            // 👇 THIS IS THE MAGIC LINE I ADDED 👇
+            document.body.classList.add('guest-mode', 'view-only'); 
             return; 
         }
 
-        document.querySelector('.profile-info').classList.remove('not-logged-in');
-        document.getElementById('user-email').innerText = user.email;
+        const handle = "@" + user.email.split('@')[0];
+        document.getElementById('user-email').innerText = handle;
         
-        const fallbackName = user.email.split('@')[0];
-        const displayName = user.user_metadata?.display_name || fallbackName;
-
+        const displayName = user.user_metadata?.display_name || user.email.split('@')[0];
         document.getElementById('user-name').innerText = displayName;
+        document.getElementById('nav-name').innerText = displayName;
         document.getElementById('edit-name-input').value = displayName; 
         
         const avatarUrl = user.user_metadata?.avatar_url;
         const avatarDiv = document.getElementById('user-avatar');
         const bannerUrl = user.user_metadata?.banner_url;
 
-        if (bannerUrl) {
-            document.getElementById('profile-banner').style.backgroundImage = `url(${bannerUrl})`;
-        }
+        if (bannerUrl) document.getElementById('profile-banner-img').src = bannerUrl;
 
         if (avatarUrl) {
             avatarDiv.innerText = ''; 
@@ -392,329 +213,295 @@ h1 { font-size: 1.8rem; margin: 0; }
         }
 
         const bioText = user.user_metadata?.bio;
-        const bioDisplay = document.getElementById('user-bio');
-        const bioInput = document.getElementById('edit-bio-input');
-        
-        if (bioDisplay && bioInput) {
-            bioDisplay.innerText = bioText || "Chưa có tiểu sử...";
-            bioInput.value = bioText || "";
-            checkBioLength();
+        const contactEmail = user.user_metadata?.contact_email || user.email;
+        const phone = user.user_metadata?.phone;
+
+        if (contactEmail) {
+            document.getElementById('user-contact-email').innerText = contactEmail;
+            document.getElementById('edit-email-input').value = contactEmail;
+            document.getElementById('display-email').style.display = 'flex';
+        }
+        if (phone) {
+            document.getElementById('user-phone').innerText = phone;
+            document.getElementById('edit-phone-input').value = phone;
+            document.getElementById('display-phone').style.display = 'flex';
+        }
+        if (bioText) {
+            document.getElementById('user-bio').innerHTML = formatBioText(bioText);
+            setBio(bioText);
         }
     }
 
-    function toggleEditName() {
-        document.getElementById('user-name').style.display = 'none';
-        document.getElementById('edit-name-btn').style.display = 'none';
+function toggleEditMode() {
+        originalNameText = document.getElementById('edit-name-input').value;
+        originalBioText = getBio(); // ✅ GET first
+        originalEmailText = document.getElementById('edit-email-input').value;
+        originalPhoneText = document.getElementById('edit-phone-input').value;
+        document.getElementById('bio-counter').style.display = 'block';
+
+        document.getElementById('message-profile-btn').style.display = 'none';
+        document.getElementById('display-mode-name').style.display = 'none';
+        document.getElementById('display-mode-bio').style.display = 'none';
+        document.getElementById('display-contact-info').style.display = 'none';
+        document.getElementById('edit-profile-btn').style.display = 'none';
         
-        document.getElementById('edit-name-input').style.display = 'inline-block';
-        document.getElementById('name-counter').style.display = 'inline-block'; // Shows the counter
-        document.getElementById('save-name-btn').style.display = 'inline-block';
+        document.getElementById('edit-mode-name').style.display = 'block';
+        document.getElementById('edit-mode-bio').style.display = 'block';
+        document.getElementById('edit-contact-info').style.display = 'flex';
+        document.getElementById('cancel-profile-btn').style.display = 'inline-block';
+        document.getElementById('save-profile-btn').style.display = 'inline-block';
         
         document.getElementById('edit-name-input').focus();
-        updateNameCounter(); // Sets the initial number when opened
+        
+        // --- CRITICAL EASYMDE INJECTION ---
+        if (!easyMDE) {
+            easyMDE = new EasyMDE({
+                element: document.getElementById('edit-bio-input'),
+                spellChecker: false,
+                status: false, // Keeps the bottom clean
+                hideIcons: ["image", "side-by-side", "fullscreen", "guide"],
+                placeholder: "Thêm tiểu sử vào hồ sơ của bạn..."
+            });
+            // CRITICAL: Force EasyMDE to run our custom math on every keystroke
+            easyMDE.codemirror.on("change", validateProfileForm);
+        }
+        setBio(originalBioText);
+        
+        // Run immediately to set the starting countdown numbers
+        setTimeout(validateProfileForm, 50);    }
+
+    function cancelEditMode() {
+        document.getElementById('edit-name-input').value = originalNameText;
+        setBio(originalBioText);
+        document.getElementById('edit-email-input').value = originalEmailText;
+        document.getElementById('edit-phone-input').value = originalPhoneText;
+
+        document.getElementById('edit-mode-name').style.display = 'none';
+        document.getElementById('edit-mode-bio').style.display = 'none';
+        document.getElementById('edit-contact-info').style.display = 'none';
+        document.getElementById('cancel-profile-btn').style.display = 'none';
+        document.getElementById('save-profile-btn').style.display = 'none';
+        document.getElementById('bio-counter').style.display = 'none';
+
+        document.getElementById('message-profile-btn').style.display = 'inline-flex';
+        document.getElementById('display-mode-name').style.display = 'block';
+        document.getElementById('display-mode-bio').style.display = 'block';
+        document.getElementById('display-contact-info').style.display = 'flex';
+        document.getElementById('edit-profile-btn').style.display = 'inline-block';
     }
 
-    async function saveName() {
+    async function saveProfile() {
         const newName = document.getElementById('edit-name-input').value.trim();
-        if (!newName) {
-            alert("Tên không được để trống! (Name cannot be empty!)");
-            return;
-        }
+        const newBio = getBio().trim();
+        const newEmail = document.getElementById('edit-email-input').value.trim();
+        const newPhone = document.getElementById('edit-phone-input').value.trim();
+        
+        if (!newName) return alert("Tên không được để trống!");
 
-        const saveBtn = document.getElementById('save-name-btn');
-        saveBtn.innerText = "Đang lưu...";
+        const saveBtn = document.getElementById('save-profile-btn');
+        saveBtn.innerText = "Lưu...";
         saveBtn.disabled = true;
 
-        const { data, error } = await supabaseClient.auth.updateUser({
-            data: { display_name: newName }
+        const { error } = await supabaseClient.auth.updateUser({
+            data: { display_name: newName, bio: newBio, contact_email: newEmail, phone: newPhone }
         });
 
         saveBtn.innerText = "Lưu";
         saveBtn.disabled = false;
 
-        if (error) {
-            alert("Lỗi khi lưu tên: " + error.message);
-            return;
-        }
+        if (error) return alert("Lỗi: " + error.message);
 
         document.getElementById('user-name').innerText = newName;
-    
-        // Only update the letter if the user hasn't uploaded a background image
+        document.getElementById('nav-name').innerText = newName;
+        document.getElementById('user-bio').innerHTML = formatBioText(newBio);
+        
         const avatarDiv = document.getElementById('user-avatar');
         if (!avatarDiv.style.backgroundImage || avatarDiv.style.backgroundImage === 'none') {
             avatarDiv.innerText = newName.charAt(0).toUpperCase();
         }
-        
-        document.getElementById('user-name').style.display = 'block';
-        document.getElementById('edit-name-btn').style.display = 'inline-block';
-        document.getElementById('edit-name-input').style.display = 'none';
-        document.getElementById('name-counter').style.display = 'none'; // Hides the counter
-        document.getElementById('save-name-btn').style.display = 'none';
-    }   
 
-function toggleEditBio() {
-        document.getElementById('user-bio').style.display = 'none';
-        document.getElementById('edit-bio-btn').style.display = 'none';
-        document.getElementById('edit-bio-input').style.display = 'block';
-        document.getElementById('bio-counter').style.display = 'block'; // Show counter
-        document.getElementById('save-bio-btn').style.display = 'inline-block';
-        document.getElementById('edit-bio-input').focus();
-        updateBioCounter(); // Set initial number when opened
+        document.getElementById('display-mode-name').style.display = 'block';
+        document.getElementById('display-mode-bio').style.display = 'block';
+        document.getElementById('edit-profile-btn').style.display = 'inline-block';
+        
+        document.getElementById('edit-mode-name').style.display = 'none';
+        document.getElementById('edit-mode-bio').style.display = 'none';
+        document.getElementById('save-profile-btn').style.display = 'none';
+        document.getElementById('cancel-profile-btn').style.display = 'none';
+        document.getElementById('message-profile-btn').style.display = 'inline-flex';
+        document.getElementById('bio-counter').style.display = 'none';
+        
+        document.getElementById('user-contact-email').innerText = newEmail;
+        document.getElementById('display-email').style.display = newEmail ? 'flex' : 'none';
+        document.getElementById('user-phone').innerText = newPhone;
+        document.getElementById('display-phone').style.display = newPhone ? 'flex' : 'none';
+        document.getElementById('edit-contact-info').style.display = 'none';
+        document.getElementById('display-contact-info').style.display = 'flex';
     }
 
-    function updateBioCounter() {
-        const input = document.getElementById('edit-bio-input');
-        const counter = document.getElementById('bio-counter');
-        const remaining = 160 - input.value.length;
+    async function loadNewestGroups() {
+        const sidebarContainer = document.getElementById('newest-groups-widget');
+        sidebarContainer.innerHTML = '<h3 class="widget-title text-primary">Nhóm mới tạo</h3><p style="color: var(--text-muted); font-size: 13px;">Đang tải...</p>';
         
-        counter.innerText = remaining;
-        
-        // Make it turn red if they are running out of space
-        if (remaining <= 10) {
-            counter.style.color = 'red';
-        } else {
-            counter.style.color = 'var(--text-muted)';
-        }
-    }
-    function updateNameCounter() {
-        const input = document.getElementById('edit-name-input');
-        const counter = document.getElementById('name-counter');
-        const remaining = 36 - input.value.length;
-        
-        counter.innerText = remaining;
-        
-        // Turns red when 5 or fewer characters remain
-        if (remaining <= 5) {
-            counter.style.color = 'red';
-        } else {
-            counter.style.color = 'var(--text-muted)';
-        }
-    }
+        const { data: newestGroups, error } = await supabaseClient
+            .from('groups') 
+            .select('id, name, created_at') 
+            .order('created_at', { ascending: false })
+            .limit(4);
 
-    async function saveBio() {
-        const newBio = document.getElementById('edit-bio-input').value.trim();
-        const saveBtn = document.getElementById('save-bio-btn');
-        
-        saveBtn.innerText = "Đang lưu...";
-        saveBtn.disabled = true;
+        sidebarContainer.innerHTML = '<h3 class="widget-title text-primary">Nhóm mới tạo</h3>';
 
-        const { data, error } = await supabaseClient.auth.updateUser({
-            data: { bio: newBio }
-        });
-
-        saveBtn.innerText = "Lưu tiểu sử";
-        saveBtn.disabled = false;
-
-        if (error) {
-            alert("Lỗi khi lưu tiểu sử: " + error.message);
+if (error) {
+            sidebarContainer.innerHTML += `<p style="color: var(--text-muted); font-size: 13px;">Không có dữ liệu nhóm lúc này.</p>`;
+            console.error("Supabase Fetch Error:", error.message); // Keeps the error in the console for YOU to debug later
             return;
         }
 
-        document.getElementById('user-bio').innerText = newBio || "Chưa có tiểu sử...";
-        checkBioLength();
-        
-        document.getElementById('user-bio').style.display = 'block';
-        document.getElementById('edit-bio-btn').style.display = 'inline-block';
-        document.getElementById('edit-bio-input').style.display = 'none';
-        document.getElementById('bio-counter').style.display = 'none'; // Hide counter
-        document.getElementById('save-bio-btn').style.display = 'none';
-    }
-
-// --- NEW CROPPER LOGIC ---
-let cropper = null;
-let currentCropType = ''; // 'avatar' or 'banner'
-
-// 1. Intercept Avatar Upload
-function uploadAvatar(event) {
-    const file = event.target.files[0];
-    if (file) openCropModal(file, 'avatar');
-    event.target.value = ''; // Reset input so they can pick the same file again if needed
-}
-
-// 2. Intercept Banner Upload
-function uploadBanner(event) {
-    const file = event.target.files[0];
-    if (file) openCropModal(file, 'banner');
-    event.target.value = ''; 
-}
-
-// 3. Open the Editor Modal
-function openCropModal(file, type) {
-    if (file.size > 4 * 1024 * 1024) {
-        alert("Ảnh quá lớn! Vui lòng chọn ảnh dưới 4MB.");
-        return;
-    }
-
-    currentCropType = type;
-    const imageElement = document.getElementById('image-to-crop');
-    
-    // Read file and put it in the modal
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        imageElement.src = e.target.result;
-        document.getElementById('crop-modal').style.display = 'flex';
-        
-        // Destroy old cropper instance if it exists
-        if (cropper) cropper.destroy();
-        
-        // Set ratio: 1:1 for Avatar, ~16:3 for Banner
-        const aspectRatio = type === 'avatar' ? 1 : (1400 / 220); 
-
-        // Initialize Cropper.js
-        cropper = new Cropper(imageElement, {
-            aspectRatio: aspectRatio,
-            viewMode: 1, // Restrict crop box to not exceed canvas
-            background: false,
-            zoomable: true,
-            movable: true
-        });
-    };
-    reader.readAsDataURL(file);
-}
-
-// 4. Close Modal
-function closeCropModal() {
-    document.getElementById('crop-modal').style.display = 'none';
-    if (cropper) cropper.destroy();
-}
-
-// 5. Save the Cropped Image to Supabase
-async function saveCroppedImage() {
-    if (!cropper) return;
-    
-    const btn = document.getElementById('save-crop-btn');
-    btn.innerText = "Đang lưu...";
-    btn.disabled = true;
-
-    // Get the cropped result from the library
-    // We limit width to keep the Base64 string from getting too massive for Supabase
-    const canvas = cropper.getCroppedCanvas({
-        maxWidth: currentCropType === 'avatar' ? 400 : 1200,
-    });
-    
-    // Compress to JPEG to save space
-    const base64Image = canvas.toDataURL('image/jpeg', 0.8); 
-    
-    // Prepare the update payload based on what we are editing
-    const updateData = currentCropType === 'avatar' 
-        ? { avatar_url: base64Image } 
-        : { banner_url: base64Image };
-
-    // Send to Supabase
-    const { error } = await supabaseClient.auth.updateUser({ data: updateData });
-
-    btn.innerText = "Lưu thay đổi";
-    btn.disabled = false;
-
-    if (error) {
-        alert("Lỗi khi lưu ảnh: " + error.message);
-        return;
-    }
-
-    // Success! Update the UI and close modal
-    if (currentCropType === 'avatar') {
-        const avatarDiv = document.getElementById('user-avatar');
-        avatarDiv.innerText = '';
-        avatarDiv.style.backgroundImage = `url(${base64Image})`;
-    } else {
-        document.getElementById('profile-banner').style.backgroundImage = `url(${base64Image})`;
-    }
-
-    closeCropModal();
-}
-   
-async function loadUserGroups() {
-    const groupsContainer = document.getElementById('groups-container');
-    
-    groupsContainer.innerHTML = '<p style="color: var(--text-muted); font-style: italic; margin: 0;">Đang tải danh sách nhóm...</p>';
-
-    // --- DUMMY DATA FOR TESTING ---
-    const groups = [];
-    
-    groupsContainer.innerHTML = ''; 
-
-    if (!groups || groups.length === 0) {
-        groupsContainer.innerHTML = `
-            <div style="grid-column: 1 / -1; padding: 20px 0; text-align: center;">
-                <p style="color: var(--text-muted); font-size: 1.05rem; margin: 0;">
-                    Người dùng này chưa tham gia hoặc tạo nhóm nào :( 
-                </p>
-            </div>
-        `;
-        return; 
-    }
-
-    groups.forEach(group => {
-        const groupName = group.name || group.groups?.name || "Tên nhóm";
-        const groupDesc = group.description || group.groups?.description || "Chưa có mô tả cho nhóm này.";
-        
-        const groupCard = document.createElement('div');
-        // REPLACED JAVASCRIPT HARDCODED COLORS WITH VARIABLES
-        groupCard.style.cssText = "background: var(--bg-2); border-radius: 12px; padding: 16px; border: 1px solid var(--border); display: flex; align-items: center; gap: 15px; cursor: pointer; transition: background 0.2s;";
-        
-        groupCard.onmouseover = () => groupCard.style.background = 'var(--card)';
-        groupCard.onmouseout = () => groupCard.style.background = 'var(--bg-2)';
-        groupCard.onclick = () => window.location.href = `/group.html?id=${group.id || 1}`;
-
-        groupCard.innerHTML = `
-            <div style="width: 50px; height: 50px; border-radius: 10px; background: var(--card); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; color: var(--primary); flex-shrink: 0;">
-                ${groupName.charAt(0).toUpperCase()}
-            </div>
-            <div>
-                <h4 style="margin: 0 0 4px 0; color: var(--text); font-size: 1.05rem;">${groupName}</h4>
-                <p style="margin: 0; color: var(--text-muted); font-size: 0.85rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${groupDesc}</p>
-            </div>
-        `;
-        
-        groupsContainer.appendChild(groupCard);
-    });
-}
-
-function toggleSeeMore() {
-    const wrapper = document.getElementById('bio-text-wrapper');
-    const btn = document.getElementById('see-more-btn');
-    const fade = document.getElementById('bio-fade');
-
-    if (wrapper.style.maxHeight === '3em') {
-        // Expand fully
-        wrapper.style.maxHeight = 'none'; 
-        btn.innerText = 'Show less';
-        fade.style.display = 'none';
-    } else {
-        // Collapse back to 2 lines
-        wrapper.style.maxHeight = '3em'; 
-        btn.innerText = 'See more';
-        fade.style.display = 'block';
-    }
-}
-
-function checkBioLength() {
-    // We use setTimeout to let the browser finish resizing the text before we do the math
-    setTimeout(() => {
-        const wrapper = document.getElementById('bio-text-wrapper');
-        const bioText = document.getElementById('user-bio');
-        const btn = document.getElementById('see-more-btn');
-        const fade = document.getElementById('bio-fade');
-
-        // Only hide/show if it's in the collapsed state
-        if (wrapper.style.maxHeight === '3em') {
-            // Compare the actual text height to the wrapper's 3em height
-            if (bioText.scrollHeight > wrapper.clientHeight) {
-                btn.style.display = 'inline-block';
-                fade.style.display = 'block';
-            } else {
-                btn.style.display = 'none';
-                fade.style.display = 'none';
-            }
+        if (!newestGroups || newestGroups.length === 0) {
+            sidebarContainer.innerHTML += `<p style="color: var(--text-muted); font-size: 13px;">Chưa có nhóm nào trên hệ thống.</p>`;
+            return;
         }
-    }, 50); // 50ms delay gives the browser time to paint the new layout
-}
 
-    loadProfile();
-    loadUserGroups();
-    // This tells the browser to re-check the bio height every time the window is resized!
-    window.addEventListener('resize', checkBioLength);
+        newestGroups.forEach(group => {
+            const groupName = group.name || "Nhóm ẩn danh";
+            const dateStr = new Date(group.created_at).toLocaleDateString('vi-VN'); 
+            const widgetItem = document.createElement('div');
+            widgetItem.className = 'widget-item';
+            widgetItem.onclick = () => window.location.href = `/group.html?id=${group.id}`;
+            widgetItem.innerHTML = `
+                <div class="widget-avatar">${groupName.charAt(0).toUpperCase()}</div>
+                <div class="widget-text"><h4>${groupName}</h4><p>Tạo ngày ${dateStr}</p></div>
+            `;
+            sidebarContainer.appendChild(widgetItem);
+        });
+    }
+
+    // --- CROPPER LOGIC ---
+    function uploadAvatar(event) { const file = event.target.files[0]; if (file) openCropModal(file, 'avatar'); event.target.value = ''; }
+    function uploadBanner(event) { const file = event.target.files[0]; if (file) openCropModal(file, 'banner'); event.target.value = ''; }
+
+    function openCropModal(file, type) {
+        if (file.size > 4 * 1024 * 1024) return alert("Ảnh quá lớn! Chọn ảnh dưới 4MB.");
+        currentCropType = type;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('image-to-crop').src = e.target.result;
+            document.getElementById('crop-modal').style.display = 'flex';
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(document.getElementById('image-to-crop'), {
+                aspectRatio: type === 'avatar' ? 1 : (600 / 200), viewMode: 1, background: false, zoomable: true, movable: true
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function closeCropModal() { document.getElementById('crop-modal').style.display = 'none'; if (cropper) cropper.destroy(); }
+
+    async function saveCroppedImage() {
+        if (!cropper) return;
+        const btn = document.getElementById('save-crop-btn');
+        btn.innerText = "Đang lưu..."; btn.disabled = true;
+
+        const canvas = cropper.getCroppedCanvas({ maxWidth: currentCropType === 'avatar' ? 400 : 1200 });
+        const base64Image = canvas.toDataURL('image/jpeg', 0.8); 
+        const updateData = currentCropType === 'avatar' ? { avatar_url: base64Image } : { banner_url: base64Image };
+        
+        const { error } = await supabaseClient.auth.updateUser({ data: updateData });
+
+        btn.innerText = "Áp dụng"; btn.disabled = false;
+        if (error) return alert("Lỗi: " + error.message);
+
+        if (currentCropType === 'avatar') {
+            const avatarDiv = document.getElementById('user-avatar');
+            avatarDiv.innerText = ''; avatarDiv.style.backgroundImage = `url(${base64Image})`;
+        } else {
+            document.getElementById('profile-banner-img').src = base64Image;
+        }
+        closeCropModal();
+    }
+
+    // --- HELPERS & VALIDATION ---
+function formatBioText(text) {
+    if (!text) return '<span style="color: var(--text-muted);">Chưa có tiểu sử...</span>';
     
+    let linkMap = {}, linkIndex = 0;
+    let safeText = text;
+
+    // 1. EXTRACT CODE BLOCKS FIRST (Before any escaping)
+    // This captures your cat exactly as it appears in the editor
+    safeText = safeText.replace(/```([\s\S]*?)```/g, (match, p1) => {
+        let placeholder = `___CODE${linkIndex}___`;
+        // Use the CSS class we built for the "Blue Pop" and Monospace alignment
+        linkMap[placeholder] = `<div class="bio-code-block cat">${p1.replace(/^\n|\n$/g, '')}</div>`;
+        linkIndex++; 
+        return placeholder;
+    });
+
+    // 2. Escape HTML for everything ELSE (safety)
+    safeText = safeText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    // 3. Convert standard newlines to <br> for regular text
+    safeText = safeText.replace(/\n/g, '<br>');
+
+    // 4. PUT THE CAT BACK IN
+    // This restores the div block into the placeholder
+    for (let placeholder in linkMap) {
+        safeText = safeText.replace(placeholder, linkMap[placeholder]);
+    }
+    
+    return safeText;
+}
+        // --- LIVE COUNTDOWN VALIDATION ---
+    function validateProfileForm() {
+        const nameInput = document.getElementById('edit-name-input');
+        
+        // Calculate remaining
+        const nameRemaining = 36 - nameInput.value.length;
+        const bioLen = getBio().length;
+        const bioRemaining = 200 - bioLen;
+        
+        const nameCounter = document.getElementById('name-counter');
+        const bioCounter = document.getElementById('bio-counter');
+        const saveBtn = document.getElementById('save-profile-btn');
+        
+        // Update raw numbers
+        nameCounter.innerText = nameRemaining;
+        bioCounter.innerText = bioRemaining;
+        
+        let isValid = true;
+        
+        // Name UI state
+        if (nameRemaining < 0) {
+            nameCounter.style.color = "var(--error)";
+            nameInput.style.borderColor = "var(--error)";
+            isValid = false;
+        } else {
+            nameCounter.style.color = "var(--text-muted)";
+            nameInput.style.borderColor = "var(--primary)";
+        }
+        
+        // Bio UI state
+        if (bioRemaining < 0) {
+            bioCounter.style.color = "var(--error)";
+            isValid = false;
+            const cm = document.querySelector('.CodeMirror');
+            if(cm) cm.style.borderColor = "var(--error)"; // Turns the EasyMDE box red
+        } else {
+            bioCounter.style.color = "var(--text-muted)";
+            const cm = document.querySelector('.CodeMirror');
+            if(cm) cm.style.borderColor = "var(--border)";
+        }
+        
+        if (saveBtn) saveBtn.disabled = !isValid;
+    }
+
+    // Listen to standard typing in the name box
+    document.getElementById('edit-name-input').addEventListener('input', validateProfileForm);
+
+    window.onload = () => {
+        loadProfile();
+        loadNewestGroups();
+    };
 </script>
 </body>
 </html>
