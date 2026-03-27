@@ -43,7 +43,7 @@
     </div>
 
     <script>
-        let dsNhom = [];
+        let dsNhom = [const API_URL = "https://konect-ivory.vercel.app/api/groups";];
 
         function batTatTinhNang(idVung) {
             const tatCaCacBox = document.querySelectorAll('.box');
@@ -81,22 +81,40 @@
             render(filtered);
         }
 
-        function hamTaoNhom() {
-            const ten = document.getElementById('tenNhomMoi').value;
-            const muonChat = document.getElementById('chkChat').checked;
-            if (ten.trim() !== "") {
-                dsNhom.push({ id: Date.now(), ten: ten, coChat: muonChat });
-                render();
-                document.getElementById('tenNhomMoi').value = "";
-            }
-        }
+        async function hamTaoNhom() {
+    const ten = document.getElementById('tenNhomMoi').value;
+    const muonChat = document.getElementById('chkChat').checked;
+    
+    if (ten.trim() !== "") {
+        const nhomMoi = { id: Date.now(), ten: ten, coChat: muonChat };
+
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(nhomMoi)
+        });
+
+       
+        document.getElementById('tenNhomMoi').value = "";
+        location.reload(); 
+    }
+}
 
         function thamGiaNhom(tenNhom) {
             window.alert("Đang kết nối vào nhóm: " + tenNhom);
             window.location.href = "chat.html?room=" + tenNhom;
         }
 
-        window.onload = render;
+        window.onload = async () => {
+    try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        dsNhom = data; 
+        render(dsNhom);
+    } catch (error) {
+        console.error("Lỗi khi lấy danh sách nhóm:", error);
+    }
+};
     </script>
 </body>
 </html>
