@@ -16,12 +16,20 @@
       "dest": "Backend/main.py"
     },
     {
-      "src": "/reset-password",
+      "src": "/chat",
       "dest": "Backend/main.py"
     },
     {
       "src": "/profile",
       "dest": "Backend/main.py"
+    },
+    {
+      "src": "/reset-password",
+      "dest": "Backend/main.py"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "Frontend/assets/$1"
     },
     {
       "src": "/(.*)",
