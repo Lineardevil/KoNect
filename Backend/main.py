@@ -20,22 +20,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 2. KẾT NỐI SUPABASE
+# 2. KẾT NỐI SUPABASE (An toàn chống sập 500)
 url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_KEY")
-supabase: Client = create_client(url, key)
 
-# 3. ĐƯỜNG DẪN THƯ MỤC (Sửa lại để chạy chuẩn trên Vercel)
-# Dùng dirname của dirname để lùi lại 1 cấp từ Backend/ ra thư mục gốc
+if not url or not key:
+    print("⚠️ CẢNH BÁO: Chưa cấu hình SUPABASE_URL hoặc SUPABASE_KEY")
+    supabase = None # Tránh crash server ngay lúc khởi động
+else:
+    supabase: Client = create_client(url, key)
+
+# 3. ĐƯỜNG DẪN THƯ MỤC
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(BASE_DIR, "Frontend")
 
-# Phục vụ file tĩnh - ĐẢM BẢO đường dẫn này tồn tại
-app.mount(
-    "/assets",
-    StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")),
-    name="assets",
-)
+# 4. BẢO VỆ MOUNT ASSETS (Chống sập 500 nếu Vercel mất file)
+assets_path = os.path.join(FRONTEND_DIR, "assets")
+if os.path.exists(assets_path):
+    app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
+else:
+    print(f"⚠️ CẢNH BÁO: Không tìm thấy thư mục {assets_path}")
+
 
 # ============================================================
 # PHẦN 1: TRẢ VỀ CÁC TRANG HTML (Đã sửa lỗi tên file)
