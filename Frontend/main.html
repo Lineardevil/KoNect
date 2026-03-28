@@ -6,36 +6,41 @@
     <title>KoNect - Khám phá nhóm</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* CSS giữ nguyên như cũ của bạn */
-        :root { --primary: #4a90e2; --bg: #121212; --card: #1e1e1e; --text: #eee; }
+        :root { --primary: #4a90e2; --bg: #121212; --card: #1e1e1e; --text: #eee; --success: #28a745; }
         body {
             font-family: 'Segoe UI', sans-serif;
             background: var(--bg); color: var(--text);
             margin: 0; padding: 20px;
-            /* QUAN TRỌNG: Ẩn trang lúc đầu để tránh bị văng nhầm */
-            display: none;
+            display: none; /* Chỉ hiện khi đã xác nhận đăng nhập và tải xong profile */
         }
 
         nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 5%; background: #1a1a1a; border-radius: 12px; margin-bottom: 30px; }
         .logo { font-size: 24px; font-weight: bold; color: var(--primary); }
-        .nav-btns button { background: #333; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; margin-left: 10px; }
+        #user-display { font-size: 14px; color: var(--primary); font-weight: 600; }
+        .nav-btns button { background: #333; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; margin-left: 10px; font-weight: 500; }
         .nav-btns button:hover { background: #444; }
+
         .group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 0 5%; }
-        .group-card { background: var(--card); border-radius: 15px; padding: 20px; border: 1px solid #333; transition: 0.3s; position: relative; overflow: hidden; }
+
+        .group-card { background: var(--card); border-radius: 15px; padding: 20px; border: 1px solid #333; transition: 0.3s; display: flex; flex-direction: column; }
         .group-card:hover { transform: translateY(-5px); border-color: var(--primary); }
         .group-name { font-size: 20px; font-weight: bold; margin-bottom: 10px; color: var(--primary); }
-        .group-desc { font-size: 14px; color: #aaa; margin-bottom: 20px; min-height: 40px; }
-        .group-meta { font-size: 12px; color: #666; display: flex; justify-content: space-between; align-items: center; }
-        .join-btn { width: 100%; background: var(--primary); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; }
-        .join-btn:hover { background: #357abd; }
-        .loading { text-align: center; font-size: 18px; color: #888; margin-top: 50px; }
+        .group-desc { font-size: 14px; color: #aaa; margin-bottom: 20px; flex-grow: 1; }
+        .group-meta { font-size: 12px; color: #666; margin-bottom: 15px; }
+
+        .btn { width: 100%; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .join-btn { background: var(--primary); color: white; }
+        .chat-btn { background: var(--success); color: white; }
+        .btn:hover { opacity: 0.9; }
+
+        .loading-box { text-align: center; font-size: 18px; color: #888; margin-top: 100px; width: 100%; }
     </style>
 </head>
 <body>
 
 <nav>
     <div class="logo">KoNect</div>
-    <div id="user-display" style="font-size: 14px; color: #888;"></div>
+    <div id="user-display">Đang xác thực...</div>
     <div class="nav-btns">
         <button onclick="window.location.href='profile.html'">Hồ sơ</button>
         <button onclick="logout()" style="color: #ff4d4d;">Đăng xuất</button>
@@ -45,80 +50,129 @@
 <h2 style="text-align: center; margin-bottom: 40px;">Khám phá các nhóm học tập</h2>
 
 <div class="group-grid" id="group-list">
-    <div class="loading">Đang tải danh sách nhóm...</div>
+    <div class="loading-box">Đang tải danh sách nhóm...</div>
 </div>
 
 <script>
+    // Cấu hình Supabase từ dữ liệu bạn cung cấp
     const SUPABASE_URL = 'https://dfbklcbregcxzngpiorx.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYmtsY2JyZWdjeHpuZ3Bpb3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTI2MTIsImV4cCI6MjA4OTQyODYxMn0.3EOOOodNiaa46ptAksdTY43_vknTIxhejcJCbVN441w';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     async function init() {
-        // Sử dụng getSession() thay vì getUser() để kiểm tra nhanh trạng thái đăng nhập
-        const { data: { session } } = await supabaseClient.auth.getSession();
+        try {
+            // 1. Kiểm tra trạng thái đăng nhập nhanh
+            const { data: { session }, error: authError } = await supabaseClient.auth.getSession();
 
-        if (!session) {
-            // Nếu không có session, điều hướng về trang chủ một cách đồng nhất
-            // Dùng './' thay vì '/' hoặc 'index.html' để Vercel tự hiểu trang gốc
-            window.location.replace('./');
-            return;
+            if (authError || !session) {
+                console.log("Chưa đăng nhập, quay lại trang chủ...");
+                window.location.replace('./index.html'); // Chống văng nhầm sang "/"
+                return;
+            }
+
+            const user = session.user;
+
+            // 2. Lấy thông tin từ bảng 'profiles'
+            const { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('username, full_name')
+                .eq('id', user.id)
+                .single();
+
+            // Hiển thị tên người dùng (Ưu tiên Full Name > Username > Email)
+            let displayName = user.email.split('@')[0];
+            if (profile) {
+                displayName = profile.full_name || profile.username || displayName;
+            }
+            document.getElementById('user-display').innerText = "Chào, " + displayName;
+
+            // Hiện nội dung trang sau khi đã load xong thông tin cá nhân
+            document.body.style.display = 'block';
+
+            // 3. Tải danh sách nhóm và trạng thái tham gia
+            await loadGroups(user.id);
+
+        } catch (err) {
+            console.error("Lỗi khởi tạo:", err);
+            window.location.replace('./index.html');
         }
+    }
 
-        // Nếu đã có session, hiển thị nội dung trang main
-        document.body.style.display = 'block';
-
-        const user = session.user;
-        const fallbackName = user.email.split('@')[0];
-        const displayName = user.user_metadata?.display_name || fallbackName;
-        document.getElementById('user-display').innerText = "Chào, " + displayName;
-
-        // Lấy danh sách nhóm
-        const { data: groups, error } = await supabaseClient
+    async function loadGroups(userId) {
+        // Lấy tất cả nhóm
+        const { data: allGroups, error: groupError } = await supabaseClient
             .from('groups')
             .select('*');
 
-        if (error) {
-            console.error("Lỗi lấy dữ liệu:", error);
+        // Lấy danh sách ID các nhóm mà User hiện tại đã tham gia
+        const { data: userMemberships } = await supabaseClient
+            .from('group_members')
+            .select('group_id')
+            .eq('user_id', userId);
+
+        if (groupError) {
+            console.error("Lỗi tải nhóm:", groupError);
             return;
         }
 
-        renderGroups(groups);
+        const joinedIds = userMemberships ? userMemberships.map(m => m.group_id) : [];
+        renderGroups(allGroups, joinedIds);
     }
 
-    function renderGroups(groups) {
+    function renderGroups(groups, joinedIds) {
         const list = document.getElementById('group-list');
         list.innerHTML = '';
 
         if (!groups || groups.length === 0) {
-            list.innerHTML = '<div class="loading">Chưa có nhóm nào được tạo.</div>';
+            list.innerHTML = '<div class="loading-box">Chưa có nhóm nào.</div>';
             return;
         }
 
         groups.forEach(group => {
+            const isJoined = joinedIds.includes(group.id);
             const card = document.createElement('div');
             card.className = 'group-card';
-            // Cập nhật group.title thay vì group.name cho khớp với schema của bạn
+
             card.innerHTML = `
                 <div class="group-name">${group.title || 'Nhóm không tên'}</div>
                 <div class="group-desc">${group.description || 'Không có mô tả cho nhóm này.'}</div>
                 <div class="group-meta">
-                    <span>Chủ đề: ${group.topic || 'Chung'}</span>
+                    <b>Mục tiêu:</b> ${group.goal || 'Học tập'}
                 </div>
-                <button class="join-btn" onclick="joinGroup('${group.id}')">Tham gia ngay</button>
+                ${isJoined
+                    ? `<button class="btn chat-btn" onclick="window.location.href='chat.html?id=${group.id}'">Vào đoạn chat</button>`
+                    : `<button class="btn join-btn" onclick="joinGroup('${group.id}')">Tham gia ngay</button>`
+                }
             `;
             list.appendChild(card);
         });
     }
 
+    async function joinGroup(groupId) {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+
+        const { error } = await supabaseClient
+            .from('group_members')
+            .insert([{
+                group_id: groupId,
+                user_id: user.id,
+                status: 'joined'
+            }]);
+
+        if (error) {
+            alert("Lỗi khi tham gia: " + error.message);
+        } else {
+            alert("Tham gia nhóm thành công!");
+            location.reload(); // Làm mới để cập nhật nút bấm
+        }
+    }
+
     async function logout() {
         await supabaseClient.auth.signOut();
-        window.location.replace('./');
+        window.location.replace('./index.html');
     }
 
-    function joinGroup(groupId) {
-        alert("Bạn đã yêu cầu tham gia nhóm ID: " + groupId + ". Tính năng Chat đang được hoàn thiện!");
-    }
-
+    // Chạy chương trình
     init();
 </script>
 </body>
