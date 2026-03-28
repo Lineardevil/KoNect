@@ -54,7 +54,7 @@ async def read_index():
 
 @app.get("/main")
 async def read_main():
-    return FileResponse(os.path.join(FRONTEND_DIR, "main.html"))
+    return FileResponse(os.path.join(FRONTEND_DIR, "lỗi.html"))
 
 @app.get("/create")                          # <-- THÊM MỚI cho create.html
 async def read_create():
