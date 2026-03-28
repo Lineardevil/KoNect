@@ -1,6 +1,5 @@
 import os
-import json
-from fastapi import FastAPI, HTTPException, Form, File, UploadFile
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -14,7 +13,7 @@ load_dotenv()
 app = FastAPI()
 
 # ============================================================
-# 1. CẤU HÌNH CORS
+# 1. CẤU HÌNH CORS (cho phép frontend gọi backend)
 # ============================================================
 app.add_middleware(
     CORSMiddleware,
@@ -33,9 +32,9 @@ supabase: Client = create_client(url, key)
 # ============================================================
 # 3. ĐƯỜNG DẪN THƯ MỤC
 # ============================================================
-CURRENT_DIR  = os.path.dirname(os.path.abspath(__file__))
-BASE_DIR     = os.path.abspath(os.path.join(CURRENT_DIR, ".."))
-FRONTEND_DIR = os.path.join(BASE_DIR, "Frontend")
+CURRENT_DIR  = os.path.dirname(os.path.abspath(__file__))       # thư mục backend/
+BASE_DIR     = os.path.abspath(os.path.join(CURRENT_DIR, "..")) # thư mục gốc
+FRONTEND_DIR = os.path.join(BASE_DIR, "Frontend")               # thư mục chứa HTML
 
 # Phục vụ file tĩnh (style.css, ảnh...) tại /assets
 app.mount(
@@ -57,11 +56,11 @@ async def read_index():
 async def read_main():
     return FileResponse(os.path.join(FRONTEND_DIR, "main.html"))
 
-@app.get("/create")
+@app.get("/create")                          # <-- THÊM MỚI cho create.html
 async def read_create():
     return FileResponse(os.path.join(FRONTEND_DIR, "create.html"))
 
-@app.get("/chat")
+@app.get("/chat")                            # <-- THÊM MỚI cho chat.html
 async def read_chat():
     return FileResponse(os.path.join(FRONTEND_DIR, "chat.html"))
 
@@ -78,15 +77,25 @@ async def read_reset():
 # PHẦN 2: API NHÓM (/api/groups)
 # ============================================================
 
-# GET /api/groups — Lấy tất cả nhóm
+# --- Định nghĩa dữ liệu khi tạo nhóm (khớp form trong create.html) ---
+class GroupCreate(BaseModel):
+    name: str
+    description: str
+    max_members: int
+    privacy: str                       # "public" hoặc "private"
+    tags: List[str]                    # Tối đa 5 tag
+    cover_image: Optional[str] = None  # Ảnh bìa base64 (nếu có)
+    created_by: Optional[str] = None   # User ID người tạo
+
+
+# GET /api/groups — Lấy tất cả nhóm (đã có, giữ nguyên)
 @app.get("/api/groups")
 async def get_all_groups():
-    response = supabase.table("groups").select("*").order("created_at", desc=True).execute()
+    response = supabase.table("groups").select("*").execute()
     return response.data
 
 
 # GET /api/groups/search?keyword=...&tag=... — Tìm kiếm nhóm
-# ⚠️ Route này phải đặt TRƯỚC /api/groups/{group_id}
 @app.get("/api/groups/search")
 async def search_groups(keyword: str = "", tag: str = ""):
     query = supabase.table("groups").select("*")
@@ -94,12 +103,13 @@ async def search_groups(keyword: str = "", tag: str = ""):
         query = query.ilike("name", f"%{keyword}%")
     response = query.execute()
     results = response.data
+    # Lọc theo tag nếu có (tags lưu dạng mảng trong Supabase)
     if tag and results:
         results = [g for g in results if tag in (g.get("tags") or [])]
     return results
 
 
-# GET /api/groups/{group_id} — Lấy thông tin 1 nhóm
+# GET /api/groups/{group_id} — Lấy thông tin 1 nhóm cụ thể
 @app.get("/api/groups/{group_id}")
 async def get_group(group_id: str):
     response = supabase.table("groups").select("*").eq("id", group_id).execute()
@@ -108,66 +118,26 @@ async def get_group(group_id: str):
     return response.data[0]
 
 
-# POST /api/groups — Tạo nhóm mới
-# ĐÃ CẬP NHẬT: nhận FormData + file ảnh thay vì JSON
-# (create.html dùng FormData để gửi cả ảnh bìa)
+# POST /api/groups — Tạo nhóm mới (create.html gọi cái này)
 @app.post("/api/groups")
-async def create_group(
-    name:        str            = Form(...),
-    description: str            = Form(...),
-    maxMember:   int            = Form(...),
-    privacy:     str            = Form(...),
-    tags:        str            = Form(...),   # JSON string vd: '["AI","gym"]'
-    image:       UploadFile     = File(None),  # Ảnh bìa (không bắt buộc)
-    created_by:  Optional[str]  = Form(None),  # User ID người tạo
-):
-    # --- Kiểm tra dữ liệu ---
-    if not name or not description:
+async def create_group(group: GroupCreate):
+    if not group.name or not group.description:
         raise HTTPException(status_code=400, detail="Thiếu tên hoặc mô tả nhóm")
-    if maxMember < 1 or maxMember > 50:
+    if group.max_members < 1 or group.max_members > 50:
         raise HTTPException(status_code=400, detail="Số thành viên phải từ 1 đến 50")
-    if privacy not in ["public", "private"]:
+    if len(group.tags) > 5:
+        raise HTTPException(status_code=400, detail="Tối đa 5 tag")
+    if group.privacy not in ["public", "private"]:
         raise HTTPException(status_code=400, detail="Privacy phải là 'public' hoặc 'private'")
 
-    # --- Parse tags từ JSON string sang list ---
-    try:
-        tags_list = json.loads(tags)
-    except Exception:
-        tags_list = []
-    if len(tags_list) > 5:
-        raise HTTPException(status_code=400, detail="Tối đa 5 tag")
-
-    # --- Upload ảnh bìa lên Supabase Storage (nếu có) ---
-    image_url = None
-    if image and image.filename:
-        try:
-            file_bytes = await image.read()
-            # Đặt tên file theo tên nhóm để dễ quản lý
-            safe_name = name.replace(" ", "_").lower()
-            file_path = f"covers/{safe_name}_{image.filename}"
-
-            supabase.storage.from_("group-images").upload(
-                file_path,
-                file_bytes,
-                {"content-type": image.content_type}
-            )
-
-            # Lấy URL công khai của ảnh vừa upload
-            image_url = supabase.storage.from_("group-images").get_public_url(file_path)
-        except Exception as e:
-            # Không có ảnh vẫn tạo nhóm được, chỉ ghi log lỗi
-            print(f"Lỗi upload ảnh: {e}")
-            image_url = None
-
-    # --- Lưu nhóm vào database ---
     new_group = {
-        "name":        name,
-        "description": description,
-        "max_members": maxMember,
-        "privacy":     privacy,
-        "tags":        tags_list,
-        "image_url":   image_url,   # Dùng image_url cho khớp với main.html
-        "created_by":  created_by,
+        "name":        group.name,
+        "description": group.description,
+        "max_members": group.max_members,
+        "privacy":     group.privacy,
+        "tags":        group.tags,
+        "cover_image": group.cover_image,
+        "created_by":  group.created_by,
     }
     response = supabase.table("groups").insert(new_group).execute()
     return {"message": "Tạo nhóm thành công!", "data": response.data}
@@ -181,9 +151,10 @@ async def delete_group(group_id: str):
 
 
 # ============================================================
-# PHẦN 3: API TIN NHẮN (/api/messages)
+# PHẦN 3: API TIN NHẮN (/api/messages) — dùng cho chat.html
 # ============================================================
 
+# --- Định nghĩa dữ liệu khi gửi tin nhắn ---
 class MessageSend(BaseModel):
     group_id: str
     sender_id: str
@@ -198,7 +169,7 @@ async def get_messages(group_id: str, limit: int = 50):
         supabase.table("messages")
         .select("*")
         .eq("group_id", group_id)
-        .order("created_at", desc=False)
+        .order("created_at", desc=False)  # Cũ nhất lên trên
         .limit(limit)
         .execute()
     )
@@ -239,10 +210,12 @@ async def get_members(group_id: str):
 # POST /api/groups/{group_id}/join — Tham gia nhóm
 @app.post("/api/groups/{group_id}/join")
 async def join_group(group_id: str, user_id: str):
+    # Kiểm tra nhóm tồn tại
     group_res = supabase.table("groups").select("*").eq("id", group_id).execute()
     if not group_res.data:
         raise HTTPException(status_code=404, detail="Nhóm không tồn tại")
 
+    # Kiểm tra đã là thành viên chưa
     existing = (
         supabase.table("group_members")
         .select("*")
@@ -260,7 +233,7 @@ async def join_group(group_id: str, user_id: str):
     return {"message": "Tham gia nhóm thành công!"}
 
 
-# POST /api/groups/{group_id}/leave — Rời nhóm
+# POST /api/groups/{group_id}/leave—Rời nhóm
 @app.post("/api/groups/{group_id}/leave")
 async def leave_group(group_id: str, user_id: str):
     supabase.table("group_members").delete() \
