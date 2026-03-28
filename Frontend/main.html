@@ -7,37 +7,34 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #4a90e2; --bg: #121212; --card: #1e1e1e; --text: #eee; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg); color: var(--text);
+            margin: 0; padding: 20px;
+            /* QUAN TRỌNG: Ẩn trang để tránh bị văng nhầm khi đang load */
+            display: none;
+        }
 
-        /* Thanh điều hướng */
         nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 5%; background: #1a1a1a; border-radius: 12px; margin-bottom: 30px; }
         .logo { font-size: 24px; font-weight: bold; color: var(--primary); }
         .nav-btns button { background: #333; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; margin-left: 10px; }
         .nav-btns button:hover { background: #444; }
 
-        /* Lưới hiển thị các nhóm */
         .group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 0 5%; }
-
-        /* Giao diện Card từng nhóm */
         .group-card { background: var(--card); border-radius: 15px; padding: 20px; border: 1px solid #333; transition: 0.3s; position: relative; overflow: hidden; }
         .group-card:hover { transform: translateY(-5px); border-color: var(--primary); }
         .group-name { font-size: 20px; font-weight: bold; margin-bottom: 10px; color: var(--primary); }
         .group-desc { font-size: 14px; color: #aaa; margin-bottom: 20px; min-height: 40px; }
-        .group-meta { font-size: 12px; color: #666; display: flex; justify-content: space-between; align-items: center; }
-
         .join-btn { width: 100%; background: var(--primary); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; }
-        .join-btn:hover { background: #357abd; }
-
-        .loading { text-align: center; font-size: 18px; color: #888; margin-top: 50px; }
     </style>
 </head>
 <body>
 
 <nav>
     <div class="logo">KoNect</div>
-    <div id="user-display" style="font-size: 14px; color: #888;"></div>
+    <div id="user-display" style="font-size: 14px; color: var(--primary); font-weight: bold;"></div>
     <div class="nav-btns">
-        <button onclick="window.location.href='/profile'">Hồ sơ</button>
+        <button onclick="window.location.href='profile.html'">Hồ sơ</button>
         <button onclick="logout()" style="color: #ff4d4d;">Đăng xuất</button>
     </div>
 </nav>
@@ -45,7 +42,7 @@
 <h2 style="text-align: center; margin-bottom: 40px;">Khám phá các nhóm học tập</h2>
 
 <div class="group-grid" id="group-list">
-    <div class="loading">Đang tải danh sách nhóm...</div>
+    <div style="text-align: center; width: 100%;">Đang tải dữ liệu...</div>
 </div>
 
 <script>
@@ -53,23 +50,34 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYmtsY2JyZWdjeHpuZ3Bpb3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTI2MTIsImV4cCI6MjA4OTQyODYxMn0.3EOOOodNiaa46ptAksdTY43_vknTIxhejcJCbVN441w';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 1. Kiểm tra đăng nhập và lấy dữ liệu nhóm
     async function init() {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        // 1. Dùng getSession để check auth cực nhanh
+        const { data: { session } } = await supabaseClient.auth.getSession();
 
-        if (!user) {
-            window.location.href = '/'; // Nếu chưa login thì đá về trang chủ
+        if (!session) {
+            // Chuyển hướng về index.html cụ thể để tránh lỗi đường dẫn
+            window.location.replace('index.html');
             return;
         }
 
-        // 1. Try to get the saved display name.
-        // 2. If it doesn't exist yet, fall back to the first part of their email.
-        const fallbackName = user.email.split('@')[0];
-        const displayName = user.user_metadata?.display_name || fallbackName;
+        // 2. Nếu có session, hiện trang ngay lập tức
+        document.body.style.display = 'block';
+        const user = session.user;
 
+        // 3. Kết nối bảng 'profiles' để lấy tên hiển thị
+        const { data: profile } = await supabaseClient
+            .from('profiles')
+            .select('full_name, username')
+            .eq('id', user.id)
+            .single();
+
+        let displayName = user.email.split('@')[0];
+        if (profile) {
+            displayName = profile.full_name || profile.username || displayName;
+        }
         document.getElementById('user-display').innerText = "Chào, " + displayName;
 
-        // Lấy danh sách nhóm từ bảng 'groups'
+        // 4. Lấy danh sách nhóm (Sửa cột 'name' thành 'title' cho đúng schema của bạn)
         const { data: groups, error } = await supabaseClient
             .from('groups')
             .select('*');
@@ -82,25 +90,22 @@
         renderGroups(groups);
     }
 
-    // 2. Hiển thị danh sách nhóm ra màn hình
     function renderGroups(groups) {
         const list = document.getElementById('group-list');
         list.innerHTML = '';
 
-        if (groups.length === 0) {
-            list.innerHTML = '<div class="loading">Chưa có nhóm nào được tạo. Hãy là người đầu tiên!</div>';
+        if (!groups || groups.length === 0) {
+            list.innerHTML = '<div style="text-align: center; width: 100%;">Chưa có nhóm nào.</div>';
             return;
         }
 
         groups.forEach(group => {
             const card = document.createElement('div');
             card.className = 'group-card';
+            // Lưu ý: Dùng group.title và group.description theo đúng bảng của bạn
             card.innerHTML = `
-                <div class="group-name">${group.name}</div>
-                <div class="group-desc">${group.description || 'Không có mô tả cho nhóm này.'}</div>
-                <div class="group-meta">
-                    <span>Chủ đề: ${group.topic || 'Chung'}</span>
-                </div>
+                <div class="group-name">${group.title || 'Nhóm không tên'}</div>
+                <div class="group-desc">${group.description || 'Không có mô tả.'}</div>
                 <button class="join-btn" onclick="joinGroup('${group.id}')">Tham gia ngay</button>
             `;
             list.appendChild(card);
@@ -109,11 +114,11 @@
 
     async function logout() {
         await supabaseClient.auth.signOut();
-        window.location.href = '/';
+        window.location.replace('index.html');
     }
 
     function joinGroup(groupId) {
-        alert("Bạn đã yêu cầu tham gia nhóm ID: " + groupId + ". Tính năng Chat đang được hoàn thiện!");
+        alert("Đã gửi yêu cầu tham gia nhóm ID: " + groupId);
     }
 
     init();
