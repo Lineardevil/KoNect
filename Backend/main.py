@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -12,7 +12,9 @@ load_dotenv()
 
 app = FastAPI()
 
-# 1. CẤU HÌNH CORS
+# ============================================================
+# 1. CẤU HÌNH CORS (cho phép frontend gọi backend)
+# ============================================================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,30 +22,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 2. KẾT NỐI SUPABASE (An toàn chống sập 500)
+# ============================================================
+# 2. KẾT NỐI SUPABASE
+# ============================================================
 url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_KEY")
+supabase: Client = create_client(url, key)
 
-if not url or not key:
-    print("⚠️ CẢNH BÁO: Chưa cấu hình SUPABASE_URL hoặc SUPABASE_KEY")
-    supabase = None # Tránh crash server ngay lúc khởi động
-else:
-    supabase: Client = create_client(url, key)
-
+# ============================================================
 # 3. ĐƯỜNG DẪN THƯ MỤC
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FRONTEND_DIR = os.path.join(BASE_DIR, "Frontend")
+# ============================================================
+CURRENT_DIR  = os.path.dirname(os.path.abspath(__file__))       # thư mục backend/
+BASE_DIR     = os.path.abspath(os.path.join(CURRENT_DIR, "..")) # thư mục gốc
+FRONTEND_DIR = os.path.join(BASE_DIR, "Frontend")               # thư mục chứa HTML
 
-# 4. BẢO VỆ MOUNT ASSETS (Chống sập 500 nếu Vercel mất file)
-assets_path = os.path.join(FRONTEND_DIR, "assets")
-if os.path.exists(assets_path):
-    app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
-else:
-    print(f"⚠️ CẢNH BÁO: Không tìm thấy thư mục {assets_path}")
+# Phục vụ file tĩnh (style.css, ảnh...) tại /assets
+app.mount(
+    "/assets",
+    StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")),
+    name="assets",
+)
 
 
 # ============================================================
-# PHẦN 1: TRẢ VỀ CÁC TRANG HTML (Đã sửa lỗi tên file)
+# PHẦN 1: TRẢ VỀ CÁC TRANG HTML
 # ============================================================
 
 @app.get("/")
@@ -52,14 +54,13 @@ async def read_index():
 
 @app.get("/main")
 async def read_main():
-    # ĐÃ SỬA: từ "lỗi.html" thành "main.html"
     return FileResponse(os.path.join(FRONTEND_DIR, "main.html"))
 
-@app.get("/create")
+@app.get("/create")                          # <-- THÊM MỚI cho create.html
 async def read_create():
     return FileResponse(os.path.join(FRONTEND_DIR, "create.html"))
 
-@app.get("/chat")
+@app.get("/chat")                            # <-- THÊM MỚI cho chat.html
 async def read_chat():
     return FileResponse(os.path.join(FRONTEND_DIR, "chat.html"))
 
@@ -70,6 +71,7 @@ async def read_profile():
 @app.get("/reset-password")
 async def read_reset():
     return FileResponse(os.path.join(FRONTEND_DIR, "reset-password.html"))
+
 
 # ============================================================
 # PHẦN 2: API NHÓM (/api/groups)

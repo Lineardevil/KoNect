@@ -6,56 +6,46 @@
     <title>KoNect - Khám phá nhóm</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #4a90e2; --bg: #121212; --card: #1e1e1e; --text: #eee; --border: #333; }
+        :root { --primary: #4a90e2; --bg: #121212; --card: #1e1e1e; --text: #eee; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
 
+        /* Thanh điều hướng */
         nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 5%; background: #1a1a1a; border-radius: 12px; margin-bottom: 30px; }
-        .logo { font-size: 24px; font-weight: bold; color: var(--primary); cursor: pointer; }
-        .nav-btns button { background: #333; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; margin-left: 10px; font-weight: 500; }
+        .logo { font-size: 24px; font-weight: bold; color: var(--primary); }
+        .nav-btns button { background: #333; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; margin-left: 10px; }
         .nav-btns button:hover { background: #444; }
 
-        .box { background: var(--card); padding: 20px; border-radius: 15px; margin: 0 5% 20px 5%; border: 1px solid var(--border); display: none; }
-        input { background: #2a2a2a; border: 1px solid #444; color: white; padding: 10px; border-radius: 6px; width: 100%; box-sizing: border-box; }
+        /* Lưới hiển thị các nhóm */
+        .group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 0 5%; }
 
-        /* Grid hiển thị nhóm */
-        .group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; padding: 0 5%; }
-        
-        /* Card nhóm xịn xò */
-        .group-card { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid var(--border); transition: 0.3s; display: flex; flex-direction: column; }
-        .group-card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-        
-        .card-banner { width: 100%; height: 150px; background: #333; object-fit: cover; }
-        .card-content { padding: 20px; flex-grow: 1; }
-        .group-name { font-size: 20px; font-weight: bold; color: var(--primary); margin: 0 0 10px 0; }
-        .group-desc { font-size: 14px; color: #aaa; margin-bottom: 15px; height: 40px; overflow: hidden; }
-        
-        /* Tags hiển thị trên main */
-        .tag-list { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; }
-        .tag-item { background: #2d333b; color: #58a6ff; font-size: 11px; padding: 3px 8px; border-radius: 10px; border: 1px solid #444; }
-        
-        .card-footer { padding: 15px 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .privacy-info { font-size: 12px; color: #888; }
-        .join-btn { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        /* Giao diện Card từng nhóm */
+        .group-card { background: var(--card); border-radius: 15px; padding: 20px; border: 1px solid #333; transition: 0.3s; position: relative; overflow: hidden; }
+        .group-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+        .group-name { font-size: 20px; font-weight: bold; margin-bottom: 10px; color: var(--primary); }
+        .group-desc { font-size: 14px; color: #aaa; margin-bottom: 20px; min-height: 40px; }
+        .group-meta { font-size: 12px; color: #666; display: flex; justify-content: space-between; align-items: center; }
+
+        .join-btn { width: 100%; background: var(--primary); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        .join-btn:hover { background: #357abd; }
+
+        .loading { text-align: center; font-size: 18px; color: #888; margin-top: 50px; }
     </style>
 </head>
 <body>
 
 <nav>
-    <div class="logo" onclick="location.reload()">KoNect</div>
+    <div class="logo">KoNect</div>
+    <div id="user-display" style="font-size: 14px; color: #888;"></div>
     <div class="nav-btns">
-        <button onclick="batTatTinhNang('vungTimKiem')">🔍 Tìm kiếm</button>
-        <button onclick="window.location.href='create.html'" style="background: var(--primary);">➕ Tạo nhóm mới</button>
+        <button onclick="window.location.href='/profile'">Hồ sơ</button>
+        <button onclick="logout()" style="color: #ff4d4d;">Đăng xuất</button>
     </div>
 </nav>
 
-<div class="box" id="vungTimKiem">
-    <input type="text" id="oTimKiem" placeholder="Nhập tên hoặc tag để tìm kiếm..." oninput="hamTimKiem()">
-</div>
-
-<h2 style="text-align: center; margin: 40px 0 20px 0;">Cộng đồng học tập</h2>
+<h2 style="text-align: center; margin-bottom: 40px;">Khám phá các nhóm học tập</h2>
 
 <div class="group-grid" id="group-list">
-    <p style="text-align: center; width: 100%;">Đang tải dữ liệu từ hệ thống...</p>
+    <div class="loading">Đang tải danh sách nhóm...</div>
 </div>
 
 <script>
@@ -63,68 +53,70 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYmtsY2JyZWdjeHpuZ3Bpb3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTI2MTIsImV4cCI6MjA4OTQyODYxMn0.3EOOOodNiaa46ptAksdTY43_vknTIxhejcJCbVN441w';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let dsNhomGlobal = [];
+    // 1. Kiểm tra đăng nhập và lấy dữ liệu nhóm
+    async function init() {
+        const { data: { user } } = await supabaseClient.auth.getUser();
 
-    function batTatTinhNang(idVung) {
-        const vung = document.getElementById(idVung);
-        vung.style.display = (vung.style.display === "block") ? "none" : "block";
-    }
-
-    async function loadGroups() {
-        const { data, error } = await supabaseClient
-            .from('groups')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (!error) {
-            dsNhomGlobal = data;
-            renderGroups(data);
-        }
-    }
-
-    function renderGroups(groups) {
-        const list = document.getElementById('group-list');
-        if (groups.length === 0) {
-            list.innerHTML = "<p style='grid-column: 1/-1; text-align: center;'>Chưa có nhóm nào được tạo.</p>";
+        if (!user) {
+            window.location.href = '/'; // Nếu chưa login thì đá về trang chủ
             return;
         }
 
-        list.innerHTML = groups.map(g => {
-            // Xử lý tag: nếu tags là mảng thì render, không thì để trống
-            const tagsHTML = (g.tags && Array.isArray(g.tags)) 
-                ? g.tags.map(t => `<span class="tag-item">${t}</span>`).join('') 
-                : '';
+        // 1. Try to get the saved display name.
+        // 2. If it doesn't exist yet, fall back to the first part of their email.
+        const fallbackName = user.email.split('@')[0];
+        const displayName = user.user_metadata?.display_name || fallbackName;
 
-            // Ảnh mặc định nếu không có image_url
-            const coverImg = g.image_url || 'https://via.placeholder.com/400x150?text=KoNect+Group';
+        document.getElementById('user-display').innerText = "Chào, " + displayName;
 
-            return `
-                <div class="group-card">
-                    <img src="${coverImg}" class="card-banner" alt="cover">
-                    <div class="card-content">
-                        <h4 class="group-name">${g.name}</h4>
-                        <p class="group-desc">${g.description || 'Không có mô tả.'}</p>
-                        <div class="tag-list">${tagsHTML}</div>
-                    </div>
-                    <div class="card-footer">
-                        <span class="privacy-info">${g.privacy === 'private' ? '🔒 Private' : '🌍 Public'}</span>
-                        <button class="join-btn" onclick="location.href='chat.html?room=${encodeURIComponent(g.name)}'">Tham gia</button>
-                    </div>
+        // Lấy danh sách nhóm từ bảng 'groups'
+        const { data: groups, error } = await supabaseClient
+            .from('groups')
+            .select('*');
+
+        if (error) {
+            console.error("Lỗi lấy dữ liệu:", error);
+            return;
+        }
+
+        renderGroups(groups);
+    }
+
+    // 2. Hiển thị danh sách nhóm ra màn hình
+    function renderGroups(groups) {
+        const list = document.getElementById('group-list');
+        list.innerHTML = '';
+
+        if (groups.length === 0) {
+            list.innerHTML = '<div class="loading">Chưa có nhóm nào được tạo. Hãy là người đầu tiên!</div>';
+            return;
+        }
+
+        groups.forEach(group => {
+            const card = document.createElement('div');
+            card.className = 'group-card';
+            card.innerHTML = `
+                <div class="group-name">${group.name}</div>
+                <div class="group-desc">${group.description || 'Không có mô tả cho nhóm này.'}</div>
+                <div class="group-meta">
+                    <span>Chủ đề: ${group.topic || 'Chung'}</span>
                 </div>
+                <button class="join-btn" onclick="joinGroup('${group.id}')">Tham gia ngay</button>
             `;
-        }).join('');
+            list.appendChild(card);
+        });
     }
 
-    function hamTimKiem() {
-        const keyword = document.getElementById('oTimKiem').value.toLowerCase();
-        const filtered = dsNhomGlobal.filter(n => 
-            n.name.toLowerCase().includes(keyword) || 
-            (n.tags && n.tags.some(t => t.toLowerCase().includes(keyword)))
-        );
-        renderGroups(filtered);
+    async function logout() {
+        await supabaseClient.auth.signOut();
+        window.location.href = '/';
     }
 
-    window.onload = loadGroups;
+    function joinGroup(groupId) {
+        alert("Bạn đã yêu cầu tham gia nhóm ID: " + groupId + ". Tính năng Chat đang được hoàn thiện!");
+    }
+
+    init();
 </script>
 </body>
 </html>

@@ -12,17 +12,20 @@
       "dest": "Backend/main.py"
     },
     {
-      "src": "/assets/(.*)",
-      "dest": "Frontend/assets/$1"
+      "src": "/main",
+      "dest": "Backend/main.py"
+    },
+    {
+      "src": "/reset-password",
+      "dest": "Backend/main.py"
+    },
+    {
+      "src": "/profile",
+      "dest": "Backend/main.py"
     },
     {
       "src": "/(.*)",
       "dest": "Backend/main.py"
     }
-  ],
-  "functions": {
-    "Backend/main.py": {
-      "includeFiles": "Frontend/**"
-    }
-  }
+  ]
 }
