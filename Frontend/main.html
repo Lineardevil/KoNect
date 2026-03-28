@@ -9,126 +9,119 @@
         :root { --primary: #4a90e2; --bg: #121212; --card: #1e1e1e; --text: #eee; --border: #333; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
 
-        /* Header UI giống ảnh bạn gửi */
         nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 5%; background: #1a1a1a; border-radius: 12px; margin-bottom: 30px; }
-        .logo { font-size: 24px; font-weight: bold; color: var(--primary); }
-        .nav-btns button { background: #333; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; margin-left: 10px; }
-        
-        /* 4 Vùng chức năng theo yêu cầu */
+        .logo { font-size: 24px; font-weight: bold; color: var(--primary); cursor: pointer; }
+        .nav-btns button { background: #333; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; margin-left: 10px; font-weight: 500; }
+        .nav-btns button:hover { background: #444; }
+
         .box { background: var(--card); padding: 20px; border-radius: 15px; margin: 0 5% 20px 5%; border: 1px solid var(--border); display: none; }
-        #vungDanhSach { display: block; border: none; background: transparent; }
+        input { background: #2a2a2a; border: 1px solid #444; color: white; padding: 10px; border-radius: 6px; width: 100%; box-sizing: border-box; }
 
-        input { background: #2a2a2a; border: 1px solid #444; color: white; padding: 10px; border-radius: 6px; margin: 5px 0; width: 100%; box-sizing: border-box; }
-        .btn-main { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-
-        /* Danh sách nhóm dạng Grid hiện đại */
-        .group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .group-card { background: var(--card); border-radius: 15px; padding: 20px; border: 1px solid var(--border); transition: 0.3s; }
-        .group-card:hover { transform: translateY(-5px); border-color: var(--primary); }
-        .group-name { font-size: 20px; font-weight: bold; color: var(--primary); margin-bottom: 10px; }
+        /* Grid hiển thị nhóm */
+        .group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; padding: 0 5%; }
+        
+        /* Card nhóm xịn xò */
+        .group-card { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid var(--border); transition: 0.3s; display: flex; flex-direction: column; }
+        .group-card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        
+        .card-banner { width: 100%; height: 150px; background: #333; object-fit: cover; }
+        .card-content { padding: 20px; flex-grow: 1; }
+        .group-name { font-size: 20px; font-weight: bold; color: var(--primary); margin: 0 0 10px 0; }
+        .group-desc { font-size: 14px; color: #aaa; margin-bottom: 15px; height: 40px; overflow: hidden; }
+        
+        /* Tags hiển thị trên main */
+        .tag-list { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; }
+        .tag-item { background: #2d333b; color: #58a6ff; font-size: 11px; padding: 3px 8px; border-radius: 10px; border: 1px solid #444; }
+        
+        .card-footer { padding: 15px 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .privacy-info { font-size: 12px; color: #888; }
+        .join-btn { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <nav>
-    <div class="logo">KoNect</div>
-    <div id="user-display" style="font-size: 14px; color: #888;"></div>
+    <div class="logo" onclick="location.reload()">KoNect</div>
     <div class="nav-btns">
-        <button onclick="batTatTinhNang('vungTimKiem')">🔍 Tìm nhóm</button>
-        <button onclick="batTatTinhNang('vungTaoNhom')">➕ Tạo mới</button>
-        <button onclick="logout()" style="color: #ff4d4d;">Đăng xuất</button>
+        <button onclick="batTatTinhNang('vungTimKiem')">🔍 Tìm kiếm</button>
+        <button onclick="window.location.href='create.html'" style="background: var(--primary);">➕ Tạo nhóm mới</button>
     </div>
 </nav>
 
 <div class="box" id="vungTimKiem">
-    <h3>Tìm kiếm nhóm</h3>
-    <input type="text" id="oTimKiem" placeholder="Nhập tên nhóm..." oninput="hamTimKiem()">
+    <input type="text" id="oTimKiem" placeholder="Nhập tên hoặc tag để tìm kiếm..." oninput="hamTimKiem()">
 </div>
 
-<div class="box" id="vungTaoNhom">
-    <h3>Thiết lập nhóm mới</h3>
-    <input type="text" id="tenNhomMoi" placeholder="Tên nhóm...">
-    <input type="text" id="moTaNhom" placeholder="Mô tả ngắn...">
-    <div style="margin: 10px 0;">
-        <label><input type="checkbox" id="chkChat" checked> Cho phép tham gia chat công khai</label>
-    </div>
-    <button class="btn-main" onclick="hamTaoNhom(event)">Xác nhận Lập Nhóm</button>
-</div>
+<h2 style="text-align: center; margin: 40px 0 20px 0;">Cộng đồng học tập</h2>
 
-<h2 style="text-align: center; margin-bottom: 30px;">Khám phá các nhóm học tập</h2>
-<div id="vungDanhSach">
-    <div class="group-grid" id="group-list">
-        </div>
+<div class="group-grid" id="group-list">
+    <p style="text-align: center; width: 100%;">Đang tải dữ liệu từ hệ thống...</p>
 </div>
 
 <script>
-    // Config Supabase
     const SUPABASE_URL = 'https://dfbklcbregcxzngpiorx.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYmtsY2JyZWdjeHpuZ3Bpb3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTI2MTIsImV4cCI6MjA4OTQyODYxMn0.3EOOOodNiaa46ptAksdTY43_vknTIxhejcJCbVN441w';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let dsNhomGlobal = [];
 
-    // Logic Ẩn/Hiện vùng chức năng
     function batTatTinhNang(idVung) {
         const vung = document.getElementById(idVung);
-        const dangHien = vung.style.display === "block";
-        document.querySelectorAll('.box').forEach(b => b.style.display = "none");
-        vung.style.display = dangHien ? "none" : "block";
+        vung.style.display = (vung.style.display === "block") ? "none" : "block";
     }
 
-    // Tải dữ liệu từ Cloud
     async function loadGroups() {
-        const { data, error } = await supabaseClient.from('groups').select('*').order('created_at', { ascending: false });
+        const { data, error } = await supabaseClient
+            .from('groups')
+            .select('*')
+            .order('created_at', { ascending: false });
+
         if (!error) {
             dsNhomGlobal = data;
             renderGroups(data);
         }
     }
 
-    // Tạo nhóm mới (Connect thẳng Cloud)
-    async function hamTaoNhom(e) {
-        e.preventDefault();
-        const ten = document.getElementById('tenNhomMoi').value;
-        const moTa = document.getElementById('moTaNhom').value;
-        const coChat = document.getElementById('chkChat').checked;
-
-        if (!ten) return alert("Vui lòng nhập tên nhóm!");
-
-        const { error } = await supabaseClient.from('groups').insert([{ 
-            name: ten, 
-            description: moTa,
-            is_public: coChat 
-        }]);
-
-        if (!error) {
-            document.getElementById('tenNhomMoi').value = "";
-            batTatTinhNang('vungTaoNhom');
-            loadGroups();
-        }
-    }
-
-    // Tìm kiếm Real-time
-    function hamTimKiem() {
-        const keyword = document.getElementById('oTimKiem').value.toLowerCase();
-        const filtered = dsNhomGlobal.filter(n => n.name.toLowerCase().includes(keyword));
-        renderGroups(filtered);
-    }
-
     function renderGroups(groups) {
         const list = document.getElementById('group-list');
         if (groups.length === 0) {
-            list.innerHTML = "<p>Không tìm thấy nhóm nào.</p>";
+            list.innerHTML = "<p style='grid-column: 1/-1; text-align: center;'>Chưa có nhóm nào được tạo.</p>";
             return;
         }
-        list.innerHTML = groups.map(g => `
-            <div class="group-card">
-                <div class="group-name">${g.name}</div>
-                <div style="font-size:14px; color:#aaa; margin-bottom:15px;">${g.description || 'Không có mô tả.'}</div>
-                <div style="font-size:12px; margin-bottom:10px;">${g.is_public ? '🔓 Công khai' : '🔒 Riêng tư'}</div>
-                <button class="btn-main" style="width:100%" onclick="location.href='chat.html?room=${encodeURIComponent(g.name)}'">Tham gia</button>
-            </div>
-        `).join('');
+
+        list.innerHTML = groups.map(g => {
+            // Xử lý tag: nếu tags là mảng thì render, không thì để trống
+            const tagsHTML = (g.tags && Array.isArray(g.tags)) 
+                ? g.tags.map(t => `<span class="tag-item">${t}</span>`).join('') 
+                : '';
+
+            // Ảnh mặc định nếu không có image_url
+            const coverImg = g.image_url || 'https://via.placeholder.com/400x150?text=KoNect+Group';
+
+            return `
+                <div class="group-card">
+                    <img src="${coverImg}" class="card-banner" alt="cover">
+                    <div class="card-content">
+                        <h4 class="group-name">${g.name}</h4>
+                        <p class="group-desc">${g.description || 'Không có mô tả.'}</p>
+                        <div class="tag-list">${tagsHTML}</div>
+                    </div>
+                    <div class="card-footer">
+                        <span class="privacy-info">${g.privacy === 'private' ? '🔒 Private' : '🌍 Public'}</span>
+                        <button class="join-btn" onclick="location.href='chat.html?room=${encodeURIComponent(g.name)}'">Tham gia</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function hamTimKiem() {
+        const keyword = document.getElementById('oTimKiem').value.toLowerCase();
+        const filtered = dsNhomGlobal.filter(n => 
+            n.name.toLowerCase().includes(keyword) || 
+            (n.tags && n.tags.some(t => t.toLowerCase().includes(keyword)))
+        );
+        renderGroups(filtered);
     }
 
     window.onload = loadGroups;
