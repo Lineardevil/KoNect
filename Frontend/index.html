@@ -3,65 +3,72 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Project KoNect - Login</title>
+    <title>KoNect - Đăng nhập</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="/assets/style.css">
-
   </head>
   <body class="auth-body">
     <div class="auth-container">
+
+      <div class="logo-wrap">
+        <div class="logo-icon">KN</div>
+        <div class="tagline">Mạng xã hội học tập</div>
+      </div>
+
       <div class="card">
-      <h1>KoNect</h1>
+        <h1>KoNect</h1>
 
-      <div class="tabs">
-        <div id="tabLogin" class="tab active" onclick="switchTab('login')">
-          ĐĂNG NHẬP
+        <div class="tabs">
+          <div id="tabLogin" class="tab active" onclick="switchTab('login')">
+            ĐĂNG NHẬP
+          </div>
+          <div id="tabRegister" class="tab" onclick="switchTab('register')">
+            ĐĂNG KÝ
+          </div>
         </div>
-        <div id="tabRegister" class="tab" onclick="switchTab('register')">
-          ĐĂNG KÝ
-        </div>
-      </div>
 
-      <div class="form-group">
-        <label>Email</label>
-        <input
-          type="email"
-          id="email"
-          placeholder="example@gmail.com"
-          required
-        />
-      </div>
-
-      <div class="form-group">
-        <label>Mật khẩu</label>
-        <div class="password-wrapper">
+        <div class="form-group">
+          <label>Email</label>
           <input
-            type="password"
-            id="password"
-            placeholder="Tối thiểu 6 ký tự"
+            type="email"
+            id="email"
+            placeholder="example@gmail.com"
             required
           />
-          <span id="togglePassword" class="toggle-password">
-            <svg id="eyeIcon" viewBox="0 0 24 24">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-          </span>
         </div>
-      </div>
 
-      <button id="authBtn"  class="btn-primary">Đăng nhập</button>
+        <div class="form-group">
+          <label>Mật khẩu</label>
+          <div class="password-wrapper">
+            <input
+              type="password"
+              id="password"
+              placeholder="Tối thiểu 6 ký tự"
+              required
+            />
+            <span id="togglePassword" class="toggle-password">
+              <svg id="eyeIcon" viewBox="0 0 24 24">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </span>
+          </div>
+        </div>
 
-      <a href="#" id="forgotBtn" class="link-secondary">Quên mật khẩu?</a>
+        <button id="authBtn" class="btn-primary">Đăng nhập</button>
 
-      <div id="message" class="status-msg"></div>
+        <div class="divider" id="forgotDivider">
+          <a href="#" id="forgotBtn" class="link-secondary">Quên mật khẩu?</a>
+        </div>
+
+        <div id="message" class="status-msg"></div>
       </div>
     </div>
 
     <script>
+      // KẾT NỐI SUPABASE
       const SUPABASE_URL = "https://dfbklcbregcxzngpiorx.supabase.co";
-      const SUPABASE_KEY =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYmtsY2JyZWdjeHpuZ3Bpb3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTI2MTIsImV4cCI6MjA4OTQyODYxMn0.3EOOOodNiaa46ptAksdTY43_vknTIxhejcJCbVN441w";
+      const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYmtsY2JyZWdjeHpuZ3Bpb3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTI2MTIsImV4cCI6MjA4OTQyODYxMn0.3EOOOodNiaa46ptAksdTY43_vknTIxhejcJCbVN441w";
       const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
       let mode = "login";
@@ -85,16 +92,13 @@
       // 2. CHUYỂN TAB
       function switchTab(newMode) {
         mode = newMode;
-        document.getElementById("tabLogin").className =
-          mode === "login" ? "tab active" : "tab";
-        document.getElementById("tabRegister").className =
-          mode === "register" ? "tab active" : "tab";
-        document.getElementById("authBtn").innerText =
-          mode === "login" ? "Đăng nhập" : "Tạo tài khoản mới";
+        document.getElementById("tabLogin").className = mode === "login" ? "tab active" : "tab";
+        document.getElementById("tabRegister").className = mode === "register" ? "tab active" : "tab";
+        document.getElementById("authBtn").innerText = mode === "login" ? "Đăng nhập" : "Tạo tài khoản mới";
         document.getElementById("message").innerText = "";
-        // Ẩn link quên mật khẩu khi ở tab đăng ký
-        document.getElementById("forgotBtn").style.display =
-          mode === "login" ? "block" : "none";
+
+        // Ẩn/Hiện đường kẻ ngang (divider) chứa Quên mật khẩu
+        document.getElementById("forgotDivider").style.display = mode === "login" ? "flex" : "none";
       }
 
       // 3. LOGIC XỬ LÝ CHÍNH (ĐĂNG NHẬP / ĐĂNG KÝ)
@@ -103,22 +107,19 @@
         const password = passwordInput.value;
 
         if (!email || !password) {
-          showStatus("Vui lòng nhập đủ thông tin!", "#ff9800");
+          showStatus("Vui lòng nhập đủ thông tin!", "var(--warning)");
           return;
         }
-        showStatus("Đang xử lý...", "#aaa");
+        showStatus("Đang xử lý...", "var(--text-muted)");
 
         if (mode === "register") {
           const { error } = await supabaseClient.auth.signUp({
             email,
             password,
           });
-          if (error) showStatus("Lỗi: " + error.message, "#f44336");
+          if (error) showStatus("Lỗi: " + error.message, "var(--error)");
           else
-            showStatus(
-              "📩 Thành công! Hãy kiểm tra Gmail để xác thực.",
-              "#4caf50",
-            );
+            showStatus("📩 Thành công! Hãy kiểm tra Gmail để xác thực.", "var(--success)");
         } else {
           const { error } = await supabaseClient.auth.signInWithPassword({
             email,
@@ -127,15 +128,14 @@
           if (error) {
             const errMsg = error.message.toLowerCase();
             if (errMsg.includes("invalid login credentials"))
-              showStatus("Mật khẩu không chính xác!", "#f44336");
+              showStatus("Mật khẩu không chính xác!", "var(--error)");
             else if (errMsg.includes("email not confirmed"))
-              showStatus("Tài khoản chưa xác thực Gmail!", "#f44336");
+              showStatus("Tài khoản chưa xác thực Gmail!", "var(--error)");
             else if (errMsg.includes("user not found"))
-              showStatus("Email này chưa được đăng ký!", "#f44336");
-            else showStatus("Lỗi: " + error.message, "#f44336");
+              showStatus("Email này chưa được đăng ký!", "var(--error)");
+            else showStatus("Lỗi: " + error.message, "var(--error)");
           } else {
-            showStatus("Đang vào hệ thống...", "#4caf50");
-            // Chuyển hướng sang route /main đã cấu hình ở main.py
+            showStatus("Đang vào hệ thống...", "var(--success)");
             setTimeout(() => (window.location.href = "/main"), 800);
           }
         }
@@ -146,35 +146,28 @@
         e.preventDefault();
         const email = document.getElementById("email").value;
         if (!email) {
-          showStatus("Nhập Email trước khi lấy lại mật khẩu!", "#ff9800");
+          showStatus("Nhập Email trước khi lấy lại mật khẩu!", "var(--warning)");
           return;
         }
-        showStatus("Đang gửi yêu cầu...", "#aaa");
+        showStatus("Đang gửi yêu cầu...", "var(--text-muted)");
         const { error } = await supabaseClient.auth.resetPasswordForEmail(
           email,
-          {
-            redirectTo: window.location.origin + "/reset-password",
-          },
+          { redirectTo: window.location.origin + "/reset-password" },
         );
-        if (error) showStatus("Lỗi: " + error.message, "#f44336");
-        else
-          showStatus(
-            "📩 Link đặt lại mật khẩu đã được gửi vào Gmail!",
-            "#4caf50",
-          );
+        if (error) showStatus("Lỗi: " + error.message, "var(--error)");
+        else showStatus("📩 Link đặt lại mật khẩu đã được gửi vào Gmail!", "var(--success)");
       };
 
+      // HÀM HIỂN THỊ TRẠNG THÁI (Đã sửa lại để dùng biến màu của CSS)
       function showStatus(text, color) {
         const msg = document.getElementById("message");
         msg.innerText = text;
         msg.style.color = color;
       }
 
-      // Tự động chuyển hướng nếu đã đăng nhập sẵn
+      // KIỂM TRA ĐĂNG NHẬP
       async function checkUser() {
-        const {
-          data: { session },
-        } = await supabaseClient.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         if (session) window.location.href = "/main";
       }
       checkUser();
