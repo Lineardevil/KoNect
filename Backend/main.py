@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -12,9 +12,7 @@ load_dotenv()
 
 app = FastAPI()
 
-# ============================================================
-# 1. CẤU HÌNH CORS (cho phép frontend gọi backend)
-# ============================================================
+# 1. CẤU HÌNH CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,30 +20,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ============================================================
 # 2. KẾT NỐI SUPABASE
-# ============================================================
 url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
-# ============================================================
-# 3. ĐƯỜNG DẪN THƯ MỤC
-# ============================================================
-CURRENT_DIR  = os.path.dirname(os.path.abspath(__file__))       # thư mục backend/
-BASE_DIR     = os.path.abspath(os.path.join(CURRENT_DIR, "..")) # thư mục gốc
-FRONTEND_DIR = os.path.join(BASE_DIR, "Frontend")               # thư mục chứa HTML
+# 3. ĐƯỜNG DẪN THƯ MỤC (Sửa lại để chạy chuẩn trên Vercel)
+# Dùng dirname của dirname để lùi lại 1 cấp từ Backend/ ra thư mục gốc
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FRONTEND_DIR = os.path.join(BASE_DIR, "Frontend")
 
-# Phục vụ file tĩnh (style.css, ảnh...) tại /assets
+# Phục vụ file tĩnh - ĐẢM BẢO đường dẫn này tồn tại
 app.mount(
     "/assets",
     StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")),
     name="assets",
 )
 
-
 # ============================================================
-# PHẦN 1: TRẢ VỀ CÁC TRANG HTML
+# PHẦN 1: TRẢ VỀ CÁC TRANG HTML (Đã sửa lỗi tên file)
 # ============================================================
 
 @app.get("/")
@@ -54,13 +47,14 @@ async def read_index():
 
 @app.get("/main")
 async def read_main():
-    return FileResponse(os.path.join(FRONTEND_DIR, "lỗi.html"))
+    # ĐÃ SỬA: từ "lỗi.html" thành "main.html"
+    return FileResponse(os.path.join(FRONTEND_DIR, "main.html"))
 
-@app.get("/create")                          # <-- THÊM MỚI cho create.html
+@app.get("/create")
 async def read_create():
     return FileResponse(os.path.join(FRONTEND_DIR, "create.html"))
 
-@app.get("/chat")                            # <-- THÊM MỚI cho chat.html
+@app.get("/chat")
 async def read_chat():
     return FileResponse(os.path.join(FRONTEND_DIR, "chat.html"))
 
@@ -71,7 +65,6 @@ async def read_profile():
 @app.get("/reset-password")
 async def read_reset():
     return FileResponse(os.path.join(FRONTEND_DIR, "reset-password.html"))
-
 
 # ============================================================
 # PHẦN 2: API NHÓM (/api/groups)
