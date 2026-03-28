@@ -1,32 +1,302 @@
-// 1. Lắng nghe tin nhắn mới "đập" vào bảng messages
-const channel = supabase
-  .channel('room_1') // 'room_1' có thể thay bằng ID của nhóm chat
-  .on(
-    'postgres_changes',
-    {
-      event: 'INSERT',     // Chỉ bắt sự kiện khi có tin nhắn mới được thêm vào
-      schema: 'public',
-      table: 'messages'
-    },
-    (payload) => {
-      console.log('Phát hiện tin nhắn mới:', payload.new);
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Box - Konect</title>
+    <style>
+        /* Tổng thể màn hình */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #18191a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #e4e6eb;
+        }
 
-      // 2. Gọi hàm để hiển thị tin nhắn này lên giao diện HTML
-      displayNewMessage(payload.new);
+        /* Khung chứa chat */
+        #chat-container {
+            width: 400px;
+            background-color: #242526;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #3e4042;
+        }
+
+        /* CSS cho màn hình chờ (Empty State) */
+        #empty-state {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            text-align: center;
+            padding: 20px;
+            color: #b0b3b8;
+        }
+
+        /* CSS cho thanh tiêu đề và nút quay lại */
+        #chat-header {
+            padding: 10px 15px;
+            border-bottom: 1px solid #3e4042;
+            display: flex;
+            align-items: center;
+            background-color: #242526;
+        }
+
+        #back-btn {
+            background-color: transparent;
+            color: #b0b3b8;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-right: 15px;
+        }
+
+        #back-btn:hover {
+            background-color: #3a3b3c;
+            color: #e4e6eb;
+        }
+
+        #empty-state p {
+            font-size: 16px;
+            margin-top: 15px;
+            line-height: 1.5;
+        }
+
+        /* Nút test (sau này xoá đi) */
+        #test-join-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #3a3b3c;
+            color: #e4e6eb;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        #test-join-btn:hover { background-color: #4e4f50; }
+
+        /* Vùng hiển thị tin nhắn */
+        #chat-box {
+            height: 400px;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background-color: #242526;
+        }
+
+        /* Tùy chỉnh thanh cuộn cho tone tối */
+        #chat-box::-webkit-scrollbar {
+            width: 6px;
+        }
+        #chat-box::-webkit-scrollbar-thumb {
+            background-color: #3e4042;
+            border-radius: 3px;
+        }
+
+        /* Giao diện bong bóng tin nhắn */
+        .message {
+            max-width: 75%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            background-color: #3e4042;
+            color: #e4e6eb;
+            align-self: flex-start;
+            word-wrap: break-word;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        /* Tin nhắn của mình (Cần thêm logic JS để phân biệt, tạm thời tao cứ style trước) */
+        .message.user-message {
+            background-color: #0084ff;
+            color: white;
+            align-self: flex-end;
+        }
+
+        /* Chỗ nhập tin nhắn */
+        #input-area {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #3e4042;
+            background-color: #242526;
+        }
+
+        #message-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            background-color: #3a3b3c;
+            color: #e4e6eb;
+            border-radius: 20px;
+            outline: none;
+            font-size: 15px;
+        }
+
+        #message-input::placeholder {
+            color: #b0b3b8;
+        }
+
+        /* Nút Gửi */
+        #send-btn {
+            background-color: transparent;
+            color: #0084ff;
+            border: none;
+            padding: 0 15px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        #send-btn:hover {
+            color: #1a91ff;
+        }
+    </style>
+</head>
+<body>
+
+<div id="chat-container">
+
+    <div id="empty-state">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#b0b3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <p>Hãy tham gia một nhóm bất kỳ để giao lưu đi!</p>
+
+        <button id="test-join-btn" onclick="openChatRoom()">Test thử: Bấm để mở khung chat</button>
+    </div>
+
+    <div id="chat-ui" style="display: none; flex-direction: column; height: 100%;">
+
+        <div id="chat-header">
+            <button id="back-btn" onclick="closeChatRoom()">&#8592; Quay lại</button>
+            <span style="font-weight: bold;">Tên Nhóm Chat</span>
+        </div>
+
+        <div id="chat-box">
+        </div>
+
+        <div id="input-area">
+            <input type="text" id="message-input" placeholder="Nhập tin nhắn...">
+            <button id="send-btn">Gửi</button>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+    function openChatRoom() {
+        document.getElementById('empty-state').style.display = 'none';
+        document.getElementById('chat-ui').style.display = 'flex';
+        loadChatHistory();
     }
-  )
-  .subscribe();
 
-// 3. Hàm hiển thị tin nhắn (Nhóm Frontend sẽ tùy chỉnh giao diện ở đây)
-function displayNewMessage(msg) {
-    const chatContainer = document.getElementById('chat-box'); // ID của khung chat
-    const messageElement = document.createElement('div');
+    function closeChatRoom() {
+        document.getElementById('chat-ui').style.display = 'none';
+        document.getElementById('empty-state').style.display = 'flex';
+    }
 
-    messageElement.classList.add('message');
-    messageElement.innerText = `${msg.content}`; // Hiển thị nội dung tin nhắn
+    const supabaseUrl = 'https://dfbklcbregcxzngpiorx.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYmtsY2JyZWdjeHpuZ3Bpb3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTI2MTIsImV4cCI6MjA4OTQyODYxMn0.3EOOOodNiaa46ptAksdTY43_vknTIxhejcJCbVN441w';
 
-    chatContainer.appendChild(messageElement);
+    const mySupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    // Tự động cuộn xuống cuối cùng khi có tin nhắn mới
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-}
+    function displayNewMessage(msg) {
+        const chatContainer = document.getElementById('chat-box');
+        if (!chatContainer) return;
+
+        const noMsgText = document.getElementById('no-msg-text');
+        if (noMsgText) {
+            noMsgText.remove();
+        }
+
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message');
+        messageElement.innerText = `${msg.content}`;
+
+        chatContainer.appendChild(messageElement);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    async function loadChatHistory() {
+        const { data, error } = await mySupabase
+            .from('messages')
+            .select('*')
+            // Chú ý: Lấy data theo ID nhóm
+            .eq('group_id', 'b145cf3c-1969-40db-a95c-9854281de575')
+            .order('created_at', { ascending: true });
+
+        if (error) {
+            console.error('Lỗi load lịch sử:', error.message);
+            return;
+        }
+
+        const chatBox = document.getElementById('chat-box');
+        chatBox.innerHTML = '';
+
+        if (data && data.length > 0) {
+            data.forEach(msg => displayNewMessage(msg));
+        } else {
+            chatBox.innerHTML = `
+                <div id="no-msg-text" style="text-align: center; color: #b0b3b8; margin: auto; font-size: 14px; font-style: italic;">
+                    Có vẻ chưa ai mở lời với nhau thì phải. Hãy là người đầu tiên gửi lời chào! 👋
+                </div>
+            `;
+        }
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('message-input');
+        const content = input.value.trim();
+        if (!content) return;
+
+        // Dán 2 cái ID THẬT vào đây
+        const testGroupId = 'b145cf3c-1969-40db-a95c-9854281de575';
+        const testSenderId = 'f7083cda-d0e9-4689-a5d9-900516e3175d'; // ID thật mày vừa mò ra
+
+        const { error } = await mySupabase
+            .from('messages')
+            .insert([{
+                content: content,
+                group_id: testGroupId,
+                sender_id: testSenderId
+            }]);
+
+        if (error) {
+            console.error('Gửi lỗi nè fen:', error.message);
+            alert("Lỗi: " + error.message);
+        } else {
+            input.value = '';
+        }
+    }
+
+    // ĐÃ ĐỔI TÊN KÊNH THÀNH GROUP_ID ĐỂ NGHE ĐÚNG PHÒNG CHAT NÀY
+    const channel = mySupabase
+        .channel('b145cf3c-1969-40db-a95c-9854281de575')
+        .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'messages' },
+            (payload) => { displayNewMessage(payload.new); }
+        )
+        .subscribe();
+
+    document.getElementById('send-btn').onclick = sendMessage;
+    document.getElementById('message-input').onkeydown = (e) => {
+        if (e.key === 'Enter') sendMessage();
+    };
+</script>
+
+</body>
+</html>
