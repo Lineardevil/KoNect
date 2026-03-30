@@ -104,25 +104,58 @@
             border-radius: 3px;
         }
 
-        /* Giao diện bong bóng tin nhắn */
-        .message {
+        /* --- BẮT ĐẦU PHẦN CSS TIN NHẮN MỚI --- */
+        /* Bao bọc cả Tên và Bong bóng chat */
+        .message-wrapper {
+            display: flex;
+            flex-direction: column;
             max-width: 75%;
-            padding: 10px 15px;
-            border-radius: 18px;
-            background-color: #3e4042;
-            color: #e4e6eb;
-            align-self: flex-start;
-            word-wrap: break-word;
-            font-size: 15px;
-            line-height: 1.4;
+            margin-bottom: 5px;
         }
 
-        /* Tin nhắn của mình (Cần thêm logic JS để phân biệt, tạm thời tao cứ style trước) */
-        .message.user-message {
-            background-color: #0084ff;
-            color: white;
-            align-self: flex-end;
+        /* Phe của người khác (Nằm lề trái) */
+        .message-wrapper.left {
+            align-self: flex-start;
         }
+
+        /* Phe của mình (Nằm lề phải) */
+        .message-wrapper.right {
+            align-self: flex-end;
+            align-items: flex-end; /* Ép bong bóng chat dạt sang phải */
+        }
+
+        /* Tên người gửi (Chỉ hiện cho người khác) */
+        .sender-name {
+            font-size: 12px;
+            color: #8a8d91; /* Màu chữ tên mờ mờ cho tone tối */
+            margin-bottom: 4px;
+            margin-left: 12px;
+        }
+
+        /* Giao diện bong bóng chat chung */
+        .message {
+            max-width: 100%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            font-size: 15px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        /* Màu nền cho người khác (Giống y hệt lúc đầu) */
+        .message.other {
+            background-color: #3e4042;
+            color: #e4e6eb;
+        }
+
+        /* Màu nền cho mình (Tone tối, có viền đen đậm) */
+        .message.self {
+            background-color: #2b2b2e; /* Na ná màu nền khung chat */
+            color: #aeafaf;
+            border: 2.5px solid #121314; /* Viền đen đậm hơn nền */
+            box-shadow: 0 4px 2px rgba(0,0,0,0.2); /* Thêm tí bóng đổ cho nó nổi lên */
+        }
+        /* --- KẾT THÚC PHẦN CSS TIN NHẮN MỚI --- */
 
         /* Chỗ nhập tin nhắn */
         #input-area {
@@ -171,7 +204,7 @@
         <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#b0b3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
         </svg>
-        <p>Hãy tham gia một nhóm bất kỳ để giao lưu đi!</p>
+        <p>Hãy tham gia một nhóm bất kỳ để giao lưu!</p>
 
         <button id="test-join-btn" onclick="openChatRoom()">Test thử: Bấm để mở khung chat</button>
     </div>
@@ -213,7 +246,13 @@
 
     const mySupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+    // Cuốn sổ tay ghi nhớ ID của những người đã nhắn tin
+    const memberMap = {};
+    let memberCounter = 1; // Số thứ tự bắt đầu từ 1
+
+    // Hàm hiển thị tin nhắn (Đã nâng cấp Tên + Trái/Phải)
     function displayNewMessage(msg) {
+
         const chatContainer = document.getElementById('chat-box');
         if (!chatContainer) return;
 
@@ -222,11 +261,54 @@
             noMsgText.remove();
         }
 
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message');
-        messageElement.innerText = `${msg.content}`;
+        // CÁI ID THẬT CỦA MÀY
+        const myUserId = 'cceab40a-0fef-4f21-9bba-c62273b139bb';
 
-        chatContainer.appendChild(messageElement);
+        // 1. Tạo cái vỏ bọc bên ngoài
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('message-wrapper');
+
+        // 2. Tạo cái bong bóng chứa chữ
+        const messageBubble = document.createElement('div');
+        messageBubble.classList.add('message');
+        messageBubble.innerText = `${msg.content}`;
+
+        // 3. Phân luồng Trái/Phải
+        if (msg.sender_id === myUserId) {
+            // LÀ MÌNH GỬI: Nhảy sang phải, màu xanh
+            wrapper.classList.add('right');
+            messageBubble.classList.add('self');
+
+            // Mình gửi thì không cần hiện tên, nhét luôn bong bóng vào
+            wrapper.appendChild(messageBubble);
+
+        } else {
+            // LÀ NGƯỜI KHÁC GỬI: Nằm bên trái, màu xám, có tên ở trên
+            wrapper.classList.add('left');
+            messageBubble.classList.add('other');
+
+            // Tạo thẻ hiện tên
+            const nameLabel = document.createElement('div');
+            nameLabel.classList.add('sender-name');
+
+            // --- LOGIC ĐÁNH SỐ THÀNH VIÊN ---
+            // Nếu sổ tay chưa có ID của người này, thì ghi danh nó vào và cấp số
+            if (!memberMap[msg.sender_id]) {
+                memberMap[msg.sender_id] = memberCounter;
+                memberCounter++; // Tăng số lên cho người tiếp theo
+            }
+
+            // Lấy số thứ tự trong sổ tay ra in
+            nameLabel.innerText = `Thành viên ${memberMap[msg.sender_id]}`;
+            // ---------------------------------
+
+            // Nhét tên vào trước, rồi mới nhét bong bóng chat ở dưới
+            wrapper.appendChild(nameLabel);
+            wrapper.appendChild(messageBubble);
+        }
+
+        // 4. Bơm tất cả vào khung chat
+        chatContainer.appendChild(wrapper);
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
@@ -264,7 +346,7 @@
 
         // Dán 2 cái ID THẬT vào đây
         const testGroupId = 'b145cf3c-1969-40db-a95c-9854281de575';
-        const testSenderId = 'f7083cda-d0e9-4689-a5d9-900516e3175d'; // ID thật mày vừa mò ra
+        const testSenderId = 'cceab40a-0fef-4f21-9bba-c62273b139bb';
 
         const { error } = await mySupabase
             .from('messages')
