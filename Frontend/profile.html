@@ -345,7 +345,7 @@ function toggleEditMode() {
         
         const { data: newestGroups, error } = await supabaseClient
             .from('groups') 
-            .select('id, name, created_at') 
+            .select('id, title, created_at') 
             .order('created_at', { ascending: false })
             .limit(4);
 
