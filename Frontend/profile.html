@@ -397,30 +397,71 @@ if (error) {
 
     function closeCropModal() { document.getElementById('crop-modal').style.display = 'none'; if (cropper) cropper.destroy(); }
 
-    async function saveCroppedImage() {
-        if (!cropper) return;
-        const btn = document.getElementById('save-crop-btn');
-        btn.innerText = "Đang lưu..."; btn.disabled = true;
+async function saveCroppedImage() {
+    if (!cropper) return;
+    const btn = document.getElementById('save-crop-btn');
+    btn.innerText = "Đang lưu..."; 
+    btn.disabled = true;
 
-        const canvas = cropper.getCroppedCanvas({ maxWidth: currentCropType === 'avatar' ? 400 : 1200 });
-        const base64Image = canvas.toDataURL('image/jpeg', 0.8); 
-        const updateData = currentCropType === 'avatar' ? { avatar_url: base64Image } : { banner_url: base64Image };
-        
-        const { error } = await supabaseClient.auth.updateUser({ data: updateData });
+    // 1. Get canvas at a reasonable size
+    const canvas = cropper.getCroppedCanvas({ maxWidth: currentCropType === 'avatar' ? 400 : 1200 });
 
-        btn.innerText = "Áp dụng"; btn.disabled = false;
-        if (error) return alert("Lỗi: " + error.message);
-
-        if (currentCropType === 'avatar') {
-            const avatarDiv = document.getElementById('user-avatar');
-            avatarDiv.innerText = ''; avatarDiv.style.backgroundImage = `url(${base64Image})`;
-        } else {
-            document.getElementById('profile-banner-img').src = base64Image;
+    // 2. Convert Canvas to a binary Blob instead of a massive Base64 string
+    canvas.toBlob(async (blob) => {
+        if (!blob) {
+            alert("Lỗi xử lý ảnh!");
+            btn.innerText = "Áp dụng"; 
+            btn.disabled = false;
+            return;
         }
-        closeCropModal();
-    }
 
-    // --- HELPERS & VALIDATION ---
+        try {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) throw new Error("Chưa đăng nhập");
+
+            // 3. Create a unique filename (e.g., user123-170000000-avatar.jpeg)
+            const fileName = `${user.id}-${Date.now()}-${currentCropType}.jpeg`;
+
+            // 4. Upload the Blob to the 'profiles' bucket
+            const { error: uploadError } = await supabaseClient.storage
+                .from('profiles') 
+                .upload(fileName, blob, { 
+                    contentType: 'image/jpeg', 
+                    upsert: true 
+                });
+
+            if (uploadError) throw uploadError;
+
+            // 5. Get the clean, short public URL
+            const { data: { publicUrl } } = supabaseClient.storage
+                .from('profiles')
+                .getPublicUrl(fileName);
+
+            // 6. Update user_metadata with ONLY the short URL
+            const updateData = currentCropType === 'avatar' ? { avatar_url: publicUrl } : { banner_url: publicUrl };
+            const { error: updateError } = await supabaseClient.auth.updateUser({ data: updateData });
+
+            if (updateError) throw updateError;
+
+            // 7. Update the UI
+            if (currentCropType === 'avatar') {
+                const avatarDiv = document.getElementById('user-avatar');
+                avatarDiv.innerText = ''; 
+                avatarDiv.style.backgroundImage = `url(${publicUrl})`;
+            } else {
+                document.getElementById('profile-banner-img').src = publicUrl;
+            }
+            closeCropModal();
+
+        } catch (err) {
+            alert("Lỗi: " + err.message);
+        } finally {
+            btn.innerText = "Áp dụng"; 
+            btn.disabled = false;
+        }
+    }, 'image/jpeg', 0.8);
+}    // --- HELPERS & VALIDATION ---
+
 function formatBioText(text) {
     if (!text) return '<span style="color: var(--text-muted);">Chưa có tiểu sử...</span>';
     
