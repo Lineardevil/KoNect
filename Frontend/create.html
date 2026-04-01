@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <title>KoNect - Tạo nhóm</title>
 
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.css">
+<script src="https://cdn.jsdelivr.net/npm/cropperjs"></script>
+
+<link rel="stylesheet" href="/assets/style.css">
 </head>
 
 <body class="create-page">
@@ -26,24 +29,24 @@
 
 <div class="section">
     <div class="label">Tên nhóm</div>
-    <input id="name" placeholder="Nhập tên nhóm...">
+    <input id="name" maxlength="50" placeholder="Nhập tên nhóm...">
 </div>
 
 <div class="section">
     <div class="label">Mô tả</div>
-    <textarea id="desc" placeholder="Mô tả nhóm..."></textarea>
+    <textarea id="desc" maxlength="200" placeholder="Mô tả nhóm..."></textarea>
 </div>
 
 <div class="section">
     <div class="label">Số lượng tối đa</div>
-    <input type="number" id="maxMember" placeholder="Tối đa 50">
+    <input type="number" id="maxMember" min="1" max="50" placeholder="Tối đa 50">
 </div>
 
 <div class="section">
     <div class="label">Quyền riêng tư</div>
     <div class="privacy-wrapper">
-        <div class="privacy-option active" onclick="selectPrivacy(this)" data-value="public">🌍 Public</div>
-        <div class="privacy-option" onclick="selectPrivacy(this)" data-value="private">🔒 Private</div>
+        <div class="privacy-option active" onclick="selectPrivacy(this)" data-value="public">Public</div>
+        <div class="privacy-option" onclick="selectPrivacy(this)" data-value="private">Private</div>
     </div>
 </div>
 
@@ -53,7 +56,7 @@
     <div class="tag-box">
 
         <div class="category">
-            <div class="category-title">⚽ Thể thao</div>
+            <div class="category-title">Thể thao</div>
             <div class="tags-container">
                 <div class="tag">bóng đá</div>
                 <div class="tag">bóng rổ</div>
@@ -62,7 +65,7 @@
         </div>
 
         <div class="category">
-            <div class="category-title">🎨 Sở thích</div>
+            <div class="category-title">Sở thích</div>
             <div class="tags-container">
                 <div class="tag">đọc sách</div>
                 <div class="tag">nấu ăn</div>
@@ -71,7 +74,7 @@
         </div>
 
         <div class="category">
-            <div class="category-title">💻 Công nghệ</div>
+            <div class="category-title">Công nghệ</div>
             <div class="tags-container">
                 <div class="tag">lập trình</div>
                 <div class="tag">AI</div>
@@ -94,40 +97,91 @@
 
 <div id="toast" class="toast"></div>
 
-<script>
-let privacy="public";
+<!-- CROP MODAL -->
+<div id="cropModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); justify-content:center; align-items:center;">
+    <div style="background:#222; padding:20px; border-radius:12px; max-width:90%;">
+        <img id="cropImage" style="max-width:100%;">
+        <div style="margin-top:10px; text-align:right;">
+            <button onclick="confirmCrop()" class="btn">Crop & OK</button>
+        </div>
+    </div>
+</div>
 
-// UPLOAD
+<script>
+let privacy = "public";
+let cropper;
+let croppedBlob;
+
+// ================= UPLOAD =================
 function triggerUpload(){
     document.getElementById("coverInput").click();
 }
 
-document.getElementById("coverInput").addEventListener("change", function(e){
+document.getElementById("coverInput").addEventListener("change", handleUpload);
+
+function handleUpload(e){
     let file = e.target.files[0];
     if(!file) return;
 
-    let reader = new FileReader();
-    reader.onload = function(event){
-        let box = document.querySelector(".upload-box");
+    if(file.size > 5 * 1024 * 1024){
+        toast("Ảnh tối đa 5MB","error");
+        return;
+    }
 
+    let imgURL = URL.createObjectURL(file);
+    let image = document.getElementById("cropImage");
+
+    image.src = imgURL;
+    document.getElementById("cropModal").style.display = "flex";
+
+    if(cropper) cropper.destroy();
+
+    cropper = new Cropper(image, {
+        aspectRatio: 16/9,
+        viewMode: 1
+    });
+}
+
+function confirmCrop(){
+    if(!cropper) return;
+
+    let canvas = cropper.getCroppedCanvas({
+        width: 1920,
+        height: 1080
+    });
+
+    canvas.toBlob(blob => {
+        croppedBlob = blob;
+
+        let preview = URL.createObjectURL(blob);
+
+        let box = document.querySelector(".upload-box");
         box.innerHTML = `
-            <img src="${event.target.result}">
+            <img src="${preview}">
             <div class="remove-img" onclick="removeImage(event)">×</div>
         `;
-    }
-    reader.readAsDataURL(file);
-});
+
+        document.getElementById("cropModal").style.display = "none";
+
+        // reset input để chọn lại cùng file vẫn chạy
+        document.getElementById("coverInput").value = "";
+    }, "image/jpeg", 0.9);
+}
 
 function removeImage(e){
     e.stopPropagation();
+    croppedBlob = null;
+
     let box = document.querySelector(".upload-box");
     box.innerHTML = `
         <span id="uploadText">Click để chọn ảnh</span>
         <input type="file" id="coverInput" accept="image/*" hidden>
     `;
+
+    document.getElementById("coverInput").addEventListener("change", handleUpload);
 }
 
-// TAG
+// ================= TAG =================
 document.addEventListener("click", e=>{
     if(e.target.classList.contains("tag")){
         if(e.target.classList.contains("disabled")) return;
@@ -153,7 +207,7 @@ function updateTags(){
     }
 }
 
-// CUSTOM TAG
+// ================= CUSTOM TAG =================
 document.getElementById("customInput").addEventListener("keypress", e=>{
     if(e.key==="Enter"){
         let val=e.target.value.trim();
@@ -181,20 +235,19 @@ document.addEventListener("click", e=>{
     }
 });
 
-// PRIVACY
+// ================= PRIVACY =================
 function selectPrivacy(el){
     document.querySelectorAll(".privacy-option").forEach(e=>e.classList.remove("active"));
     el.classList.add("active");
     privacy=el.dataset.value;
 }
 
-// SHAKE
+// ================= UI =================
 function shake(el){
     el.classList.add("shake");
     setTimeout(()=>el.classList.remove("shake"),300);
 }
 
-// TOAST
 function toast(msg,type){
     let t=document.getElementById("toast");
     t.innerText=msg;
@@ -202,7 +255,7 @@ function toast(msg,type){
     setTimeout(()=>t.classList.remove("show"),2000);
 }
 
-// CREATE
+// ================= CREATE =================
 async function create(){
     let name=document.getElementById("name");
     let desc=document.getElementById("desc");
@@ -224,23 +277,34 @@ async function create(){
         return;
     }
 
-    // LẤY TAGS
+    // VALIDATE TRƯỚC
+    if(!croppedBlob){
+        toast("Vui lòng chọn ảnh bìa","error");
+        return;
+    }
+
+    if(name.value.length > 50){
+        toast("Tên tối đa 50 ký tự","error");
+        shake(name);
+        return;
+    }
+
+    if(desc.value.length > 200){
+        toast("Mô tả tối đa 200 ký tự","error");
+        shake(desc);
+        return;
+    }
+
     let tags = Array.from(document.querySelectorAll(".tag.active"))
         .map(t => t.innerText.replace("×","").trim());
 
-    // TẠO FORM DATA (để gửi cả ảnh)
     let formData = new FormData();
-
     formData.append("name", name.value);
     formData.append("description", desc.value);
     formData.append("maxMember", member.value);
     formData.append("privacy", privacy);
     formData.append("tags", JSON.stringify(tags));
-
-    let fileInput = document.getElementById("coverInput");
-    if(fileInput && fileInput.files[0]){
-        formData.append("image", fileInput.files[0]);
-    }
+    formData.append("image", croppedBlob, "cover.jpg");
 
     try {
         let res = await fetch("/api/groups", {
@@ -252,6 +316,10 @@ async function create(){
 
         if(res.ok){
             toast("Tạo nhóm thành công!","success");
+
+            setTimeout(() => {
+                window.location.href = "/main";
+            }, 1200);
         } else {
             toast(data.message || "Tạo nhóm thất bại","error");
         }
@@ -263,7 +331,7 @@ async function create(){
 }
 
 function goHome(){
-    window.location="main.html";
+    window.location.href = "/main";
 }
 </script>
 
