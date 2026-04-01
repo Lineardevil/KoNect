@@ -5,28 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Box - Konect</title>
     <style>
-        /* Tổng thể màn hình */
+        /* Reset body cho bám sát màn hình */
         body {
             font-family: Arial, sans-serif;
             background-color: #18191a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             margin: 0;
+            height: 100vh;
             color: #e4e6eb;
         }
 
-        /* Khung chứa chat */
-        #chat-container {
-            width: 400px;
+        /* Layout 2 cột thần thánh */
+        #messenger-layout {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Cột trái (Sidebar) */
+        #sidebar {
+            width: 350px; /* Độ rộng cột danh sách */
             background-color: #242526;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            border-right: 1px solid #3e4042;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            border-bottom: 1px solid #3e4042;
+        }
+
+        .friend-list {
+            overflow-y: auto;
+            flex: 1;
+            padding: 10px;
+        }
+
+        .friend-item {
+            padding: 15px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: transparent;
+        }
+
+        .friend-item:hover {
+            background-color: #3a3b3c;
+        }
+
+        /* Cột phải (Khung chat cũ của mày) */
+        #chat-container {
+            flex: 1; /* Chiếm toàn bộ phần diện tích còn lại */
+            background-color: #242526;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            border: 1px solid #3e4042;
+            /* Đã bỏ cái width: 400px và cái border đi cho nó bung lụa */
         }
 
         /* CSS cho màn hình chờ (Empty State) */
@@ -86,7 +122,7 @@
 
         /* Vùng hiển thị tin nhắn */
         #chat-box {
-            height: 400px;
+            flex: 1;
             padding: 15px;
             overflow-y: auto;
             display: flex;
@@ -196,33 +232,47 @@
         }
     </style>
 </head>
+
 <body>
 
-<div id="chat-container">
+<div id="messenger-layout">
 
-    <div id="empty-state">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#b0b3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-        </svg>
-        <p>Hãy tham gia một nhóm bất kỳ để giao lưu!</p>
-
-        <button id="test-join-btn" onclick="openChatRoom()">Test thử: Bấm để mở khung chat</button>
+    <div id="sidebar">
+        <div class="sidebar-header">Đoạn Chat</div>
+        <div class="friend-list">
+            <div class="friend-item" style="background-color: #3a3b3c;" onclick="openChatRoom()">Nhóm KoNect (Đang chọn)</div>
+            <div class="friend-item">Thằng A</div>
+            <div class="friend-item">Thằng B</div>
+            <div class="friend-item">Nhóm Đồ Án</div>
+        </div>
     </div>
 
-    <div id="chat-ui" style="display: none; flex-direction: column; height: 100%;">
+    <div id="chat-container">
 
-        <div id="chat-header">
-            <button id="back-btn" onclick="closeChatRoom()">&#8592; Quay lại</button>
-            <span style="font-weight: bold;">Tên Nhóm Chat</span>
+        <div id="empty-state">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#b0b3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <p>Hãy tham gia một nhóm bất kỳ để giao lưu!</p>
+
         </div>
 
-        <div id="chat-box">
+        <div id="chat-ui" style="display: none; flex-direction: column; height: 100%;">
+
+            <div id="chat-header">
+                <button id="back-btn" onclick="closeChatRoom()">&#8592; Quay lại</button>
+                <span style="font-weight: bold;">Tên Nhóm Chat</span>
+            </div>
+
+            <div id="chat-box">
+            </div>
+
+            <div id="input-area">
+                <input type="text" id="message-input" placeholder="Nhập tin nhắn...">
+                <button id="send-btn">Gửi</button>
+            </div>
         </div>
 
-        <div id="input-area">
-            <input type="text" id="message-input" placeholder="Nhập tin nhắn...">
-            <button id="send-btn">Gửi</button>
-        </div>
     </div>
 
 </div>
