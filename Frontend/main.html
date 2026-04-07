@@ -102,8 +102,9 @@
     <div class="nav-right">
         <span id="uName" style="color: #888; font-size: 13px;">Đang tải...</span>
         <div class="nav-btns" style="display: flex; gap: 10px;">
-            <button class="custom-btn" onclick="window.location.href='profile.html'">Hồ sơ</button>
-            <button class="custom-btn btn-create" onclick="window.location.href='create.html'">Tạo nhóm</button>
+            <!-- Đã sửa thành /profile và /create -->
+            <button class="custom-btn" onclick="window.location.href='/profile'">Hồ sơ</button>
+            <button class="custom-btn btn-create" onclick="window.location.href='/create'">Tạo nhóm</button>
             <button class="custom-btn btn-logout" onclick="logout()">Đăng xuất</button>
         </div>
     </div>
@@ -129,14 +130,14 @@
     async function init() {
         // 1. LẤY THÔNG TIN USER TỪ SESSION
         const { data: { session } } = await supabaseClient.auth.getSession();
-        
+
         if (session) {
             // Hiển thị Email hoặc Full Name từ metadata nếu có
             const displayName = session.user.user_metadata.full_name || session.user.email.split('@')[0];
             document.getElementById('uName').innerText = "Chào, " + displayName;
         } else {
-            // Nếu chưa đăng nhập thì đuổi về trang chủ
-            window.location.href = 'index.html';
+            // Đã sửa: Nếu chưa đăng nhập thì đuổi về trang chủ (route /)
+            window.location.href = '/';
         }
 
         // 2. LẤY DANH SÁCH NHÓM
@@ -169,7 +170,8 @@
 
     async function logout() {
         await supabaseClient.auth.signOut();
-        window.location.href = 'index.html';
+        // Đã sửa: Điều hướng về / thay vì index.html
+        window.location.href = '/';
     }
 
     function search() {
