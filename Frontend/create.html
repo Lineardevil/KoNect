@@ -97,12 +97,21 @@
 
 <div id="toast" class="toast"></div>
 
-<!-- CROP MODAL -->
-<div id="cropModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); justify-content:center; align-items:center;">
-    <div style="background:#222; padding:20px; border-radius:12px; max-width:90%;">
-        <img id="cropImage" style="max-width:100%;">
-        <div style="margin-top:10px; text-align:right;">
-            <button onclick="confirmCrop()" class="btn">Crop & OK</button>
+<!-- CROP MODAL (Đã sửa lỗi tràn màn hình và thêm nút Hủy) -->
+<div id="cropModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index: 9999;">
+    <!-- Khung Modal -->
+    <div style="background:#222; padding:20px; border-radius:12px; width:90%; max-width:700px; max-height:90vh; display:flex; flex-direction:column;">
+        <h3 style="color: white; margin-top: 0; margin-bottom: 15px;">Chỉnh sửa ảnh bìa</h3>
+
+        <!-- Khung chứa ảnh (Giới hạn chiều cao tự động) -->
+        <div style="flex: 1; min-height: 0; background: #000; border-radius: 8px; overflow: hidden; display: flex; align-items: center;">
+            <img id="cropImage" style="display: block; max-width: 100%; max-height: 100%;">
+        </div>
+
+        <!-- Khu vực nút bấm -->
+        <div style="margin-top:15px; display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0;">
+            <button onclick="closeCropModal()" class="btn" style="background: #444; width: 100px;">Hủy</button>
+            <button onclick="confirmCrop()" class="btn" style="width: 120px;">Crop & OK</button>
         </div>
     </div>
 </div>
@@ -166,6 +175,16 @@ function confirmCrop(){
         // reset input để chọn lại cùng file vẫn chạy
         document.getElementById("coverInput").value = "";
     }, "image/jpeg", 0.9);
+}
+
+// Đóng modal cắt ảnh
+function closeCropModal() {
+    document.getElementById("cropModal").style.display = "none";
+    if (cropper) {
+        cropper.destroy();
+    }
+    // Reset lại ô chọn file để có thể chọn lại chính ảnh đó nếu muốn
+    document.getElementById("coverInput").value = "";
 }
 
 function removeImage(e){
