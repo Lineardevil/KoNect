@@ -140,14 +140,17 @@ function handleUpload(e){
     document.getElementById("cropModal").style.display = "flex";
     image.src = imgURL;
 
-    if(cropper) {
-        cropper.replace(imgURL);
-    } else {
-        cropper = new Cropper(image, {
-            aspectRatio: 16/9,
-            viewMode: 1
-        });
-    }
+    // Thêm setTimeout để trình duyệt kịp hiển thị modal trước khi gọi Cropper
+    setTimeout(() => {
+        if(cropper) {
+            cropper.replace(imgURL);
+        } else {
+            cropper = new Cropper(image, {
+                aspectRatio: 16/9,
+                viewMode: 1
+            });
+        }
+    }, 50);
 }
 
 function confirmCrop(){
