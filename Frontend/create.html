@@ -5,7 +5,7 @@
 <title>KoNect - Tạo nhóm</title>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.css">
-<script src="https://cdn.jsdelivr.net/npm/cropperjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
 
 <link rel="stylesheet" href="/assets/style.css">
 </head>
@@ -152,14 +152,27 @@ function handleUpload(e){
 }
 
 function confirmCrop(){
-    if(!cropper) return;
+    if(!cropper){
+        toast("Lỗi crop ảnh","error");
+        return;
+    }
 
     let canvas = cropper.getCroppedCanvas({
         width: 1920,
         height: 1080
     });
 
+    if(!canvas){
+        toast("Không thể crop ảnh","error");
+        return;
+    }
+
     canvas.toBlob(blob => {
+        if(!blob){
+            toast("Lỗi xử lý ảnh","error");
+            return;
+        }
+
         croppedBlob = blob;
 
         let preview = URL.createObjectURL(blob);
@@ -172,7 +185,6 @@ function confirmCrop(){
 
         document.getElementById("cropModal").style.display = "none";
 
-        // 🔴 FIX: destroy cropper
         cropper.destroy();
         cropper = null;
 
