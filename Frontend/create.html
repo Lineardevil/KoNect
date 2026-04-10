@@ -18,12 +18,13 @@
 
 <div class="container">
 
+<!-- UPLOAD -->
 <div class="section">
     <div class="label">Chọn ảnh bìa cho nhóm của bạn</div>
     <div class="upload-box" onclick="triggerUpload()">
         <span id="uploadText">Click để chọn ảnh</span>
+        <input type="file" id="coverInput" accept="image/*" hidden>
     </div>
-    <input type="file" id="coverInput" accept="image/*" hidden>
 </div>
 
 <div class="section">
@@ -96,17 +97,16 @@
 
 <div id="toast" class="toast"></div>
 
-<div id="cropModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index: 9999;">
-    <div style="background:#222; padding:20px; border-radius:12px; width:90%; max-width:700px; max-height:90vh; display:flex; flex-direction:column;">
-        <h3 style="color: white; margin-top: 0; margin-bottom: 15px;">Chỉnh sửa ảnh bìa</h3>
-
-        <div style="flex: 1; min-height: 0; background: #000; border-radius: 8px; overflow: hidden; display: flex; align-items: center;">
-            <img id="cropImage" style="display: block; max-width: 100%; max-height: 100%;">
+<!-- CROP MODAL -->
+<div id="cropModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); justify-content:center; align-items:center;">
+    <div style="background:#222; padding:20px; border-radius:12px; max-width:90%; max-height:90vh; display:flex; flex-direction:column;">
+        
+        <div class="crop-container" style="flex:1; min-height:0; background:#000; border-radius:8px;">
+            <img id="cropImage" style="max-width:100%; max-height:100%;">
         </div>
 
-        <div style="margin-top:15px; display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0;">
-            <button onclick="closeCropModal()" class="btn" style="background: #444; width: 100px;">Hủy</button>
-            <button onclick="confirmCrop()" class="btn" style="width: 120px;">Crop & OK</button>
+        <div style="margin-top:10px; text-align:right;">
+            <button onclick="confirmCrop()" class="btn">Crop & OK</button>
         </div>
     </div>
 </div>
@@ -115,6 +115,7 @@
 let privacy = "public";
 let cropper;
 let croppedBlob;
+let isSubmitting = false;
 
 // ================= UPLOAD =================
 function triggerUpload(){
@@ -129,20 +130,17 @@ function handleUpload(e){
 
     if(file.size > 5 * 1024 * 1024){
         toast("Ảnh tối đa 5MB","error");
-        e.target.value = "";
         return;
     }
 
     let imgURL = URL.createObjectURL(file);
     let image = document.getElementById("cropImage");
 
-    // Hiển thị modal trước để cropper lấy kích thước khung chứa chính xác
-    document.getElementById("cropModal").style.display = "flex";
     image.src = imgURL;
+    document.getElementById("cropModal").style.display = "flex";
 
-    // Thêm setTimeout để trình duyệt kịp hiển thị modal trước khi gọi Cropper
     setTimeout(() => {
-        if(cropper) {
+        if(cropper){
             cropper.replace(imgURL);
         } else {
             cropper = new Cropper(image, {
@@ -161,11 +159,6 @@ function confirmCrop(){
         height: 1080
     });
 
-    if (!canvas) {
-        toast("Vui lòng đợi ảnh tải xong", "error");
-        return;
-    }
-
     canvas.toBlob(blob => {
         croppedBlob = blob;
 
@@ -173,22 +166,17 @@ function confirmCrop(){
 
         let box = document.querySelector(".upload-box");
         box.innerHTML = `
-            <img src="${preview}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block;">
+            <img src="${preview}">
             <div class="remove-img" onclick="removeImage(event)">×</div>
         `;
 
         document.getElementById("cropModal").style.display = "none";
-        document.getElementById("coverInput").value = "";
-    }, "image/jpeg", 0.9);
-}
 
-function closeCropModal() {
-    document.getElementById("cropModal").style.display = "none";
-    if (cropper) {
+        // 🔴 FIX: destroy cropper
         cropper.destroy();
         cropper = null;
-    }
-    document.getElementById("coverInput").value = "";
+
+    }, "image/jpeg", 0.9);
 }
 
 function removeImage(e){
@@ -196,9 +184,12 @@ function removeImage(e){
     croppedBlob = null;
 
     let box = document.querySelector(".upload-box");
-    box.innerHTML = `<span id="uploadText">Click để chọn ảnh</span>`;
+    box.innerHTML = `
+        <span id="uploadText">Click để chọn ảnh</span>
+        <input type="file" id="coverInput" accept="image/*" hidden>
+    `;
 
-    document.getElementById("coverInput").value = "";
+    document.getElementById("coverInput").addEventListener("change", handleUpload);
 }
 
 // ================= TAG =================
@@ -211,39 +202,39 @@ document.addEventListener("click", e=>{
 });
 
 function updateTags(){
-    let all = document.querySelectorAll(".tag");
-    let active = document.querySelectorAll(".tag.active");
+    let all=document.querySelectorAll(".tag");
+    let active=document.querySelectorAll(".tag.active");
 
-    document.getElementById("tagCount").innerText = active.length;
+    document.getElementById("tagCount").innerText=active.length;
 
-    if(active.length >= 5){
-        all.forEach(t => {
+    if(active.length>=5){
+        all.forEach(t=>{
             if(!t.classList.contains("active")){
                 t.classList.add("disabled");
             }
         });
     } else {
-        all.forEach(t => t.classList.remove("disabled"));
+        all.forEach(t=>t.classList.remove("disabled"));
     }
 }
 
 // ================= CUSTOM TAG =================
 document.getElementById("customInput").addEventListener("keypress", e=>{
-    if(e.key === "Enter"){
-        let val = e.target.value.trim();
+    if(e.key==="Enter"){
+        let val=e.target.value.trim();
         if(!val) return;
 
-        if(document.querySelectorAll(".tag.active").length >= 5){
+        if(document.querySelectorAll(".tag.active").length>=5){
             toast("Tối đa 5 tag","error");
             return;
         }
 
-        let t = document.createElement("div");
-        t.className = "tag active";
-        t.innerHTML = val + ' <span class="remove">×</span>';
+        let t=document.createElement("div");
+        t.className="tag active";
+        t.innerHTML=val+' <span class="remove">×</span>';
 
         document.getElementById("customTags").appendChild(t);
-        e.target.value = "";
+        e.target.value="";
         updateTags();
     }
 });
@@ -257,66 +248,58 @@ document.addEventListener("click", e=>{
 
 // ================= PRIVACY =================
 function selectPrivacy(el){
-    document.querySelectorAll(".privacy-option").forEach(e => e.classList.remove("active"));
+    document.querySelectorAll(".privacy-option").forEach(e=>e.classList.remove("active"));
     el.classList.add("active");
-    privacy = el.dataset.value;
+    privacy=el.dataset.value;
 }
 
 // ================= UI =================
 function shake(el){
     el.classList.add("shake");
-    setTimeout(() => el.classList.remove("shake"), 300);
+    setTimeout(()=>el.classList.remove("shake"),300);
 }
 
-function toast(msg, type){
-    let t = document.getElementById("toast");
-    t.innerText = msg;
-    t.className = "toast show " + type;
-    setTimeout(() => t.classList.remove("show"), 2000);
+function toast(msg,type){
+    let t=document.getElementById("toast");
+    t.innerText=msg;
+    t.className="toast show "+type;
+    setTimeout(()=>t.classList.remove("show"),2000);
 }
 
 // ================= CREATE =================
 async function create(){
-    let name = document.getElementById("name");
-    let desc = document.getElementById("desc");
-    let member = document.getElementById("maxMember");
+    if(isSubmitting) return;
+    isSubmitting = true;
 
-    let error = false;
+    let name=document.getElementById("name");
+    let desc=document.getElementById("desc");
+    let member=document.getElementById("maxMember");
 
-    if(!name.value){shake(name); error = true;}
-    if(!desc.value){shake(desc); error = true;}
-    if(document.querySelectorAll(".tag.active").length == 0){
-        shake(document.getElementById("tagSection")); error = true;
+    let error=false;
+
+    if(!name.value){shake(name); error=true;}
+    if(!desc.value){shake(desc); error=true;}
+    if(document.querySelectorAll(".tag.active").length==0){
+        shake(document.getElementById("tagSection")); error=true;
     }
-    if(member.value < 1 || member.value > 50){
-        shake(member); error = true;
+    if(member.value<1||member.value>50){
+        shake(member); error=true;
     }
 
     if(error){
         toast("Thiếu thông tin!","error");
+        isSubmitting = false;
         return;
     }
 
-    // VALIDATE TRƯỚC
     if(!croppedBlob){
         toast("Vui lòng chọn ảnh bìa","error");
-        return;
-    }
-
-    if(name.value.length > 50){
-        toast("Tên tối đa 50 ký tự","error");
-        shake(name);
-        return;
-    }
-
-    if(desc.value.length > 200){
-        toast("Mô tả tối đa 200 ký tự","error");
-        shake(desc);
+        isSubmitting = false;
         return;
     }
 
     let tags = Array.from(document.querySelectorAll(".tag.active"))
-        .map(t => t.innerText.replace("×","").trim());
+        .map(t => t.childNodes[0].nodeValue.trim());
 
     let formData = new FormData();
     formData.append("name", name.value);
@@ -332,14 +315,12 @@ async function create(){
             body: formData
         });
 
-        let data = await res.json();
+        let data = {};
+        try { data = await res.json(); } catch(e){}
 
         if(res.ok){
             toast("Tạo nhóm thành công!","success");
-
-            setTimeout(() => {
-                window.location.href = "/main";
-            }, 1200);
+            setTimeout(()=> window.location.href="/main",1200);
         } else {
             toast(data.message || "Tạo nhóm thất bại","error");
         }
@@ -348,6 +329,8 @@ async function create(){
         console.error(err);
         toast("Không kết nối được server","error");
     }
+
+    isSubmitting = false;
 }
 
 function goHome(){

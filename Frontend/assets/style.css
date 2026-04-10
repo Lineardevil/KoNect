@@ -1399,7 +1399,37 @@ body.create-page .btn:active { transform: translateY(0); }
 }
 
 .shake { animation: shake 0.3s; border: 2px solid var(--error) !important; }
+/* FIX CROP MODAL OVERFLOW */
+#cropModal {
+    overflow: hidden;
+}
 
+#cropModal > div {
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* container chứa cropper */
+#cropModal .crop-container {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#cropModal .crop-container .cropper-container {
+    max-width: 100% !important;
+    max-height: 100% !important;
+}
+
+/* đảm bảo canvas không phá layout */
+#cropModal .crop-container canvas {
+    max-width: 100% !important;
+    max-height: 100% !important;
+}
 
 /* ============================================================
    10. reset-password.html
