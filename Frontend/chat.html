@@ -240,11 +240,26 @@
     <div id="sidebar">
         <div class="sidebar-header">Đoạn Chat</div>
         <div class="friend-list">
-            <div class="friend-item" style="background-color: #3a3b3c;" onclick="openChatRoom()">Nhóm KoNect (Đang chọn)</div>
-            <div class="friend-item">Thằng A</div>
-            <div class="friend-item">Thằng B</div>
-            <div class="friend-item">Nhóm Đồ Án</div>
+            <div class="sidebar-section">
+                <div class="section-header" onclick="toggleSection('friends-list')">
+                    <span>BẠN BÈ - FRIENDS</span>
+                    <span class="arrow">▼</span>
+                </div>
+                <div id="friends-list" class="section-content">
+                    <div class="friend-item" style="font-style: italic; color: #666;">Chưa có ai ở đây cả...</div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="section-header" onclick="toggleSection('groups-list')">
+                    <span> CÁC NHÓM - GROUPS </span>
+                    <span class="arrow">▼</span>
+                </div>
+                <div id="groups-list" class="section-content">
+                </div>
+            </div>
         </div>
+
     </div>
 
     <div id="chat-container">
@@ -255,6 +270,15 @@
             </svg>
             <p>Hãy tham gia một nhóm bất kỳ để giao lưu!</p>
 
+        </div>
+
+        <div id="join-state" style="display: none; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center; padding: 20px; color: #b0b3b8;">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ff4d4f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <p style="font-size: 16px; margin-top: 15px;">Bạn chưa là thành viên của nhóm này!</p>
+            <button id="join-btn" style="margin-top: 15px; padding: 10px 20px; background-color: #0084ff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Tham gia </button>
         </div>
 
         <div id="chat-ui" style="display: none; flex-direction: column; height: 100%;">
@@ -280,154 +304,199 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    function openChatRoom() {
-        document.getElementById('empty-state').style.display = 'none';
-        document.getElementById('chat-ui').style.display = 'flex';
-        loadChatHistory();
-    }
-
-    function closeChatRoom() {
-        document.getElementById('chat-ui').style.display = 'none';
-        document.getElementById('empty-state').style.display = 'flex';
-    }
-
     const supabaseUrl = 'https://dfbklcbregcxzngpiorx.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYmtsY2JyZWdjeHpuZ3Bpb3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTI2MTIsImV4cCI6MjA4OTQyODYxMn0.3EOOOodNiaa46ptAksdTY43_vknTIxhejcJCbVN441w';
-
     const mySupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    // Cuốn sổ tay ghi nhớ ID của những người đã nhắn tin
-    const memberMap = {};
-    let memberCounter = 1; // Số thứ tự bắt đầu từ 1
+    // BƯỚC 0: BIẾN TOÀN CỤC (Dùng let hết cho tao!)
+    let globalUserId = null;
+    let currentGroupId = null;
+    let currentRealtimeChannel = null;
 
-    // Hàm hiển thị tin nhắn (Đã nâng cấp Tên + Trái/Phải)
-    function displayNewMessage(msg) {
-
-        const chatContainer = document.getElementById('chat-box');
-        if (!chatContainer) return;
-
-        const noMsgText = document.getElementById('no-msg-text');
-        if (noMsgText) {
-            noMsgText.remove();
-        }
-
-        // CÁI ID THẬT CỦA MÀY
-        const myUserId = 'cceab40a-0fef-4f21-9bba-c62273b139bb';
-
-        // 1. Tạo cái vỏ bọc bên ngoài
-        const wrapper = document.createElement('div');
-        wrapper.classList.add('message-wrapper');
-
-        // 2. Tạo cái bong bóng chứa chữ
-        const messageBubble = document.createElement('div');
-        messageBubble.classList.add('message');
-        messageBubble.innerText = `${msg.content}`;
-
-        // 3. Phân luồng Trái/Phải
-        if (msg.sender_id === myUserId) {
-            // LÀ MÌNH GỬI: Nhảy sang phải, màu xanh
-            wrapper.classList.add('right');
-            messageBubble.classList.add('self');
-
-            // Mình gửi thì không cần hiện tên, nhét luôn bong bóng vào
-            wrapper.appendChild(messageBubble);
-
+    // 1. KHỞI CHẠY APP
+    async function initApp() {
+        const { data: { user } } = await mySupabase.auth.getUser();
+        if (user) {
+            globalUserId = user.id;
+            console.log("(<33) Đã nhận diện chính chủ: ", globalUserId);
         } else {
-            // LÀ NGƯỜI KHÁC GỬI: Nằm bên trái, màu xám, có tên ở trên
-            wrapper.classList.add('left');
-            messageBubble.classList.add('other');
-
-            // Tạo thẻ hiện tên
-            const nameLabel = document.createElement('div');
-            nameLabel.classList.add('sender-name');
-
-            // --- LOGIC ĐÁNH SỐ THÀNH VIÊN ---
-            // Nếu sổ tay chưa có ID của người này, thì ghi danh nó vào và cấp số
-            if (!memberMap[msg.sender_id]) {
-                memberMap[msg.sender_id] = memberCounter;
-                memberCounter++; // Tăng số lên cho người tiếp theo
-            }
-
-            // Lấy số thứ tự trong sổ tay ra in
-            nameLabel.innerText = `Thành viên ${memberMap[msg.sender_id]}`;
-            // ---------------------------------
-
-            // Nhét tên vào trước, rồi mới nhét bong bóng chat ở dưới
-            wrapper.appendChild(nameLabel);
-            wrapper.appendChild(messageBubble);
+            globalUserId = 'cceab40a-0fef-4f21-9bba-c62273b139bb'; // ID Test của m
+            console.warn("(!!!) Dùng ID Test tạm thời: ", globalUserId);
         }
+        loadSidebar(); // Có ID rồi mới load Sidebar
+    }
+    initApp();
 
-        // 4. Bơm tất cả vào khung chat
-        chatContainer.appendChild(wrapper);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
+    // 2. LOAD SIDEBAR (PHÂN CHIA MẢNG DISCORD STYLE)
+    async function loadSidebar() {
+        console.log("Đang load sidebar cho user:", globalUserId);
+
+        const { data, error } = await mySupabase
+            .from('group_members')
+            .select(`groups ( id, title )`)
+            .eq('user_id', globalUserId)
+            .eq('status', 'joined');
+
+        if (error) return console.error("Lỗi lọc sidebar:", error);
+
+        // 👉 CHỖ THAY ĐỔI: Chỉ nhắm vào cái mảng NHÓM thôi m nhé
+        const groupsContainer = document.getElementById('groups-list');
+        if (!groupsContainer) return;
+
+        groupsContainer.innerHTML = ''; // Xóa rác cũ của riêng mảng nhóm
+
+        if (data && data.length > 0) {
+            data.forEach(item => {
+                const group = item.groups;
+                if (group) {
+                    const div = document.createElement('div');
+                    div.classList.add('friend-item');
+                    div.innerText = group.title || "Nhóm vô danh :P ";
+                    div.onclick = () => openChatRoom(group.id, group.title);
+                    groupsContainer.appendChild(div);
+                }
+            });
+        } else {
+            groupsContainer.innerHTML = '<div style="padding:10px; font-size:12px; color:#888;">M chưa vào nhóm nào cả!</div>';
+        }
     }
 
-    async function loadChatHistory() {
+    // 3. MỞ PHÒNG CHAT
+    async function openChatRoom(groupId, groupTitle) {
+        currentGroupId = groupId;
+
+        // Cập nhật giao diện
+        document.querySelector('#chat-header span').innerText = groupTitle;
+        document.getElementById('empty-state').style.display = 'none';
+        document.getElementById('chat-ui').style.display = 'flex';
+        document.getElementById('join-state').style.display = 'none';
+
+        // Xóa sạch tin cũ trước khi load tin mới
+        document.getElementById('chat-box').innerHTML = '';
+
+        await loadChatHistory(groupId);
+        setupRealtimeListener(groupId);
+    }
+
+    // 4. LOAD LỊCH SỬ (DÙNG ID ĐỘNG)
+    async function loadChatHistory(groupId) {
         const { data, error } = await mySupabase
             .from('messages')
             .select('*')
-            // Chú ý: Lấy data theo ID nhóm
-            .eq('group_id', 'b145cf3c-1969-40db-a95c-9854281de575')
+            .eq('group_id', groupId) // Dùng đúng cái ID vừa truyền vào
             .order('created_at', { ascending: true });
 
-        if (error) {
-            console.error('Lỗi load lịch sử:', error.message);
-            return;
-        }
-
-        const chatBox = document.getElementById('chat-box');
-        chatBox.innerHTML = '';
-
-        if (data && data.length > 0) {
-            data.forEach(msg => displayNewMessage(msg));
-        } else {
-            chatBox.innerHTML = `
-                <div id="no-msg-text" style="text-align: center; color: #6b99cf; margin: auto; font-size: 14px; font-style: italic;">
-                    Có vẻ chưa ai mở lời với nhau thì phải. Hãy là người đầu tiên gửi lời chào! 👋
-                </div>
-            `;
-        }
+        if (data) data.forEach(msg => displayNewMessage(msg));
     }
 
+    // 5. NGHE REALTIME (SỬA LỖI QUAN TRỌNG Ở ĐÂY)
+    function setupRealtimeListener(groupId) {
+        if (!groupId) return;
+
+        if (currentRealtimeChannel) {
+            console.log("--- Đang gỡ bỏ ống nghe cũ ---");
+            mySupabase.removeChannel(currentRealtimeChannel);
+        }
+
+        console.log(`--- Đang dò sóng cho nhóm: ${groupId} ---`);
+
+        currentRealtimeChannel = mySupabase
+            .channel('room-' + groupId)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages'
+                    // TẠM THỜI BỎ FILTER ĐỂ TEST:
+                    // Nếu bỏ filter mà nó hiện, thì do filter sai.
+                    // Nếu bỏ filter vẫn không hiện, thì do Database/Realtime chưa thông.
+                },
+                (payload) => {
+                    console.log("🔔 CÓ BIẾN! Payload bay về nè m ơi:", payload);
+
+                    // Kiểm tra xem tin nhắn này có đúng của nhóm mình đang mở không
+                    if (payload.new.group_id === groupId) {
+                        console.log("✅ Đúng nhóm rồi, bơm vào giao diện thôi!");
+                        displayNewMessage(payload.new);
+                    } else {
+                        console.log("px Tin nhắn của nhóm khác, bỏ qua.");
+                    }
+                }
+            )
+            .subscribe((status) => {
+                console.log("📡 Trạng thái ống nghe:", status);
+                if (status === 'SUBSCRIBED') {
+                    console.log("🚀 ĐÃ THÔNG NÒNG! Mày thử gửi tin nhắn đi!");
+                }
+            });
+    }
+
+    // 6. GỬI TIN NHẮN
     async function sendMessage() {
         const input = document.getElementById('message-input');
         const content = input.value.trim();
-        if (!content) return;
-
-        // Dán 2 cái ID THẬT vào đây
-        const testGroupId = 'b145cf3c-1969-40db-a95c-9854281de575';
-        const testSenderId = 'cceab40a-0fef-4f21-9bba-c62273b139bb';
+        if (!content || !currentGroupId) return;
 
         const { error } = await mySupabase
             .from('messages')
             .insert([{
                 content: content,
-                group_id: testGroupId,
-                sender_id: testSenderId
+                group_id: currentGroupId,
+                sender_id: globalUserId
             }]);
 
-        if (error) {
-            console.error('Gửi lỗi nè fen:', error.message);
-            alert("Lỗi: " + error.message);
+        if (error) alert("Lỗi: " + error.message);
+        else input.value = '';
+    }
+
+    // 7. HIỂN THỊ TIN NHẮN (GIAO DIỆN TRÁI/PHẢI)
+    const memberMap = {};
+    let memberCounter = 1;
+    function displayNewMessage(msg) {
+        console.log("🎨 Đang vẽ tin nhắn lên màn hình:", msg.content);
+
+        const chatBox = document.getElementById('chat-box');
+        if (!chatBox) {
+            console.error("❌ Không tìm thấy cái ID 'chat-box' m ơi!");
+            return;
+        }
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('message-wrapper');
+        const bubble = document.createElement('div');
+        bubble.classList.add('message');
+        bubble.innerText = msg.content;
+
+        if (msg.sender_id === globalUserId) {
+            wrapper.classList.add('right');
+            bubble.classList.add('self');
+            wrapper.appendChild(bubble);
         } else {
-            input.value = '';
+            wrapper.classList.add('left');
+            bubble.classList.add('other');
+            const name = document.createElement('div');
+            name.classList.add('sender-name');
+            if (!memberMap[msg.sender_id]) memberMap[msg.sender_id] = memberCounter++;
+            name.innerText = `Thành viên ${memberMap[msg.sender_id]}`;
+            wrapper.appendChild(name);
+            wrapper.appendChild(bubble);
+        }
+        chatBox.appendChild(wrapper);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Hàm đóng mở Sidebar (Discord Style)
+    function toggleSection(id) {
+        const content = document.getElementById(id);
+        if (content.style.display === "none") {
+            content.style.display = "block";
+        } else {
+            content.style.display = "none";
         }
     }
 
-    // ĐÃ ĐỔI TÊN KÊNH THÀNH GROUP_ID ĐỂ NGHE ĐÚNG PHÒNG CHAT NÀY
-    const channel = mySupabase
-        .channel('b145cf3c-1969-40db-a95c-9854281de575')
-        .on(
-            'postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'messages' },
-            (payload) => { displayNewMessage(payload.new); }
-        )
-        .subscribe();
-
     document.getElementById('send-btn').onclick = sendMessage;
-    document.getElementById('message-input').onkeydown = (e) => {
-        if (e.key === 'Enter') sendMessage();
-    };
+    document.getElementById('message-input').onkeydown = (e) => { if (e.key === 'Enter') sendMessage(); };
 </script>
 
 </body>
