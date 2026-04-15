@@ -308,29 +308,24 @@
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYmtsY2JyZWdjeHpuZ3Bpb3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTI2MTIsImV4cCI6MjA4OTQyODYxMn0.3EOOOodNiaa46ptAksdTY43_vknTIxhejcJCbVN441w';
     const mySupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    // BƯỚC 0: BIẾN TOÀN CỤC (Dùng let hết cho tao!)
     let globalUserId = null;
     let currentGroupId = null;
     let currentRealtimeChannel = null;
 
-    // 1. KHỞI CHẠY APP
     async function initApp() {
         const { data: { user } } = await mySupabase.auth.getUser();
         if (user) {
             globalUserId = user.id;
             console.log("(<33) Đã nhận diện chính chủ: ", globalUserId);
         } else {
-            globalUserId = 'cceab40a-0fef-4f21-9bba-c62273b139bb'; // ID Test của m
+            globalUserId = 'cceab40a-0fef-4f21-9bba-c62273b139bb';
             console.warn("(!!!) Dùng ID Test tạm thời: ", globalUserId);
         }
-        loadSidebar(); // Có ID rồi mới load Sidebar
+        loadSidebar();
     }
     initApp();
 
-    // 2. LOAD SIDEBAR (PHÂN CHIA MẢNG DISCORD STYLE)
     async function loadSidebar() {
-        console.log("Đang load sidebar cho user:", globalUserId);
-
         const { data, error } = await mySupabase
             .from('group_members')
             .select(`groups ( id, title )`)
@@ -339,11 +334,10 @@
 
         if (error) return console.error("Lỗi lọc sidebar:", error);
 
-        // 👉 CHỖ THAY ĐỔI: Chỉ nhắm vào cái mảng NHÓM thôi m nhé
         const groupsContainer = document.getElementById('groups-list');
         if (!groupsContainer) return;
 
-        groupsContainer.innerHTML = ''; // Xóa rác cũ của riêng mảng nhóm
+        groupsContainer.innerHTML = '';
 
         if (data && data.length > 0) {
             data.forEach(item => {
@@ -361,44 +355,55 @@
         }
     }
 
-    // 3. MỞ PHÒNG CHAT
     async function openChatRoom(groupId, groupTitle) {
         currentGroupId = groupId;
-
-        // Cập nhật giao diện
         document.querySelector('#chat-header span').innerText = groupTitle;
         document.getElementById('empty-state').style.display = 'none';
         document.getElementById('chat-ui').style.display = 'flex';
         document.getElementById('join-state').style.display = 'none';
-
-        // Xóa sạch tin cũ trước khi load tin mới
         document.getElementById('chat-box').innerHTML = '';
 
         await loadChatHistory(groupId);
         setupRealtimeListener(groupId);
     }
 
-    // 4. LOAD LỊCH SỬ (DÙNG ID ĐỘNG)
+    // --- FIX LỖI THIẾU NGOẶC Ở ĐÂY ---
     async function loadChatHistory(groupId) {
         const { data, error } = await mySupabase
             .from('messages')
-            .select('*')
-            .eq('group_id', groupId) // Dùng đúng cái ID vừa truyền vào
+            .select(`
+                *,
+                sender:profiles ( full_name )
+            `)
+            .eq('group_id', groupId)
             .order('created_at', { ascending: true });
 
-        if (data) data.forEach(msg => displayNewMessage(msg));
-    }
+        if (error) return console.error("Lỗi load history:", error);
 
-    // 5. NGHE REALTIME (SỬA LỖI QUAN TRỌNG Ở ĐÂY)
+        if (data) {
+            data.forEach(msg => {
+                // LOGIC DỰ PHÒNG:
+                // 1. Ưu tiên lấy full_name
+                // 2. Nếu NULL, hiện "User-" + 4 ký tự cuối của ID cho nó giống Discord
+                let displayName = "Người dùng ẩn danh";
+
+                if (msg.sender && msg.sender.full_name) {
+                    displayName = msg.sender.full_name;
+                } else {
+                    // Cắt 4 chữ cuối của UUID để phân biệt anh em
+                    displayName = "User-" + msg.sender_id.substring(0, 4);
+                }
+
+                displayNewMessage(msg, displayName);
+            });
+        }
+    } // Đã đóng ngoặc hàm loadChatHistory chuẩn chỉ!
+
     function setupRealtimeListener(groupId) {
         if (!groupId) return;
-
         if (currentRealtimeChannel) {
-            console.log("--- Đang gỡ bỏ ống nghe cũ ---");
             mySupabase.removeChannel(currentRealtimeChannel);
         }
-
-        console.log(`--- Đang dò sóng cho nhóm: ${groupId} ---`);
 
         currentRealtimeChannel = mySupabase
             .channel('room-' + groupId)
@@ -407,32 +412,18 @@
                 {
                     event: 'INSERT',
                     schema: 'public',
-                    table: 'messages'
-                    // TẠM THỜI BỎ FILTER ĐỂ TEST:
-                    // Nếu bỏ filter mà nó hiện, thì do filter sai.
-                    // Nếu bỏ filter vẫn không hiện, thì do Database/Realtime chưa thông.
+                    table: 'messages',
                 },
                 (payload) => {
-                    console.log("🔔 CÓ BIẾN! Payload bay về nè m ơi:", payload);
-
-                    // Kiểm tra xem tin nhắn này có đúng của nhóm mình đang mở không
                     if (payload.new.group_id === groupId) {
-                        console.log("✅ Đúng nhóm rồi, bơm vào giao diện thôi!");
-                        displayNewMessage(payload.new);
-                    } else {
-                        console.log("px Tin nhắn của nhóm khác, bỏ qua.");
+                        // Realtime ko trả về join profiles, nên tạm để là "Thành viên mới"
+                        displayNewMessage(payload.new, "Thành viên mới");
                     }
                 }
             )
-            .subscribe((status) => {
-                console.log("📡 Trạng thái ống nghe:", status);
-                if (status === 'SUBSCRIBED') {
-                    console.log("🚀 ĐÃ THÔNG NÒNG! Mày thử gửi tin nhắn đi!");
-                }
-            });
+            .subscribe();
     }
 
-    // 6. GỬI TIN NHẮN
     async function sendMessage() {
         const input = document.getElementById('message-input');
         const content = input.value.trim();
@@ -450,19 +441,14 @@
         else input.value = '';
     }
 
-    // 7. HIỂN THỊ TIN NHẮN (GIAO DIỆN TRÁI/PHẢI)
-    const memberMap = {};
-    let memberCounter = 1;
-    function displayNewMessage(msg) {
-        console.log("🎨 Đang vẽ tin nhắn lên màn hình:", msg.content);
-
+    // GỘP 2 HÀM HIỂN THỊ THÀNH 1 BẢN XỊN
+    function displayNewMessage(msg, senderName = "Đang tải...") {
         const chatBox = document.getElementById('chat-box');
-        if (!chatBox) {
-            console.error("❌ Không tìm thấy cái ID 'chat-box' m ơi!");
-            return;
-        }
+        if (!chatBox) return;
+
         const wrapper = document.createElement('div');
         wrapper.classList.add('message-wrapper');
+
         const bubble = document.createElement('div');
         bubble.classList.add('message');
         bubble.innerText = msg.content;
@@ -474,25 +460,22 @@
         } else {
             wrapper.classList.add('left');
             bubble.classList.add('other');
-            const name = document.createElement('div');
-            name.classList.add('sender-name');
-            if (!memberMap[msg.sender_id]) memberMap[msg.sender_id] = memberCounter++;
-            name.innerText = `Thành viên ${memberMap[msg.sender_id]}`;
-            wrapper.appendChild(name);
+
+            const nameLabel = document.createElement('div');
+            nameLabel.classList.add('sender-name');
+            nameLabel.innerText = senderName;
+
+            wrapper.appendChild(nameLabel);
             wrapper.appendChild(bubble);
         }
         chatBox.appendChild(wrapper);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // Hàm đóng mở Sidebar (Discord Style)
     function toggleSection(id) {
         const content = document.getElementById(id);
-        if (content.style.display === "none") {
-            content.style.display = "block";
-        } else {
-            content.style.display = "none";
-        }
+        if (!content) return;
+        content.style.display = (content.style.display === "none") ? "block" : "none";
     }
 
     document.getElementById('send-btn').onclick = sendMessage;
