@@ -20,13 +20,27 @@
     </div>
     
     <div class="main-wrapper">
-        <div class="top-nav">
+        <div class="top-nav" style="position: relative;">
             <div class="back-arrow" onclick="window.location.href='/main'">
                 <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 20px; fill: var(--text);"><g><path d="M7.414 13l5.043 5.04-1.414 1.42L3.586 12l7.457-7.46 1.414 1.42L7.414 11H21v2H7.414z"></path></g></svg>
             </div>
             <div class="nav-text">
                 <h2 id="nav-name">Đang tải...</h2>
                 <p>0 Nhóm</p>
+            </div>
+
+            <div id="notif-wrapper" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); z-index: 100;">
+                <div id="bell-icon" style="cursor: pointer; position: relative; display: none;" onclick="toggleNotifs()">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="var(--text)"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+                    <span id="notif-badge" style="display: none; position: absolute; top: -5px; right: -5px; background: #ff4d4d; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold;">0</span>
+                </div>
+                
+                <div id="notif-dropdown" style="display: none; position: absolute; top: 35px; right: 0; width: 320px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; padding: 15px; flex-direction: column; gap: 10px; text-align: left;">
+                    <h4 style="margin: 0; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text);">Thông báo</h4>
+                    <div id="notif-list" style="max-height: 300px; overflow-y: auto;">
+                        <p style="font-size: 13px; color: var(--text-muted); margin: 0; text-align: center;">Đang tải...</p>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="banner-container" onclick="document.getElementById('banner-upload').click()">
@@ -55,9 +69,14 @@
             </div>            
             <div id="action-buttons">
                 <button id="edit-profile-btn" class="btn-action" onclick="toggleEditMode()">Sửa hồ sơ</button>
+                
+                <button id="copy-link-btn" class="btn-action" style="margin-left: 8px; display: none;" onclick="copyMyLink()">Chia sẻ</button>
+                
                 <button id="cancel-profile-btn" class="btn-action" style="display: none; margin-right: 8px;" onclick="cancelEditMode()">Hủy</button>
                 <button id="save-profile-btn" class="btn-action btn-primary" style="display: none;" onclick="saveProfile()">Lưu</button>            
-                <button id="message-profile-btn" class="btn-action btn-pop" onclick="window.location.href='/chat'" style="margin-left: 8px;">
+                
+                <button id="add-friend-btn" class="btn-action" style="display: none; margin-left: 8px;" onclick="toggleFriend()">Kết bạn</button>
+                <button id="message-profile-btn" class="btn-action btn-pop" onclick="window.location.href='/chat'" style="margin-left: 8px; display: none;">
                         KoNect!
                     <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
                 </button>
@@ -131,7 +150,15 @@
     
     <div class="right-sidebar">
         <div class="sidebar-widget" id="newest-groups-widget">
-            <h3 class="widget-title">Nhóm mới tạo</h3>
+            <h3 class="widget-title text-primary">Nhóm mới tạo</h3>
+        </div>
+        
+        <div class="sidebar-widget" id="friendlist-widget" style="margin-top: 20px;">
+            <h3 class="widget-title text-primary">Bạn bè</h3>
+            <div id="friendlist-container">
+                <p style="color: var(--text-muted); font-size: 13px;">Đang tải...</p>
+            </div>
+            <button id="see-more-friends-btn" class="btn-action" style="width: 100%; margin-top: 10px; display: none;" onclick="alert('Trang danh sách bạn bè chưa được tạo!')">Xem thêm</button>
         </div>
     </div>
 </div>
@@ -149,386 +176,479 @@
     </div>
 </div>
 
-<script>
+<script>    
     const SUPABASE_URL = 'https://dfbklcbregcxzngpiorx.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYmtsY2JyZWdjeHpuZ3Bpb3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTI2MTIsImV4cCI6MjA4OTQyODYxMn0.3EOOOodNiaa46ptAksdTY43_vknTIxhejcJCbVN441w'; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let cropper = null;
-    let easyMDE = null;
-    let currentCropType = ''; 
-    let originalNameText = '';
-    let originalBioText = '';
-    let originalEmailText = '';
-    let originalPhoneText = '';
+    let cropper = null, easyMDE = null, currentCropType = ''; 
+    let originalNameText = '', originalBioText = '';
+    let loggedInUserId = null;
+    let currentlyViewingId = null;
+    let friendState = 'none'; // State machine: none, pending_sent, pending_received, accepted
 
-    function setBio(value) {
-        if (easyMDE) {
-            easyMDE.value(value || '');
-        } else {
-            document.getElementById('edit-bio-input').value = value || '';
-        }
+    function setBio(value) { if (easyMDE) easyMDE.value(value || ''); else document.getElementById('edit-bio-input').value = value || ''; }
+    function getBio() { if (easyMDE) return easyMDE.value(); return document.getElementById('edit-bio-input').value; }
+
+    function copyMyLink() {
+        if (!loggedInUserId) return alert("Chưa tải xong ID!");
+        const shareUrl = window.location.origin + window.location.pathname + '?id=' + loggedInUserId;
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            const btn = document.getElementById('copy-link-btn');
+            btn.innerText = "Đã chép!"; setTimeout(() => btn.innerText = "Chia sẻ", 2000);
+        });
     }
 
-    function getBio() {
-        if (easyMDE) {
-            return easyMDE.value();
-        } else {
-            return document.getElementById('edit-bio-input').value;
-        }
+    // --- NOTIFICATION UI LOGIC ---
+    function toggleNotifs() {
+        const drop = document.getElementById('notif-dropdown');
+        drop.style.display = drop.style.display === 'none' ? 'flex' : 'none';
     }
 
+    document.addEventListener('click', function(event) {
+        const wrapper = document.getElementById('notif-wrapper');
+        const drop = document.getElementById('notif-dropdown');
+        if (wrapper && !wrapper.contains(event.target) && drop) drop.style.display = 'none';
+    });
+
+    async function loadNotifications() {
+        if (!loggedInUserId) return;
+        document.getElementById('bell-icon').style.display = 'block';
+
+        const { data, error } = await supabaseClient
+            .from('friends')
+            .select(`user_id, created_at, profiles!friends_user_id_fkey(full_name, username, avatar_url)`)
+            .eq('friend_id', loggedInUserId)
+            .eq('status', 'pending');
+
+        const badge = document.getElementById('notif-badge');
+        const list = document.getElementById('notif-list');
+
+        if (error || !data || data.length === 0) {
+            badge.style.display = 'none';
+            list.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); margin: 0; text-align: center;">Không có yêu cầu kết bạn nào.</p>';
+            return;
+        }
+
+        badge.style.display = 'block';
+        badge.innerText = data.length;
+        list.innerHTML = '';
+
+        data.forEach(req => {
+            const user = req.profiles;
+            const name = user.full_name || user.username || "Ẩn danh";
+            const avatarHtml = user.avatar_url 
+                ? `<div class="widget-avatar" style="background-image: url(${user.avatar_url}); background-size: cover; flex-shrink: 0;"></div>`
+                : `<div class="widget-avatar" style="flex-shrink: 0;">${name.charAt(0).toUpperCase()}</div>`;
+
+            const notifItem = document.createElement('div');
+            notifItem.style.cssText = "display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px;";
+            notifItem.innerHTML = `
+                <div style="display:flex; gap: 10px; align-items:center;">
+                    ${avatarHtml}
+                    <div style="font-size: 13px; color: var(--text);">
+                        <strong>${name}</strong> đã gửi yêu cầu kết bạn.
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-action btn-primary" style="flex: 1; padding: 4px;" onclick="acceptRequest('${req.user_id}')">Chấp nhận</button>
+                    <button class="btn-action" style="flex: 1; padding: 4px;" onclick="rejectRequest('${req.user_id}')">Từ chối</button>
+                </div>
+            `;
+            list.appendChild(notifItem);
+        });
+    }
+
+    async function acceptRequest(senderId) {
+        await supabaseClient.from('friends').update({ status: 'accepted' }).match({ user_id: senderId, friend_id: loggedInUserId });
+        await supabaseClient.from('friends').upsert({ user_id: loggedInUserId, friend_id: senderId, status: 'accepted' });
+        
+        loadNotifications();
+        if (currentlyViewingId === senderId) { checkFriendStatus(); loadFriends(loggedInUserId); }
+    }
+
+    async function rejectRequest(senderId) {
+        await supabaseClient.from('friends').delete().match({ user_id: senderId, friend_id: loggedInUserId });
+        loadNotifications();
+        if (currentlyViewingId === senderId) checkFriendStatus();
+    }
+
+    // --- MAIN PROFILE LOGIC ---
     async function loadProfile() {
-        // ĐÃ SỬA: Dùng getSession() thay vì getUser() để không bị lỗi lúc mới chuyển trang
-        const { data: { session }, error } = await supabaseClient.auth.getSession();
-        const user = session ? session.user : null;
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetUserId = urlParams.get('id');
 
-        if (error || !user) {
-            document.getElementById('user-email').innerText = "@guest";
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const currentUser = session ? session.user : null;
+        
+        if (currentUser) {
+            loggedInUserId = currentUser.id;
+            loadNotifications(); // Fetch bell data
+        }
+
+        const idToFetch = targetUserId || loggedInUserId;
+        currentlyViewingId = idToFetch;
+
+        if (!idToFetch) {
             document.getElementById('user-name').innerText = "Chưa đăng nhập";
-            document.getElementById('nav-name').innerText = "Chưa đăng nhập";
+            document.getElementById('nav-name').innerText = "Khách";
             document.getElementById('action-buttons').style.display = 'none';
             document.body.classList.add('guest-mode', 'view-only');
             return;
         }
 
-        const handle = "@" + user.email.split('@')[0];
-        document.getElementById('user-email').innerText = handle;
+        const isOwnProfile = (idToFetch === loggedInUserId);
+        if (isOwnProfile && !urlParams.has('id')) {
+            window.history.replaceState({}, '', window.location.pathname + '?id=' + loggedInUserId);
+        }
 
-        const displayName = user.user_metadata?.display_name || user.email.split('@')[0];
+        const { data: profileData } = await supabaseClient.from('profiles').select('*').eq('id', idToFetch).single();
+
+        let displayName = profileData?.full_name || profileData?.username || "Người dùng ẩn danh";
+        let bioText = profileData?.bio || "";
+        let avatarUrl = profileData?.avatar_url || null;
+        let bannerUrl = profileData?.banner_url || null;
+
         document.getElementById('user-name').innerText = displayName;
         document.getElementById('nav-name').innerText = displayName;
-        document.getElementById('edit-name-input').value = displayName;
-
-        const avatarUrl = user.user_metadata?.avatar_url;
+        document.getElementById('user-bio').innerHTML = formatBioText(bioText);
+        
         const avatarDiv = document.getElementById('user-avatar');
-        const bannerUrl = user.user_metadata?.banner_url;
-
         if (bannerUrl) document.getElementById('profile-banner-img').src = bannerUrl;
-
         if (avatarUrl) {
-            avatarDiv.innerText = '';
-            avatarDiv.style.backgroundImage = `url(${avatarUrl})`;
+            avatarDiv.innerText = ''; avatarDiv.style.backgroundImage = `url(${avatarUrl})`;
         } else {
-            avatarDiv.innerText = displayName.charAt(0).toUpperCase();
-            avatarDiv.style.backgroundImage = 'none';
+            avatarDiv.innerText = displayName.charAt(0).toUpperCase(); avatarDiv.style.backgroundImage = 'none';
         }
 
-        const bioText = user.user_metadata?.bio;
-        const contactEmail = user.user_metadata?.contact_email || user.email;
-        const phone = user.user_metadata?.phone;
-
-        if (contactEmail) {
-            document.getElementById('user-contact-email').innerText = contactEmail;
-            document.getElementById('edit-email-input').value = contactEmail;
-            document.getElementById('display-email').style.display = 'flex';
-        }
-        if (phone) {
-            document.getElementById('user-phone').innerText = phone;
-            document.getElementById('edit-phone-input').value = phone;
-            document.getElementById('display-phone').style.display = 'flex';
-        }
-        if (bioText) {
-            document.getElementById('user-bio').innerHTML = formatBioText(bioText);
+        if (isOwnProfile) {
+            document.getElementById('edit-name-input').value = displayName;
             setBio(bioText);
+            document.getElementById('user-email').innerText = "@" + (profileData?.username || (currentUser ? currentUser.email.split('@')[0] : "user"));
+            
+            document.getElementById('message-profile-btn').style.display = 'none';
+            document.getElementById('add-friend-btn').style.display = 'none';
+            document.getElementById('edit-profile-btn').style.display = 'inline-block';
+            document.getElementById('copy-link-btn').style.display = 'inline-block'; 
+        } else {
+            document.getElementById('edit-profile-btn').style.display = 'none';
+            document.getElementById('copy-link-btn').style.display = 'none'; 
+            document.getElementById('message-profile-btn').style.display = 'inline-flex';
+            document.getElementById('add-friend-btn').style.display = 'inline-block';
+            
+            document.querySelectorAll('.edit-overlay').forEach(el => el.style.display = 'none');
+            document.querySelector('.banner-container').removeAttribute('onclick');
+            document.querySelector('.avatar-wrapper').removeAttribute('onclick');
+            
+            document.getElementById('user-email').innerText = "@" + (profileData?.username || "user");
+            checkFriendStatus();
+        }
+
+        loadUserGroups(idToFetch);
+        loadFriends(idToFetch);
+    }
+
+async function checkFriendStatus() {
+        if (!loggedInUserId || !currentlyViewingId) return;
+
+        let { data: myRelation } = await supabaseClient.from('friends').select('status').eq('user_id', loggedInUserId).eq('friend_id', currentlyViewingId).single();
+        let { data: theirRelation } = await supabaseClient.from('friends').select('status').eq('user_id', currentlyViewingId).eq('friend_id', loggedInUserId).single();
+
+        const btn = document.getElementById('add-friend-btn');
+        
+        btn.style.background = '';
+        btn.style.color = '';
+        btn.style.border = '';
+        
+        // CRITICAL FIX: Wipe out any old hover events so they don't glitch when the state changes
+        btn.onmouseenter = null;
+        btn.onmouseleave = null;
+
+        if (myRelation && myRelation.status === 'accepted') {
+            friendState = 'accepted';
+            btn.innerText = "Hủy kết bạn";
+            btn.className = "btn-action";
+            
+            // Hover effect for Unfriend
+            btn.onmouseenter = () => { 
+                btn.style.color = "#ff4d4d"; 
+                btn.style.borderColor = "#ff4d4d"; 
+            };
+            btn.onmouseleave = () => { 
+                btn.style.color = ""; 
+                btn.style.borderColor = ""; 
+            };
+            
+        } else if (myRelation && myRelation.status === 'pending') {
+            friendState = 'pending_sent';
+            btn.innerText = "Đã gửi yêu cầu";
+            btn.className = "btn-action";
+            
+            // CRITICAL FIX: The hover text swap
+            btn.onmouseenter = () => { 
+                btn.innerText = "Hủy yêu cầu"; 
+                btn.style.color = "#ff4d4d"; 
+                btn.style.borderColor = "#ff4d4d"; 
+            };
+            btn.onmouseleave = () => { 
+                btn.innerText = "Đã gửi yêu cầu"; 
+                btn.style.color = ""; 
+                btn.style.borderColor = ""; 
+            };
+            
+        } else if (theirRelation && theirRelation.status === 'pending') {
+            friendState = 'pending_received';
+            btn.innerText = "Chấp nhận";
+            btn.className = "btn-action btn-primary"; 
+            
+        } else {
+            friendState = 'none';
+            btn.innerText = "Kết bạn";
+            btn.className = "btn-action"; 
+        }
+    }
+    async function checkFriendStatus() {
+        if (!loggedInUserId || !currentlyViewingId) return;
+
+        let { data: myRelation } = await supabaseClient.from('friends').select('status').eq('user_id', loggedInUserId).eq('friend_id', currentlyViewingId).single();
+        let { data: theirRelation } = await supabaseClient.from('friends').select('status').eq('user_id', currentlyViewingId).eq('friend_id', loggedInUserId).single();
+
+        const btn = document.getElementById('add-friend-btn');
+        
+        btn.style.background = '';
+        btn.style.color = '';
+        btn.style.border = '';
+        
+        // CRITICAL FIX: Wipe out any old hover events so they don't glitch when the state changes
+        btn.onmouseenter = null;
+        btn.onmouseleave = null;
+
+        if (myRelation && myRelation.status === 'accepted') {
+            friendState = 'accepted';
+            btn.innerText = "Hủy kết bạn";
+            btn.className = "btn-action";
+            
+            // Hover effect for Unfriend
+            btn.onmouseenter = () => { 
+                btn.style.color = "#ff4d4d"; 
+                btn.style.borderColor = "#ff4d4d"; 
+            };
+            btn.onmouseleave = () => { 
+                btn.style.color = ""; 
+                btn.style.borderColor = ""; 
+            };
+            
+        } else if (myRelation && myRelation.status === 'pending') {
+            friendState = 'pending_sent';
+            btn.innerText = "Đã gửi yêu cầu";
+            btn.className = "btn-action";
+            
+            // CRITICAL FIX: The hover text swap
+            btn.onmouseenter = () => { 
+                btn.innerText = "Hủy yêu cầu"; 
+                btn.style.color = "#ff4d4d"; 
+                btn.style.borderColor = "#ff4d4d"; 
+            };
+            btn.onmouseleave = () => { 
+                btn.innerText = "Đã gửi yêu cầu"; 
+                btn.style.color = ""; 
+                btn.style.borderColor = ""; 
+            };
+            
+        } else if (theirRelation && theirRelation.status === 'pending') {
+            friendState = 'pending_received';
+            btn.innerText = "Chấp nhận";
+            btn.className = "btn-action btn-primary"; 
+            
+        } else {
+            friendState = 'none';
+            btn.innerText = "Kết bạn";
+            btn.className = "btn-action"; 
         }
     }
 
-    function toggleEditMode() {
-        originalNameText = document.getElementById('edit-name-input').value;
-        originalBioText = getBio(); // ✅ GET first
-        originalEmailText = document.getElementById('edit-email-input').value;
-        originalPhoneText = document.getElementById('edit-phone-input').value;
-        document.getElementById('bio-counter').style.display = 'block';
+    async function toggleFriend() {
+        if (!loggedInUserId || !currentlyViewingId) return alert("Cần đăng nhập!");
+        const btn = document.getElementById('add-friend-btn');
+        btn.disabled = true; btn.innerText = "...";
 
-        document.getElementById('message-profile-btn').style.display = 'none';
-        document.getElementById('display-mode-name').style.display = 'none';
-        document.getElementById('display-mode-bio').style.display = 'none';
-        document.getElementById('display-contact-info').style.display = 'none';
-        document.getElementById('edit-profile-btn').style.display = 'none';
-
-        document.getElementById('edit-mode-name').style.display = 'block';
-        document.getElementById('edit-mode-bio').style.display = 'block';
-        document.getElementById('edit-contact-info').style.display = 'flex';
-        document.getElementById('cancel-profile-btn').style.display = 'inline-block';
-        document.getElementById('save-profile-btn').style.display = 'inline-block';
-
-        document.getElementById('edit-name-input').focus();
-
-        // --- CRITICAL EASYMDE INJECTION ---
-        if (!easyMDE) {
-            easyMDE = new EasyMDE({
-                element: document.getElementById('edit-bio-input'),
-                spellChecker: false,
-                status: false, // Keeps the bottom clean
-                hideIcons: ["image", "side-by-side", "fullscreen", "guide"],
-                placeholder: "Thêm tiểu sử vào hồ sơ của bạn..."
-            });
-            // CRITICAL: Force EasyMDE to run our custom math on every keystroke
-            easyMDE.codemirror.on("change", validateProfileForm);
+        if (friendState === 'none') {
+            await supabaseClient.from('friends').insert({ user_id: loggedInUserId, friend_id: currentlyViewingId, status: 'pending' });
+        } else if (friendState === 'pending_sent') {
+            await supabaseClient.from('friends').delete().match({ user_id: loggedInUserId, friend_id: currentlyViewingId });
+        } else if (friendState === 'pending_received') {
+            await acceptRequest(currentlyViewingId);
+        } else if (friendState === 'accepted') {
+            await supabaseClient.from('friends').delete().match({ user_id: loggedInUserId, friend_id: currentlyViewingId });
+            await supabaseClient.from('friends').delete().match({ user_id: currentlyViewingId, friend_id: loggedInUserId });
         }
-        setBio(originalBioText);
-
-        // Run immediately to set the starting countdown numbers
-        setTimeout(validateProfileForm, 50);
+        
+        btn.disabled = false;
+        await checkFriendStatus();
+        await loadFriends(currentlyViewingId);
     }
 
-    function cancelEditMode() {
-        document.getElementById('edit-name-input').value = originalNameText;
-        setBio(originalBioText);
-        document.getElementById('edit-email-input').value = originalEmailText;
-        document.getElementById('edit-phone-input').value = originalPhoneText;
+    async function loadFriends(userId) {
+        const container = document.getElementById('friendlist-container');
+        const seeMoreBtn = document.getElementById('see-more-friends-btn');
+        
+        const { data, error } = await supabaseClient
+            .from('friends')
+            .select(`friend_id, profiles!friends_friend_id_fkey(full_name, username, avatar_url)`)
+            .eq('user_id', userId)
+            .eq('status', 'accepted')
+            .order('created_at', { ascending: false })
+            .limit(4);
 
-        document.getElementById('edit-mode-name').style.display = 'none';
-        document.getElementById('edit-mode-bio').style.display = 'none';
-        document.getElementById('edit-contact-info').style.display = 'none';
-        document.getElementById('cancel-profile-btn').style.display = 'none';
-        document.getElementById('save-profile-btn').style.display = 'none';
-        document.getElementById('bio-counter').style.display = 'none';
+        if (error || !data || data.length === 0) {
+            container.innerHTML = `<p style="color: var(--text-muted); font-size: 13px;">Chưa có bạn bè.</p>`;
+            if (seeMoreBtn) seeMoreBtn.style.display = 'none';
+            return;
+        }
 
-        document.getElementById('message-profile-btn').style.display = 'inline-flex';
-        document.getElementById('display-mode-name').style.display = 'block';
-        document.getElementById('display-mode-bio').style.display = 'block';
-        document.getElementById('display-contact-info').style.display = 'flex';
-        document.getElementById('edit-profile-btn').style.display = 'inline-block';
+        container.innerHTML = '';
+        const limit = Math.min(data.length, 3);
+        
+        for (let i = 0; i < limit; i++) {
+            const friend = data[i].profiles;
+            if (!friend) continue;
+            
+            const name = friend.full_name || friend.username || "Ẩn danh";
+            const avatarHtml = friend.avatar_url 
+                ? `<div class="widget-avatar" style="background-image: url(${friend.avatar_url}); background-size: cover;"></div>`
+                : `<div class="widget-avatar">${name.charAt(0).toUpperCase()}</div>`;
+
+            const item = document.createElement('div');
+            item.className = 'widget-item';
+            item.style.cssText = "padding: 10px; border-bottom: 1px solid var(--border); cursor:pointer;";
+            item.onclick = () => window.location.href = `/profile?id=${data[i].friend_id}`;
+            item.innerHTML = `
+                <div style="display:flex; gap: 10px; align-items:center;">
+                    ${avatarHtml}
+                    <div class="widget-text">
+                        <h4 style="margin:0; color:var(--text);">${name}</h4>
+                        <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted);">@${friend.username || 'user'}</p>
+                    </div>
+                </div>
+            `;
+            container.appendChild(item);
+        }
+        if (data.length > 3 && seeMoreBtn) seeMoreBtn.style.display = 'block'; else if (seeMoreBtn) seeMoreBtn.style.display = 'none';
     }
 
-    async function saveProfile() {
-        const newName = document.getElementById('edit-name-input').value.trim();
-        const newBio = getBio().trim();
-        const newEmail = document.getElementById('edit-email-input').value.trim();
-        const newPhone = document.getElementById('edit-phone-input').value.trim();
-
-        if (!newName) return alert("Tên không được để trống!");
-
-        const saveBtn = document.getElementById('save-profile-btn');
-        saveBtn.innerText = "Lưu...";
-        saveBtn.disabled = true;
-
-        const { error } = await supabaseClient.auth.updateUser({
-            data: { display_name: newName, bio: newBio, contact_email: newEmail, phone: newPhone }
+    async function loadUserGroups(userId) {
+        const container = document.getElementById('groups-container');
+        container.innerHTML = '<p style="text-align:center; color:#888;">Đang tải nhóm...</p>';
+        const { data } = await supabaseClient.from('groups').select('id, title, description, created_at').eq('creator_id', userId).order('created_at', { ascending: false });
+        if (!data || data.length === 0) {
+            container.innerHTML = `<div style="padding: 32px; text-align: center; color: var(--text-muted);"><h2 style="color: var(--text); margin-top: 0;">Chưa có nhóm nào</h2><p>Người dùng này chưa tạo nhóm nào.</p></div>`; return;
+        }
+        document.querySelector('.stat-item:nth-child(1) .stat-val').innerText = data.length;
+        let html = '<div class="group-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px;">';
+        data.forEach(g => {
+            html += `<div class="group-card" style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-2); cursor:pointer;" onclick="window.location.href='/group.html?id=${g.id}'">
+                        <img src="https://via.placeholder.com/400x160/252525/4a90e2?text=KoNect" style="width: 100%; height: 120px; object-fit: cover;">
+                        <div style="padding: 15px;"><h3 style="margin: 0 0 5px 0; font-size: 16px;">${g.title || 'Nhóm không tên'}</h3><p style="color: var(--text-muted); font-size: 13px; margin: 0;">${g.description || ''}</p></div>
+                    </div>`;
         });
-
-        saveBtn.innerText = "Lưu";
-        saveBtn.disabled = false;
-
-        if (error) return alert("Lỗi: " + error.message);
-
-        document.getElementById('user-name').innerText = newName;
-        document.getElementById('nav-name').innerText = newName;
-        document.getElementById('user-bio').innerHTML = formatBioText(newBio);
-
-        const avatarDiv = document.getElementById('user-avatar');
-        if (!avatarDiv.style.backgroundImage || avatarDiv.style.backgroundImage === 'none') {
-            avatarDiv.innerText = newName.charAt(0).toUpperCase();
-        }
-
-        document.getElementById('display-mode-name').style.display = 'block';
-        document.getElementById('display-mode-bio').style.display = 'block';
-        document.getElementById('edit-profile-btn').style.display = 'inline-block';
-
-        document.getElementById('edit-mode-name').style.display = 'none';
-        document.getElementById('edit-mode-bio').style.display = 'none';
-        document.getElementById('save-profile-btn').style.display = 'none';
-        document.getElementById('cancel-profile-btn').style.display = 'none';
-        document.getElementById('message-profile-btn').style.display = 'inline-flex';
-        document.getElementById('bio-counter').style.display = 'none';
-
-        document.getElementById('user-contact-email').innerText = newEmail;
-        document.getElementById('display-email').style.display = newEmail ? 'flex' : 'none';
-        document.getElementById('user-phone').innerText = newPhone;
-        document.getElementById('display-phone').style.display = newPhone ? 'flex' : 'none';
-        document.getElementById('edit-contact-info').style.display = 'none';
-        document.getElementById('display-contact-info').style.display = 'flex';
+        html += '</div>'; container.innerHTML = html;
     }
 
     async function loadNewestGroups() {
         const sidebarContainer = document.getElementById('newest-groups-widget');
         sidebarContainer.innerHTML = '<h3 class="widget-title text-primary">Nhóm mới tạo</h3><p style="color: var(--text-muted); font-size: 13px;">Đang tải...</p>';
-
-        const { data: newestGroups, error } = await supabaseClient
-            .from('groups')
-            .select('id, name, created_at')
-            .order('created_at', { ascending: false })
-            .limit(4);
-
+        const { data: newestGroups } = await supabaseClient.from('groups').select(`id, title, created_at, creator_id, profiles!inner(full_name, username)`).order('created_at', { ascending: false }).limit(3);
         sidebarContainer.innerHTML = '<h3 class="widget-title text-primary">Nhóm mới tạo</h3>';
-
-        if (error) {
-            sidebarContainer.innerHTML += `<p style="color: var(--text-muted); font-size: 13px;">Không có dữ liệu nhóm lúc này.</p>`;
-            console.error("Supabase Fetch Error:", error.message);
-            return;
-        }
-
-        if (!newestGroups || newestGroups.length === 0) {
-            sidebarContainer.innerHTML += `<p style="color: var(--text-muted); font-size: 13px;">Chưa có nhóm nào trên hệ thống.</p>`;
-            return;
-        }
-
+        if (!newestGroups || newestGroups.length === 0) return;
         newestGroups.forEach(group => {
-            const groupName = group.name || "Nhóm ẩn danh";
+            const groupName = group.title || "Nhóm ẩn danh";
+            const creatorName = group.profiles?.full_name || group.profiles?.username || "Ẩn danh";
             const dateStr = new Date(group.created_at).toLocaleDateString('vi-VN');
             const widgetItem = document.createElement('div');
-            widgetItem.className = 'widget-item';
-            widgetItem.onclick = () => window.location.href = `/group.html?id=${group.id}`;
-            widgetItem.innerHTML = `
-                <div class="widget-avatar">${groupName.charAt(0).toUpperCase()}</div>
-                <div class="widget-text"><h4>${groupName}</h4><p>Tạo ngày ${dateStr}</p></div>
-            `;
+            widgetItem.className = 'widget-item'; widgetItem.style.cssText = "padding: 10px; border-bottom: 1px solid var(--border);";
+            
+            // CRITICAL FIX: Injected the date string directly into the template next to the creator name
+            widgetItem.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;"><div class="widget-avatar" style="cursor:pointer;" onclick="window.location.href='/group.html?id=${group.id}'">${groupName.charAt(0).toUpperCase()}</div><div class="widget-text"><h4 style="margin:0; cursor:pointer; color:var(--primary);" onclick="window.location.href='/group.html?id=${group.id}'">${groupName}</h4><p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted);">Bởi <span style="color: var(--text); cursor:pointer; font-weight:bold;" onclick="window.location.href='/profile?id=${group.creator_id}'">${creatorName}</span> • ${dateStr}</p></div></div>`;
             sidebarContainer.appendChild(widgetItem);
         });
     }
 
-    // --- CROPPER LOGIC ---
-    function uploadAvatar(event) { const file = event.target.files[0]; if (file) openCropModal(file, 'avatar'); event.target.value = ''; }
-    function uploadBanner(event) { const file = event.target.files[0]; if (file) openCropModal(file, 'banner'); event.target.value = ''; }
-
-    function openCropModal(file, type) {
-        if (file.size > 4 * 1024 * 1024) return alert("Ảnh quá lớn! Chọn ảnh dưới 4MB.");
-        currentCropType = type;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('image-to-crop').src = e.target.result;
-            document.getElementById('crop-modal').style.display = 'flex';
-            if (cropper) cropper.destroy();
-            cropper = new Cropper(document.getElementById('image-to-crop'), {
-                aspectRatio: type === 'avatar' ? 1 : (600 / 200), viewMode: 1, background: false, zoomable: true, movable: true
-            });
-        };
-        reader.readAsDataURL(file);
+    async function saveProfile() {
+        if (!loggedInUserId) return alert("Lỗi: Không tìm thấy ID.");
+        const newName = document.getElementById('edit-name-input').value.trim(); const newBio = getBio().trim();
+        if (!newName) return alert("Tên không được để trống!");
+        const saveBtn = document.getElementById('save-profile-btn'); saveBtn.innerText = "Lưu..."; saveBtn.disabled = true;
+        const { error: profileError } = await supabaseClient.from('profiles').update({ full_name: newName, bio: newBio }).eq('id', loggedInUserId);
+        saveBtn.innerText = "Lưu"; saveBtn.disabled = false;
+        if (profileError) return alert("Lỗi lưu hồ sơ: " + profileError.message);
+        document.getElementById('user-name').innerText = newName; document.getElementById('nav-name').innerText = newName; document.getElementById('user-bio').innerHTML = formatBioText(newBio);
+        const avatarDiv = document.getElementById('user-avatar');
+        if (!avatarDiv.style.backgroundImage || avatarDiv.style.backgroundImage === 'none') avatarDiv.innerText = newName.charAt(0).toUpperCase();
+        originalNameText = newName; originalBioText = newBio; cancelEditMode();
     }
 
+    function toggleEditMode() {
+        originalNameText = document.getElementById('edit-name-input').value; originalBioText = getBio();
+        document.getElementById('bio-counter').style.display = 'block'; document.getElementById('display-mode-name').style.display = 'none'; document.getElementById('display-mode-bio').style.display = 'none'; 
+        document.getElementById('edit-profile-btn').style.display = 'none'; document.getElementById('copy-link-btn').style.display = 'none'; 
+        document.getElementById('edit-mode-name').style.display = 'block'; document.getElementById('edit-mode-bio').style.display = 'block';
+        document.getElementById('cancel-profile-btn').style.display = 'inline-block'; document.getElementById('save-profile-btn').style.display = 'inline-block';
+        if (!easyMDE) { easyMDE = new EasyMDE({ element: document.getElementById('edit-bio-input'), spellChecker: false, status: false, hideIcons: ["image", "side-by-side", "fullscreen", "guide"] }); easyMDE.codemirror.on("change", validateProfileForm); }
+        setBio(originalBioText); setTimeout(validateProfileForm, 50);
+    }
+
+    function cancelEditMode() {
+        document.getElementById('edit-name-input').value = originalNameText; setBio(originalBioText);
+        document.getElementById('edit-mode-name').style.display = 'none'; document.getElementById('edit-mode-bio').style.display = 'none';
+        document.getElementById('cancel-profile-btn').style.display = 'none'; document.getElementById('save-profile-btn').style.display = 'none';
+        document.getElementById('bio-counter').style.display = 'none'; document.getElementById('display-mode-name').style.display = 'block';
+        document.getElementById('display-mode-bio').style.display = 'block'; 
+        document.getElementById('edit-profile-btn').style.display = 'inline-block'; document.getElementById('copy-link-btn').style.display = 'inline-block';
+    }
+
+    function uploadAvatar(event) { const file = event.target.files[0]; if (file) openCropModal(file, 'avatar'); event.target.value = ''; }
+    function uploadBanner(event) { const file = event.target.files[0]; if (file) openCropModal(file, 'banner'); event.target.value = ''; } 
+
+    function openCropModal(file, type) {
+        if (file.size > 4 * 1024 * 1024) return alert("Ảnh quá lớn!");
+        currentCropType = type; const reader = new FileReader();
+        reader.onload = function(e) { document.getElementById('image-to-crop').src = e.target.result; document.getElementById('crop-modal').style.display = 'flex'; if (cropper) cropper.destroy(); cropper = new Cropper(document.getElementById('image-to-crop'), { aspectRatio: type === 'avatar' ? 1 : 3, viewMode: 1 }); };
+        reader.readAsDataURL(file);
+    }
     function closeCropModal() { document.getElementById('crop-modal').style.display = 'none'; if (cropper) cropper.destroy(); }
 
     async function saveCroppedImage() {
-        if (!cropper) return;
-        const btn = document.getElementById('save-crop-btn');
-        btn.innerText = "Đang lưu...";
-        btn.disabled = true;
-
-        const canvas = cropper.getCroppedCanvas({ maxWidth: currentCropType === 'avatar' ? 400 : 1200 });
-
-        canvas.toBlob(async (blob) => {
-            if (!blob) {
-                alert("Lỗi xử lý ảnh!");
-                btn.innerText = "Áp dụng";
-                btn.disabled = false;
-                return;
-            }
-
+        if (!cropper || !loggedInUserId) return;
+        const btn = document.getElementById('save-crop-btn'); btn.innerText = "Đang lưu..."; btn.disabled = true;
+        cropper.getCroppedCanvas({ maxWidth: currentCropType === 'avatar' ? 400 : 1200 }).toBlob(async (blob) => {
             try {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                const user = session ? session.user : null;
-                if (!user) throw new Error("Chưa đăng nhập");
-
-                const fileName = `${user.id}-${Date.now()}-${currentCropType}.jpeg`;
-
-                const { error: uploadError } = await supabaseClient.storage
-                    .from('profiles')
-                    .upload(fileName, blob, {
-                        contentType: 'image/jpeg',
-                        upsert: true
-                    });
-
-                if (uploadError) throw uploadError;
-
-                const { data: { publicUrl } } = supabaseClient.storage
-                    .from('profiles')
-                    .getPublicUrl(fileName);
-
+                const fileName = `${loggedInUserId}-${Date.now()}-${currentCropType}.jpeg`;
+                await supabaseClient.storage.from('profiles').upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
+                const { data: { publicUrl } } = supabaseClient.storage.from('profiles').getPublicUrl(fileName);
                 const updateData = currentCropType === 'avatar' ? { avatar_url: publicUrl } : { banner_url: publicUrl };
-                const { error: updateError } = await supabaseClient.auth.updateUser({ data: updateData });
-
-                if (updateError) throw updateError;
-
-                if (currentCropType === 'avatar') {
-                    const avatarDiv = document.getElementById('user-avatar');
-                    avatarDiv.innerText = '';
-                    avatarDiv.style.backgroundImage = `url(${publicUrl})`;
-                } else {
-                    document.getElementById('profile-banner-img').src = publicUrl;
-                }
+                await supabaseClient.from('profiles').update(updateData).eq('id', loggedInUserId);
+                if (currentCropType === 'avatar') { const avatarDiv = document.getElementById('user-avatar'); avatarDiv.innerText = ''; avatarDiv.style.backgroundImage = `url(${publicUrl})`; } else document.getElementById('profile-banner-img').src = publicUrl;
                 closeCropModal();
-
-            } catch (err) {
-                alert("Lỗi: " + err.message);
-            } finally {
-                btn.innerText = "Áp dụng";
-                btn.disabled = false;
-            }
+            } catch (err) { alert("Lỗi: " + err.message); } finally { btn.innerText = "Áp dụng"; btn.disabled = false; }
         }, 'image/jpeg', 0.8);
     }
 
-    // --- HELPERS & VALIDATION ---
-    function formatBioText(text) {
-        if (!text) return '<span style="color: var(--text-muted);">Chưa có tiểu sử...</span>';
+    function formatBioText(text) { if (!text) return '<span style="color: var(--text-muted);">Chưa có tiểu sử...</span>'; return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>'); }
 
-        let linkMap = {}, linkIndex = 0;
-        let safeText = text;
-
-        safeText = safeText.replace(/```([\s\S]*?)```/g, (match, p1) => {
-            let placeholder = `___CODE${linkIndex}___`;
-            linkMap[placeholder] = `<div class="bio-code-block cat">${p1.replace(/^\n|\n$/g, '')}</div>`;
-            linkIndex++;
-            return placeholder;
-        });
-
-        safeText = safeText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        safeText = safeText.replace(/\n/g, '<br>');
-
-        for (let placeholder in linkMap) {
-            safeText = safeText.replace(placeholder, linkMap[placeholder]);
-        }
-
-        return safeText;
-    }
-
-    // --- LIVE COUNTDOWN VALIDATION ---
     function validateProfileForm() {
-        const nameInput = document.getElementById('edit-name-input');
-
-        const nameRemaining = 36 - nameInput.value.length;
-        const bioLen = getBio().length;
-        const bioRemaining = 200 - bioLen;
-
-        const nameCounter = document.getElementById('name-counter');
-        const bioCounter = document.getElementById('bio-counter');
-        const saveBtn = document.getElementById('save-profile-btn');
-
-        nameCounter.innerText = nameRemaining;
-        bioCounter.innerText = bioRemaining;
-
-        let isValid = true;
-
-        if (nameRemaining < 0) {
-            nameCounter.style.color = "var(--error)";
-            nameInput.style.borderColor = "var(--error)";
-            isValid = false;
-        } else {
-            nameCounter.style.color = "var(--text-muted)";
-            nameInput.style.borderColor = "var(--primary)";
-        }
-
-        if (bioRemaining < 0) {
-            bioCounter.style.color = "var(--error)";
-            isValid = false;
-            const cm = document.querySelector('.CodeMirror');
-            if(cm) cm.style.borderColor = "var(--error)";
-        } else {
-            bioCounter.style.color = "var(--text-muted)";
-            const cm = document.querySelector('.CodeMirror');
-            if(cm) cm.style.borderColor = "var(--border)";
-        }
-
+        const nameInput = document.getElementById('edit-name-input'), saveBtn = document.getElementById('save-profile-btn');
+        const nameCounter = document.getElementById('name-counter'), bioCounter = document.getElementById('bio-counter');
+        const nameRemaining = 36 - nameInput.value.length, bioRemaining = 200 - getBio().length;
+        nameCounter.innerText = nameRemaining; bioCounter.innerText = bioRemaining; let isValid = true;
+        if (nameRemaining < 0) { nameCounter.style.setProperty('color', '#ff4d4d', 'important'); nameInput.style.setProperty('border-color', '#ff4d4d', 'important'); nameInput.style.setProperty('color', '#ff4d4d', 'important'); isValid = false;
+        } else { nameCounter.style.setProperty('color', 'var(--text-muted)', 'important'); nameInput.style.setProperty('border-color', 'var(--border)', 'important'); nameInput.style.setProperty('color', 'var(--text)', 'important'); }
+        if (bioRemaining < 0) { bioCounter.style.setProperty('color', '#ff4d4d', 'important'); isValid = false; const cm = document.querySelector('.CodeMirror'); if (cm) cm.style.setProperty('border-color', '#ff4d4d', 'important');
+        } else { bioCounter.style.setProperty('color', 'var(--text-muted)', 'important'); const cm = document.querySelector('.CodeMirror'); if (cm) cm.style.setProperty('border-color', 'var(--border)', 'important'); }
         if (saveBtn) saveBtn.disabled = !isValid;
     }
-
+    
     document.getElementById('edit-name-input').addEventListener('input', validateProfileForm);
-
-    window.onload = () => {
-        loadProfile();
-        loadNewestGroups();
-    };
+    window.onload = () => { loadProfile(); loadNewestGroups(); };
 </script>
 </body>
 </html>
