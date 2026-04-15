@@ -186,6 +186,7 @@
     let loggedInUserId = null;
     let currentlyViewingId = null;
     let friendState = 'none'; // State machine: none, pending_sent, pending_received, accepted
+    let unreadGroupIds = [];
 
     function setBio(value) { if (easyMDE) easyMDE.value(value || ''); else document.getElementById('edit-bio-input').value = value || ''; }
     function getBio() { if (easyMDE) return easyMDE.value(); return document.getElementById('edit-bio-input').value; }
@@ -200,41 +201,90 @@
     }
 
     // --- NOTIFICATION UI LOGIC ---
+    function markGroupsAsRead() {
+        if (unreadGroupIds.length > 0) {
+            const seenGroups = JSON.parse(localStorage.getItem('seen_groups') || '[]');
+            // Merge the old seen groups with the newly seen ones without duplicates
+            const updatedSeen = [...new Set([...seenGroups, ...unreadGroupIds])];
+            localStorage.setItem('seen_groups', JSON.stringify(updatedSeen));
+            unreadGroupIds = []; // Clear the temporary list
+            loadNotifications(); // Silently reload to update the red badge
+        }
+    }
+
     function toggleNotifs() {
         const drop = document.getElementById('notif-dropdown');
-        drop.style.display = drop.style.display === 'none' ? 'flex' : 'none';
+        if (drop.style.display === 'none') {
+            drop.style.display = 'flex';
+        } else {
+            drop.style.display = 'none';
+            markGroupsAsRead(); // Trigger read status when clicking bell to close
+        }
     }
 
     document.addEventListener('click', function(event) {
         const wrapper = document.getElementById('notif-wrapper');
         const drop = document.getElementById('notif-dropdown');
-        if (wrapper && !wrapper.contains(event.target) && drop) drop.style.display = 'none';
+        if (wrapper && !wrapper.contains(event.target) && drop && drop.style.display !== 'none') {
+            drop.style.display = 'none';
+            markGroupsAsRead(); // Trigger read status when clicking outside to close
+        }
     });
 
     async function loadNotifications() {
         if (!loggedInUserId) return;
         document.getElementById('bell-icon').style.display = 'block';
 
-        const { data, error } = await supabaseClient
+        const { data: friendReqs } = await supabaseClient
             .from('friends')
             .select(`user_id, created_at, profiles!friends_user_id_fkey(full_name, username, avatar_url)`)
             .eq('friend_id', loggedInUserId)
             .eq('status', 'pending');
 
+        const { data: newGroups } = await supabaseClient
+            .from('groups')
+            .select(`id, title, created_at, profiles!inner(full_name, username, avatar_url)`)
+            .neq('creator_id', loggedInUserId)
+            .order('created_at', { ascending: false })
+            .limit(3);
+
         const badge = document.getElementById('notif-badge');
         const list = document.getElementById('notif-list');
 
-        if (error || !data || data.length === 0) {
+        const safeReqs = friendReqs || [];
+        const safeGroups = newGroups || [];
+        
+        // Check local storage for groups we've already opened the menu for
+        const seenGroups = JSON.parse(localStorage.getItem('seen_groups') || '[]');
+        let unreadGroupCount = 0;
+        unreadGroupIds = [];
+
+        safeGroups.forEach(g => {
+            if (!seenGroups.includes(g.id)) {
+                unreadGroupCount++;
+                unreadGroupIds.push(g.id);
+            }
+        });
+
+        // The badge only counts friend requests + GROUPS WE HAVEN'T SEEN
+        const totalNotifs = safeReqs.length + unreadGroupCount;
+
+        if (safeReqs.length === 0 && safeGroups.length === 0) {
             badge.style.display = 'none';
-            list.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); margin: 0; text-align: center;">Không có yêu cầu kết bạn nào.</p>';
+            list.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); margin: 0; text-align: center;">Không có thông báo mới.</p>';
             return;
         }
 
-        badge.style.display = 'block';
-        badge.innerText = data.length;
+        if (totalNotifs > 0) {
+            badge.style.display = 'block';
+            badge.innerText = totalNotifs;
+        } else {
+            badge.style.display = 'none';
+        }
+
         list.innerHTML = '';
 
-        data.forEach(req => {
+        safeReqs.forEach(req => {
             const user = req.profiles;
             const name = user.full_name || user.username || "Ẩn danh";
             const avatarHtml = user.avatar_url 
@@ -254,6 +304,30 @@
                     <button class="btn-action btn-primary" style="flex: 1; padding: 4px;" onclick="acceptRequest('${req.user_id}')">Chấp nhận</button>
                     <button class="btn-action" style="flex: 1; padding: 4px;" onclick="rejectRequest('${req.user_id}')">Từ chối</button>
                 </div>
+            `;
+            list.appendChild(notifItem);
+        });
+
+        safeGroups.forEach(group => {
+            const creator = group.profiles;
+            const name = creator?.full_name || creator?.username || "Ẩn danh";
+            const avatarHtml = creator?.avatar_url 
+                ? `<div class="widget-avatar" style="background-image: url(${creator.avatar_url}); background-size: cover; flex-shrink: 0;"></div>`
+                : `<div class="widget-avatar" style="flex-shrink: 0;">${name.charAt(0).toUpperCase()}</div>`;
+                
+            // Adds a subtle blue dot if the group is unread
+            const isUnread = !seenGroups.includes(group.id);
+            const dotHtml = isUnread ? `<div style="width: 8px; height: 8px; background: var(--primary); border-radius: 50%; flex-shrink: 0;"></div>` : '';
+
+            const notifItem = document.createElement('div');
+            notifItem.style.cssText = "display: flex; gap: 10px; align-items: center; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px; cursor: pointer;";
+            notifItem.onclick = () => window.location.href = `/group.html?id=${group.id}`;
+            notifItem.innerHTML = `
+                ${avatarHtml}
+                <div style="font-size: 13px; color: var(--text); flex: 1;">
+                    <strong>${name}</strong> vừa tạo nhóm mới: <span style="color: var(--primary); font-weight: bold;">${group.title || 'Nhóm không tên'}</span>.
+                </div>
+                ${dotHtml}
             `;
             list.appendChild(notifItem);
         });
@@ -539,19 +613,36 @@ async function checkFriendStatus() {
     async function loadUserGroups(userId) {
         const container = document.getElementById('groups-container');
         container.innerHTML = '<p style="text-align:center; color:#888;">Đang tải nhóm...</p>';
-        const { data } = await supabaseClient.from('groups').select('id, title, description, created_at').eq('creator_id', userId).order('created_at', { ascending: false });
+        
+        // CRITICAL FIX: Added cover_url to the select query
+        const { data } = await supabaseClient
+            .from('groups')
+            .select('id, title, description, cover_url, created_at')
+            .eq('creator_id', userId)
+            .order('created_at', { ascending: false });
+            
         if (!data || data.length === 0) {
-            container.innerHTML = `<div style="padding: 32px; text-align: center; color: var(--text-muted);"><h2 style="color: var(--text); margin-top: 0;">Chưa có nhóm nào</h2><p>Người dùng này chưa tạo nhóm nào.</p></div>`; return;
+            container.innerHTML = `<div style="padding: 32px; text-align: center; color: var(--text-muted);"><h2 style="color: var(--text); margin-top: 0;">Chưa có nhóm nào</h2><p>Người dùng này chưa tạo nhóm nào.</p></div>`; 
+            return;
         }
+        
         document.querySelector('.stat-item:nth-child(1) .stat-val').innerText = data.length;
+        
         let html = '<div class="group-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px;">';
         data.forEach(g => {
+            // CRITICAL FIX: Use the actual cover_url, fallback to placeholder if missing
+            const coverImage = g.cover_url || "https://via.placeholder.com/400x160/252525/4a90e2?text=KoNect";
+            
             html += `<div class="group-card" style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-2); cursor:pointer;" onclick="window.location.href='/group.html?id=${g.id}'">
-                        <img src="https://via.placeholder.com/400x160/252525/4a90e2?text=KoNect" style="width: 100%; height: 120px; object-fit: cover;">
-                        <div style="padding: 15px;"><h3 style="margin: 0 0 5px 0; font-size: 16px;">${g.title || 'Nhóm không tên'}</h3><p style="color: var(--text-muted); font-size: 13px; margin: 0;">${g.description || ''}</p></div>
+                        <img src="${coverImage}" style="width: 100%; height: 120px; object-fit: cover;">
+                        <div style="padding: 15px;">
+                            <h3 style="margin: 0 0 5px 0; font-size: 16px;">${g.title || 'Nhóm không tên'}</h3>
+                            <p style="color: var(--text-muted); font-size: 13px; margin: 0;">${g.description || ''}</p>
+                        </div>
                     </div>`;
         });
-        html += '</div>'; container.innerHTML = html;
+        html += '</div>'; 
+        container.innerHTML = html;
     }
 
     async function loadNewestGroups() {
