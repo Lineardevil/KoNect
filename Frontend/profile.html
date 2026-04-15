@@ -177,27 +177,29 @@
             return document.getElementById('edit-bio-input').value;
         }
     }
+
     async function loadProfile() {
-        const { data: { user }, error } = await supabaseClient.auth.getUser();
+        // ĐÃ SỬA: Dùng getSession() thay vì getUser() để không bị lỗi lúc mới chuyển trang
+        const { data: { session }, error } = await supabaseClient.auth.getSession();
+        const user = session ? session.user : null;
 
         if (error || !user) {
             document.getElementById('user-email').innerText = "@guest";
             document.getElementById('user-name').innerText = "Chưa đăng nhập";
             document.getElementById('nav-name').innerText = "Chưa đăng nhập";
             document.getElementById('action-buttons').style.display = 'none';
-            // 👇 THIS IS THE MAGIC LINE I ADDED 👇
-            document.body.classList.add('guest-mode', 'view-only'); 
-            return; 
+            document.body.classList.add('guest-mode', 'view-only');
+            return;
         }
 
         const handle = "@" + user.email.split('@')[0];
         document.getElementById('user-email').innerText = handle;
-        
+
         const displayName = user.user_metadata?.display_name || user.email.split('@')[0];
         document.getElementById('user-name').innerText = displayName;
         document.getElementById('nav-name').innerText = displayName;
-        document.getElementById('edit-name-input').value = displayName; 
-        
+        document.getElementById('edit-name-input').value = displayName;
+
         const avatarUrl = user.user_metadata?.avatar_url;
         const avatarDiv = document.getElementById('user-avatar');
         const bannerUrl = user.user_metadata?.banner_url;
@@ -205,8 +207,8 @@
         if (bannerUrl) document.getElementById('profile-banner-img').src = bannerUrl;
 
         if (avatarUrl) {
-            avatarDiv.innerText = ''; 
-            avatarDiv.style.backgroundImage = `url(${avatarUrl})`; 
+            avatarDiv.innerText = '';
+            avatarDiv.style.backgroundImage = `url(${avatarUrl})`;
         } else {
             avatarDiv.innerText = displayName.charAt(0).toUpperCase();
             avatarDiv.style.backgroundImage = 'none';
@@ -232,7 +234,7 @@
         }
     }
 
-function toggleEditMode() {
+    function toggleEditMode() {
         originalNameText = document.getElementById('edit-name-input').value;
         originalBioText = getBio(); // ✅ GET first
         originalEmailText = document.getElementById('edit-email-input').value;
@@ -244,15 +246,15 @@ function toggleEditMode() {
         document.getElementById('display-mode-bio').style.display = 'none';
         document.getElementById('display-contact-info').style.display = 'none';
         document.getElementById('edit-profile-btn').style.display = 'none';
-        
+
         document.getElementById('edit-mode-name').style.display = 'block';
         document.getElementById('edit-mode-bio').style.display = 'block';
         document.getElementById('edit-contact-info').style.display = 'flex';
         document.getElementById('cancel-profile-btn').style.display = 'inline-block';
         document.getElementById('save-profile-btn').style.display = 'inline-block';
-        
+
         document.getElementById('edit-name-input').focus();
-        
+
         // --- CRITICAL EASYMDE INJECTION ---
         if (!easyMDE) {
             easyMDE = new EasyMDE({
@@ -266,9 +268,10 @@ function toggleEditMode() {
             easyMDE.codemirror.on("change", validateProfileForm);
         }
         setBio(originalBioText);
-        
+
         // Run immediately to set the starting countdown numbers
-        setTimeout(validateProfileForm, 50);    }
+        setTimeout(validateProfileForm, 50);
+    }
 
     function cancelEditMode() {
         document.getElementById('edit-name-input').value = originalNameText;
@@ -295,7 +298,7 @@ function toggleEditMode() {
         const newBio = getBio().trim();
         const newEmail = document.getElementById('edit-email-input').value.trim();
         const newPhone = document.getElementById('edit-phone-input').value.trim();
-        
+
         if (!newName) return alert("Tên không được để trống!");
 
         const saveBtn = document.getElementById('save-profile-btn');
@@ -314,7 +317,7 @@ function toggleEditMode() {
         document.getElementById('user-name').innerText = newName;
         document.getElementById('nav-name').innerText = newName;
         document.getElementById('user-bio').innerHTML = formatBioText(newBio);
-        
+
         const avatarDiv = document.getElementById('user-avatar');
         if (!avatarDiv.style.backgroundImage || avatarDiv.style.backgroundImage === 'none') {
             avatarDiv.innerText = newName.charAt(0).toUpperCase();
@@ -323,14 +326,14 @@ function toggleEditMode() {
         document.getElementById('display-mode-name').style.display = 'block';
         document.getElementById('display-mode-bio').style.display = 'block';
         document.getElementById('edit-profile-btn').style.display = 'inline-block';
-        
+
         document.getElementById('edit-mode-name').style.display = 'none';
         document.getElementById('edit-mode-bio').style.display = 'none';
         document.getElementById('save-profile-btn').style.display = 'none';
         document.getElementById('cancel-profile-btn').style.display = 'none';
         document.getElementById('message-profile-btn').style.display = 'inline-flex';
         document.getElementById('bio-counter').style.display = 'none';
-        
+
         document.getElementById('user-contact-email').innerText = newEmail;
         document.getElementById('display-email').style.display = newEmail ? 'flex' : 'none';
         document.getElementById('user-phone').innerText = newPhone;
@@ -342,18 +345,18 @@ function toggleEditMode() {
     async function loadNewestGroups() {
         const sidebarContainer = document.getElementById('newest-groups-widget');
         sidebarContainer.innerHTML = '<h3 class="widget-title text-primary">Nhóm mới tạo</h3><p style="color: var(--text-muted); font-size: 13px;">Đang tải...</p>';
-        
+
         const { data: newestGroups, error } = await supabaseClient
-            .from('groups') 
-            .select('id, title, created_at') 
+            .from('groups')
+            .select('id, name, created_at')
             .order('created_at', { ascending: false })
             .limit(4);
 
         sidebarContainer.innerHTML = '<h3 class="widget-title text-primary">Nhóm mới tạo</h3>';
 
-if (error) {
+        if (error) {
             sidebarContainer.innerHTML += `<p style="color: var(--text-muted); font-size: 13px;">Không có dữ liệu nhóm lúc này.</p>`;
-            console.error("Supabase Fetch Error:", error.message); // Keeps the error in the console for YOU to debug later
+            console.error("Supabase Fetch Error:", error.message);
             return;
         }
 
@@ -364,7 +367,7 @@ if (error) {
 
         newestGroups.forEach(group => {
             const groupName = group.name || "Nhóm ẩn danh";
-            const dateStr = new Date(group.created_at).toLocaleDateString('vi-VN'); 
+            const dateStr = new Date(group.created_at).toLocaleDateString('vi-VN');
             const widgetItem = document.createElement('div');
             widgetItem.className = 'widget-item';
             widgetItem.onclick = () => window.location.href = `/group.html?id=${group.id}`;
@@ -397,121 +400,106 @@ if (error) {
 
     function closeCropModal() { document.getElementById('crop-modal').style.display = 'none'; if (cropper) cropper.destroy(); }
 
-async function saveCroppedImage() {
-    if (!cropper) return;
-    const btn = document.getElementById('save-crop-btn');
-    btn.innerText = "Đang lưu..."; 
-    btn.disabled = true;
+    async function saveCroppedImage() {
+        if (!cropper) return;
+        const btn = document.getElementById('save-crop-btn');
+        btn.innerText = "Đang lưu...";
+        btn.disabled = true;
 
-    // 1. Get canvas at a reasonable size
-    const canvas = cropper.getCroppedCanvas({ maxWidth: currentCropType === 'avatar' ? 400 : 1200 });
+        const canvas = cropper.getCroppedCanvas({ maxWidth: currentCropType === 'avatar' ? 400 : 1200 });
 
-    // 2. Convert Canvas to a binary Blob instead of a massive Base64 string
-    canvas.toBlob(async (blob) => {
-        if (!blob) {
-            alert("Lỗi xử lý ảnh!");
-            btn.innerText = "Áp dụng"; 
-            btn.disabled = false;
-            return;
-        }
-
-        try {
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            if (!user) throw new Error("Chưa đăng nhập");
-
-            // 3. Create a unique filename (e.g., user123-170000000-avatar.jpeg)
-            const fileName = `${user.id}-${Date.now()}-${currentCropType}.jpeg`;
-
-            // 4. Upload the Blob to the 'profiles' bucket
-            const { error: uploadError } = await supabaseClient.storage
-                .from('profiles') 
-                .upload(fileName, blob, { 
-                    contentType: 'image/jpeg', 
-                    upsert: true 
-                });
-
-            if (uploadError) throw uploadError;
-
-            // 5. Get the clean, short public URL
-            const { data: { publicUrl } } = supabaseClient.storage
-                .from('profiles')
-                .getPublicUrl(fileName);
-
-            // 6. Update user_metadata with ONLY the short URL
-            const updateData = currentCropType === 'avatar' ? { avatar_url: publicUrl } : { banner_url: publicUrl };
-            const { error: updateError } = await supabaseClient.auth.updateUser({ data: updateData });
-
-            if (updateError) throw updateError;
-
-            // 7. Update the UI
-            if (currentCropType === 'avatar') {
-                const avatarDiv = document.getElementById('user-avatar');
-                avatarDiv.innerText = ''; 
-                avatarDiv.style.backgroundImage = `url(${publicUrl})`;
-            } else {
-                document.getElementById('profile-banner-img').src = publicUrl;
+        canvas.toBlob(async (blob) => {
+            if (!blob) {
+                alert("Lỗi xử lý ảnh!");
+                btn.innerText = "Áp dụng";
+                btn.disabled = false;
+                return;
             }
-            closeCropModal();
 
-        } catch (err) {
-            alert("Lỗi: " + err.message);
-        } finally {
-            btn.innerText = "Áp dụng"; 
-            btn.disabled = false;
-        }
-    }, 'image/jpeg', 0.8);
-}    // --- HELPERS & VALIDATION ---
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                const user = session ? session.user : null;
+                if (!user) throw new Error("Chưa đăng nhập");
 
-function formatBioText(text) {
-    if (!text) return '<span style="color: var(--text-muted);">Chưa có tiểu sử...</span>';
-    
-    let linkMap = {}, linkIndex = 0;
-    let safeText = text;
+                const fileName = `${user.id}-${Date.now()}-${currentCropType}.jpeg`;
 
-    // 1. EXTRACT CODE BLOCKS FIRST (Before any escaping)
-    // This captures your cat exactly as it appears in the editor
-    safeText = safeText.replace(/```([\s\S]*?)```/g, (match, p1) => {
-        let placeholder = `___CODE${linkIndex}___`;
-        // Use the CSS class we built for the "Blue Pop" and Monospace alignment
-        linkMap[placeholder] = `<div class="bio-code-block cat">${p1.replace(/^\n|\n$/g, '')}</div>`;
-        linkIndex++; 
-        return placeholder;
-    });
+                const { error: uploadError } = await supabaseClient.storage
+                    .from('profiles')
+                    .upload(fileName, blob, {
+                        contentType: 'image/jpeg',
+                        upsert: true
+                    });
 
-    // 2. Escape HTML for everything ELSE (safety)
-    safeText = safeText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                if (uploadError) throw uploadError;
 
-    // 3. Convert standard newlines to <br> for regular text
-    safeText = safeText.replace(/\n/g, '<br>');
+                const { data: { publicUrl } } = supabaseClient.storage
+                    .from('profiles')
+                    .getPublicUrl(fileName);
 
-    // 4. PUT THE CAT BACK IN
-    // This restores the div block into the placeholder
-    for (let placeholder in linkMap) {
-        safeText = safeText.replace(placeholder, linkMap[placeholder]);
+                const updateData = currentCropType === 'avatar' ? { avatar_url: publicUrl } : { banner_url: publicUrl };
+                const { error: updateError } = await supabaseClient.auth.updateUser({ data: updateData });
+
+                if (updateError) throw updateError;
+
+                if (currentCropType === 'avatar') {
+                    const avatarDiv = document.getElementById('user-avatar');
+                    avatarDiv.innerText = '';
+                    avatarDiv.style.backgroundImage = `url(${publicUrl})`;
+                } else {
+                    document.getElementById('profile-banner-img').src = publicUrl;
+                }
+                closeCropModal();
+
+            } catch (err) {
+                alert("Lỗi: " + err.message);
+            } finally {
+                btn.innerText = "Áp dụng";
+                btn.disabled = false;
+            }
+        }, 'image/jpeg', 0.8);
     }
-    
-    return safeText;
-}
-        // --- LIVE COUNTDOWN VALIDATION ---
+
+    // --- HELPERS & VALIDATION ---
+    function formatBioText(text) {
+        if (!text) return '<span style="color: var(--text-muted);">Chưa có tiểu sử...</span>';
+
+        let linkMap = {}, linkIndex = 0;
+        let safeText = text;
+
+        safeText = safeText.replace(/```([\s\S]*?)```/g, (match, p1) => {
+            let placeholder = `___CODE${linkIndex}___`;
+            linkMap[placeholder] = `<div class="bio-code-block cat">${p1.replace(/^\n|\n$/g, '')}</div>`;
+            linkIndex++;
+            return placeholder;
+        });
+
+        safeText = safeText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        safeText = safeText.replace(/\n/g, '<br>');
+
+        for (let placeholder in linkMap) {
+            safeText = safeText.replace(placeholder, linkMap[placeholder]);
+        }
+
+        return safeText;
+    }
+
+    // --- LIVE COUNTDOWN VALIDATION ---
     function validateProfileForm() {
         const nameInput = document.getElementById('edit-name-input');
-        
-        // Calculate remaining
+
         const nameRemaining = 36 - nameInput.value.length;
         const bioLen = getBio().length;
         const bioRemaining = 200 - bioLen;
-        
+
         const nameCounter = document.getElementById('name-counter');
         const bioCounter = document.getElementById('bio-counter');
         const saveBtn = document.getElementById('save-profile-btn');
-        
-        // Update raw numbers
+
         nameCounter.innerText = nameRemaining;
         bioCounter.innerText = bioRemaining;
-        
+
         let isValid = true;
-        
-        // Name UI state
+
         if (nameRemaining < 0) {
             nameCounter.style.color = "var(--error)";
             nameInput.style.borderColor = "var(--error)";
@@ -520,23 +508,21 @@ function formatBioText(text) {
             nameCounter.style.color = "var(--text-muted)";
             nameInput.style.borderColor = "var(--primary)";
         }
-        
-        // Bio UI state
+
         if (bioRemaining < 0) {
             bioCounter.style.color = "var(--error)";
             isValid = false;
             const cm = document.querySelector('.CodeMirror');
-            if(cm) cm.style.borderColor = "var(--error)"; // Turns the EasyMDE box red
+            if(cm) cm.style.borderColor = "var(--error)";
         } else {
             bioCounter.style.color = "var(--text-muted)";
             const cm = document.querySelector('.CodeMirror');
             if(cm) cm.style.borderColor = "var(--border)";
         }
-        
+
         if (saveBtn) saveBtn.disabled = !isValid;
     }
 
-    // Listen to standard typing in the name box
     document.getElementById('edit-name-input').addEventListener('input', validateProfileForm);
 
     window.onload = () => {

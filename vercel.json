@@ -3,24 +3,19 @@
   "builds": [
     {
       "src": "Backend/main.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": "Frontend/**"
+      }
     }
   ],
   "routes": [
     {
+      "src": "/assets/(.*)",
+      "dest": "Backend/main.py"
+    },
+    {
       "src": "/api/(.*)",
-      "dest": "Backend/main.py"
-    },
-    {
-      "src": "/main",
-      "dest": "Backend/main.py"
-    },
-    {
-      "src": "/reset-password",
-      "dest": "Backend/main.py"
-    },
-    {
-      "src": "/profile",
       "dest": "Backend/main.py"
     },
     {

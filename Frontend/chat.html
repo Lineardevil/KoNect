@@ -5,28 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Box - Konect</title>
     <style>
-        /* Tổng thể màn hình */
+        /* Reset body cho bám sát màn hình */
         body {
             font-family: Arial, sans-serif;
             background-color: #18191a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             margin: 0;
+            height: 100vh;
             color: #e4e6eb;
         }
 
-        /* Khung chứa chat */
-        #chat-container {
-            width: 400px;
+        /* Layout 2 cột thần thánh */
+        #messenger-layout {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Cột trái (Sidebar) */
+        #sidebar {
+            width: 350px; /* Độ rộng cột danh sách */
             background-color: #242526;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            border-right: 1px solid #3e4042;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            border-bottom: 1px solid #3e4042;
+        }
+
+        .friend-list {
+            overflow-y: auto;
+            flex: 1;
+            padding: 10px;
+        }
+
+        .friend-item {
+            padding: 15px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: transparent;
+        }
+
+        .friend-item:hover {
+            background-color: #3a3b3c;
+        }
+
+        /* Cột phải (Khung chat cũ của mày) */
+        #chat-container {
+            flex: 1; /* Chiếm toàn bộ phần diện tích còn lại */
+            background-color: #242526;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            border: 1px solid #3e4042;
+            /* Đã bỏ cái width: 400px và cái border đi cho nó bung lụa */
         }
 
         /* CSS cho màn hình chờ (Empty State) */
@@ -86,7 +122,7 @@
 
         /* Vùng hiển thị tin nhắn */
         #chat-box {
-            height: 400px;
+            flex: 1;
             padding: 15px;
             overflow-y: auto;
             display: flex;
@@ -196,33 +232,71 @@
         }
     </style>
 </head>
+
 <body>
 
-<div id="chat-container">
+<div id="messenger-layout">
 
-    <div id="empty-state">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#b0b3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-        </svg>
-        <p>Hãy tham gia một nhóm bất kỳ để giao lưu!</p>
+    <div id="sidebar">
+        <div class="sidebar-header">Đoạn Chat</div>
+        <div class="friend-list">
+            <div class="sidebar-section">
+                <div class="section-header" onclick="toggleSection('friends-list')">
+                    <span>BẠN BÈ - FRIENDS</span>
+                    <span class="arrow">▼</span>
+                </div>
+                <div id="friends-list" class="section-content">
+                    <div class="friend-item" style="font-style: italic; color: #666;">Chưa có ai ở đây cả...</div>
+                </div>
+            </div>
 
-        <button id="test-join-btn" onclick="openChatRoom()">Test thử: Bấm để mở khung chat</button>
+            <div class="sidebar-section">
+                <div class="section-header" onclick="toggleSection('groups-list')">
+                    <span> CÁC NHÓM - GROUPS </span>
+                    <span class="arrow">▼</span>
+                </div>
+                <div id="groups-list" class="section-content">
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <div id="chat-ui" style="display: none; flex-direction: column; height: 100%;">
+    <div id="chat-container">
 
-        <div id="chat-header">
-            <button id="back-btn" onclick="closeChatRoom()">&#8592; Quay lại</button>
-            <span style="font-weight: bold;">Tên Nhóm Chat</span>
+        <div id="empty-state">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#b0b3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <p>Hãy tham gia một nhóm bất kỳ để giao lưu!</p>
+
         </div>
 
-        <div id="chat-box">
+        <div id="join-state" style="display: none; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center; padding: 20px; color: #b0b3b8;">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ff4d4f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <p style="font-size: 16px; margin-top: 15px;">Bạn chưa là thành viên của nhóm này!</p>
+            <button id="join-btn" style="margin-top: 15px; padding: 10px 20px; background-color: #0084ff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Tham gia </button>
         </div>
 
-        <div id="input-area">
-            <input type="text" id="message-input" placeholder="Nhập tin nhắn...">
-            <button id="send-btn">Gửi</button>
+        <div id="chat-ui" style="display: none; flex-direction: column; height: 100%;">
+
+            <div id="chat-header">
+                <button id="back-btn" onclick="closeChatRoom()">&#8592; Quay lại</button>
+                <span style="font-weight: bold;">Tên Nhóm Chat</span>
+            </div>
+
+            <div id="chat-box">
+            </div>
+
+            <div id="input-area">
+                <input type="text" id="message-input" placeholder="Nhập tin nhắn...">
+                <button id="send-btn">Gửi</button>
+            </div>
         </div>
+
     </div>
 
 </div>
@@ -230,154 +304,182 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    function openChatRoom() {
-        document.getElementById('empty-state').style.display = 'none';
-        document.getElementById('chat-ui').style.display = 'flex';
-        loadChatHistory();
-    }
-
-    function closeChatRoom() {
-        document.getElementById('chat-ui').style.display = 'none';
-        document.getElementById('empty-state').style.display = 'flex';
-    }
-
     const supabaseUrl = 'https://dfbklcbregcxzngpiorx.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYmtsY2JyZWdjeHpuZ3Bpb3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTI2MTIsImV4cCI6MjA4OTQyODYxMn0.3EOOOodNiaa46ptAksdTY43_vknTIxhejcJCbVN441w';
-
     const mySupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    // Cuốn sổ tay ghi nhớ ID của những người đã nhắn tin
-    const memberMap = {};
-    let memberCounter = 1; // Số thứ tự bắt đầu từ 1
+    let globalUserId = null;
+    let currentGroupId = null;
+    let currentRealtimeChannel = null;
 
-    // Hàm hiển thị tin nhắn (Đã nâng cấp Tên + Trái/Phải)
-    function displayNewMessage(msg) {
-
-        const chatContainer = document.getElementById('chat-box');
-        if (!chatContainer) return;
-
-        const noMsgText = document.getElementById('no-msg-text');
-        if (noMsgText) {
-            noMsgText.remove();
-        }
-
-        // CÁI ID THẬT CỦA MÀY
-        const myUserId = 'cceab40a-0fef-4f21-9bba-c62273b139bb';
-
-        // 1. Tạo cái vỏ bọc bên ngoài
-        const wrapper = document.createElement('div');
-        wrapper.classList.add('message-wrapper');
-
-        // 2. Tạo cái bong bóng chứa chữ
-        const messageBubble = document.createElement('div');
-        messageBubble.classList.add('message');
-        messageBubble.innerText = `${msg.content}`;
-
-        // 3. Phân luồng Trái/Phải
-        if (msg.sender_id === myUserId) {
-            // LÀ MÌNH GỬI: Nhảy sang phải, màu xanh
-            wrapper.classList.add('right');
-            messageBubble.classList.add('self');
-
-            // Mình gửi thì không cần hiện tên, nhét luôn bong bóng vào
-            wrapper.appendChild(messageBubble);
-
+    async function initApp() {
+        const { data: { user } } = await mySupabase.auth.getUser();
+        if (user) {
+            globalUserId = user.id;
+            console.log("(<33) Đã nhận diện chính chủ: ", globalUserId);
         } else {
-            // LÀ NGƯỜI KHÁC GỬI: Nằm bên trái, màu xám, có tên ở trên
-            wrapper.classList.add('left');
-            messageBubble.classList.add('other');
-
-            // Tạo thẻ hiện tên
-            const nameLabel = document.createElement('div');
-            nameLabel.classList.add('sender-name');
-
-            // --- LOGIC ĐÁNH SỐ THÀNH VIÊN ---
-            // Nếu sổ tay chưa có ID của người này, thì ghi danh nó vào và cấp số
-            if (!memberMap[msg.sender_id]) {
-                memberMap[msg.sender_id] = memberCounter;
-                memberCounter++; // Tăng số lên cho người tiếp theo
-            }
-
-            // Lấy số thứ tự trong sổ tay ra in
-            nameLabel.innerText = `Thành viên ${memberMap[msg.sender_id]}`;
-            // ---------------------------------
-
-            // Nhét tên vào trước, rồi mới nhét bong bóng chat ở dưới
-            wrapper.appendChild(nameLabel);
-            wrapper.appendChild(messageBubble);
+            globalUserId = 'cceab40a-0fef-4f21-9bba-c62273b139bb';
+            console.warn("(!!!) Dùng ID Test tạm thời: ", globalUserId);
         }
-
-        // 4. Bơm tất cả vào khung chat
-        chatContainer.appendChild(wrapper);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
+        loadSidebar();
     }
+    initApp();
 
-    async function loadChatHistory() {
+    async function loadSidebar() {
         const { data, error } = await mySupabase
-            .from('messages')
-            .select('*')
-            // Chú ý: Lấy data theo ID nhóm
-            .eq('group_id', 'b145cf3c-1969-40db-a95c-9854281de575')
-            .order('created_at', { ascending: true });
+            .from('group_members')
+            .select(`groups ( id, title )`)
+            .eq('user_id', globalUserId)
+            .eq('status', 'joined');
 
-        if (error) {
-            console.error('Lỗi load lịch sử:', error.message);
-            return;
-        }
+        if (error) return console.error("Lỗi lọc sidebar:", error);
 
-        const chatBox = document.getElementById('chat-box');
-        chatBox.innerHTML = '';
+        const groupsContainer = document.getElementById('groups-list');
+        if (!groupsContainer) return;
+
+        groupsContainer.innerHTML = '';
 
         if (data && data.length > 0) {
-            data.forEach(msg => displayNewMessage(msg));
+            data.forEach(item => {
+                const group = item.groups;
+                if (group) {
+                    const div = document.createElement('div');
+                    div.classList.add('friend-item');
+                    div.innerText = group.title || "Nhóm vô danh :P ";
+                    div.onclick = () => openChatRoom(group.id, group.title);
+                    groupsContainer.appendChild(div);
+                }
+            });
         } else {
-            chatBox.innerHTML = `
-                <div id="no-msg-text" style="text-align: center; color: #6b99cf; margin: auto; font-size: 14px; font-style: italic;">
-                    Có vẻ chưa ai mở lời với nhau thì phải. Hãy là người đầu tiên gửi lời chào! 👋
-                </div>
-            `;
+            groupsContainer.innerHTML = '<div style="padding:10px; font-size:12px; color:#888;">M chưa vào nhóm nào cả!</div>';
         }
+    }
+
+    async function openChatRoom(groupId, groupTitle) {
+        currentGroupId = groupId;
+        document.querySelector('#chat-header span').innerText = groupTitle;
+        document.getElementById('empty-state').style.display = 'none';
+        document.getElementById('chat-ui').style.display = 'flex';
+        document.getElementById('join-state').style.display = 'none';
+        document.getElementById('chat-box').innerHTML = '';
+
+        await loadChatHistory(groupId);
+        setupRealtimeListener(groupId);
+    }
+
+    // --- FIX LỖI THIẾU NGOẶC Ở ĐÂY ---
+    async function loadChatHistory(groupId) {
+        const { data, error } = await mySupabase
+            .from('messages')
+            .select(`
+                *,
+                sender:profiles ( full_name )
+            `)
+            .eq('group_id', groupId)
+            .order('created_at', { ascending: true });
+
+        if (error) return console.error("Lỗi load history:", error);
+
+        if (data) {
+            data.forEach(msg => {
+                // LOGIC DỰ PHÒNG:
+                // 1. Ưu tiên lấy full_name
+                // 2. Nếu NULL, hiện "User-" + 4 ký tự cuối của ID cho nó giống Discord
+                let displayName = "Người dùng ẩn danh";
+
+                if (msg.sender && msg.sender.full_name) {
+                    displayName = msg.sender.full_name;
+                } else {
+                    // Cắt 4 chữ cuối của UUID để phân biệt anh em
+                    displayName = "User-" + msg.sender_id.substring(0, 4);
+                }
+
+                displayNewMessage(msg, displayName);
+            });
+        }
+    } // Đã đóng ngoặc hàm loadChatHistory chuẩn chỉ!
+
+    function setupRealtimeListener(groupId) {
+        if (!groupId) return;
+        if (currentRealtimeChannel) {
+            mySupabase.removeChannel(currentRealtimeChannel);
+        }
+
+        currentRealtimeChannel = mySupabase
+            .channel('room-' + groupId)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages',
+                },
+                (payload) => {
+                    if (payload.new.group_id === groupId) {
+                        // Realtime ko trả về join profiles, nên tạm để là "Thành viên mới"
+                        displayNewMessage(payload.new, "Thành viên mới");
+                    }
+                }
+            )
+            .subscribe();
     }
 
     async function sendMessage() {
         const input = document.getElementById('message-input');
         const content = input.value.trim();
-        if (!content) return;
-
-        // Dán 2 cái ID THẬT vào đây
-        const testGroupId = 'b145cf3c-1969-40db-a95c-9854281de575';
-        const testSenderId = 'cceab40a-0fef-4f21-9bba-c62273b139bb';
+        if (!content || !currentGroupId) return;
 
         const { error } = await mySupabase
             .from('messages')
             .insert([{
                 content: content,
-                group_id: testGroupId,
-                sender_id: testSenderId
+                group_id: currentGroupId,
+                sender_id: globalUserId
             }]);
 
-        if (error) {
-            console.error('Gửi lỗi nè fen:', error.message);
-            alert("Lỗi: " + error.message);
-        } else {
-            input.value = '';
-        }
+        if (error) alert("Lỗi: " + error.message);
+        else input.value = '';
     }
 
-    // ĐÃ ĐỔI TÊN KÊNH THÀNH GROUP_ID ĐỂ NGHE ĐÚNG PHÒNG CHAT NÀY
-    const channel = mySupabase
-        .channel('b145cf3c-1969-40db-a95c-9854281de575')
-        .on(
-            'postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'messages' },
-            (payload) => { displayNewMessage(payload.new); }
-        )
-        .subscribe();
+    // GỘP 2 HÀM HIỂN THỊ THÀNH 1 BẢN XỊN
+    function displayNewMessage(msg, senderName = "Đang tải...") {
+        const chatBox = document.getElementById('chat-box');
+        if (!chatBox) return;
+
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('message-wrapper');
+
+        const bubble = document.createElement('div');
+        bubble.classList.add('message');
+        bubble.innerText = msg.content;
+
+        if (msg.sender_id === globalUserId) {
+            wrapper.classList.add('right');
+            bubble.classList.add('self');
+            wrapper.appendChild(bubble);
+        } else {
+            wrapper.classList.add('left');
+            bubble.classList.add('other');
+
+            const nameLabel = document.createElement('div');
+            nameLabel.classList.add('sender-name');
+            nameLabel.innerText = senderName;
+
+            wrapper.appendChild(nameLabel);
+            wrapper.appendChild(bubble);
+        }
+        chatBox.appendChild(wrapper);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function toggleSection(id) {
+        const content = document.getElementById(id);
+        if (!content) return;
+        content.style.display = (content.style.display === "none") ? "block" : "none";
+    }
 
     document.getElementById('send-btn').onclick = sendMessage;
-    document.getElementById('message-input').onkeydown = (e) => {
-        if (e.key === 'Enter') sendMessage();
-    };
+    document.getElementById('message-input').onkeydown = (e) => { if (e.key === 'Enter') sendMessage(); };
 </script>
 
 </body>
