@@ -10,6 +10,22 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
     <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .nav-icon { color: var(--text); transition: color 0.2s; display: flex; align-items: center; justify-content: center; }
+        .nav-icon:hover { color: var(--primary); }
+        
+        /* 1-Line fade out to keep group cards clean and compact */
+        .desc-fade {
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            -webkit-mask-image: linear-gradient(to right, #000 70%, transparent 100%);
+            mask-image: linear-gradient(to right, #000 70%, transparent 100%);
+        }
+        .desc-fade p { margin: 0; }
+    </style>
 </head>
 <body class="profile-page">
 <div class="app-layout">
@@ -26,18 +42,23 @@
             </div>
             <div class="nav-text">
                 <h2 id="nav-name">Đang tải...</h2>
-                <p>0 Nhóm</p>
+                <p id="nav-group-count">0 Nhóm</p>
             </div>
 
-            <div id="notif-wrapper" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); z-index: 100;">
-                <div id="bell-icon" style="cursor: pointer; position: relative; display: none;" onclick="toggleNotifs()">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="var(--text)"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+            <div id="notif-wrapper" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); z-index: 100; display: flex; gap: 15px; align-items: center;">
+                
+                <div id="msg-icon" class="nav-icon" style="cursor: pointer; display: none;" onclick="window.location.href='/chat'" title="Tin nhắn">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+                </div>
+
+                <div id="bell-icon" class="nav-icon" style="cursor: pointer; position: relative; display: none;" onclick="toggleNotifs()" title="Thông báo">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
                     <span id="notif-badge" style="display: none; position: absolute; top: -5px; right: -5px; background: #ff4d4d; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold;">0</span>
                 </div>
                 
-                <div id="notif-dropdown" style="display: none; position: absolute; top: 35px; right: 0; width: 320px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; padding: 15px; flex-direction: column; gap: 10px; text-align: left;">
+                <div id="notif-dropdown" style="display: none; position: absolute; top: 35px; right: 0; width: 340px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; padding: 15px; flex-direction: column; gap: 10px; text-align: left;">
                     <h4 style="margin: 0; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text);">Thông báo</h4>
-                    <div id="notif-list" style="max-height: 300px; overflow-y: auto;">
+                    <div id="notif-list" style="max-height: 350px; overflow-y: auto;">
                         <p style="font-size: 13px; color: var(--text-muted); margin: 0; text-align: center;">Đang tải...</p>
                     </div>
                 </div>
@@ -185,8 +206,7 @@
     let originalNameText = '', originalBioText = '';
     let loggedInUserId = null;
     let currentlyViewingId = null;
-    let friendState = 'none'; // State machine: none, pending_sent, pending_received, accepted
-    let unreadGroupIds = [];
+    let friendState = 'none';
 
     function setBio(value) { if (easyMDE) easyMDE.value(value || ''); else document.getElementById('edit-bio-input').value = value || ''; }
     function getBio() { if (easyMDE) return easyMDE.value(); return document.getElementById('edit-bio-input').value; }
@@ -200,26 +220,9 @@
         });
     }
 
-    // --- NOTIFICATION UI LOGIC ---
-    function markGroupsAsRead() {
-        if (unreadGroupIds.length > 0) {
-            const seenGroups = JSON.parse(localStorage.getItem('seen_groups') || '[]');
-            // Merge the old seen groups with the newly seen ones without duplicates
-            const updatedSeen = [...new Set([...seenGroups, ...unreadGroupIds])];
-            localStorage.setItem('seen_groups', JSON.stringify(updatedSeen));
-            unreadGroupIds = []; // Clear the temporary list
-            loadNotifications(); // Silently reload to update the red badge
-        }
-    }
-
     function toggleNotifs() {
         const drop = document.getElementById('notif-dropdown');
-        if (drop.style.display === 'none') {
-            drop.style.display = 'flex';
-        } else {
-            drop.style.display = 'none';
-            markGroupsAsRead(); // Trigger read status when clicking bell to close
-        }
+        drop.style.display = drop.style.display === 'none' ? 'flex' : 'none';
     }
 
     document.addEventListener('click', function(event) {
@@ -227,69 +230,81 @@
         const drop = document.getElementById('notif-dropdown');
         if (wrapper && !wrapper.contains(event.target) && drop && drop.style.display !== 'none') {
             drop.style.display = 'none';
-            markGroupsAsRead(); // Trigger read status when clicking outside to close
         }
     });
 
     async function loadNotifications() {
         if (!loggedInUserId) return;
-        document.getElementById('bell-icon').style.display = 'block';
+        document.getElementById('bell-icon').style.display = 'flex';
+        document.getElementById('msg-icon').style.display = 'flex';
 
         const { data: friendReqs } = await supabaseClient
             .from('friends')
-            .select(`user_id, created_at, profiles!friends_user_id_fkey(full_name, username, avatar_url)`)
+            .select(`user_id, profiles!friends_user_id_fkey(full_name, username, avatar_url)`)
             .eq('friend_id', loggedInUserId)
             .eq('status', 'pending');
 
-        const { data: newGroups } = await supabaseClient
+        const { data: myOwnedGroups } = await supabaseClient
             .from('groups')
-            .select(`id, title, created_at, profiles!inner(full_name, username, avatar_url)`)
-            .neq('creator_id', loggedInUserId)
-            .order('created_at', { ascending: false })
-            .limit(3);
+            .select('id')
+            .eq('creator_id', loggedInUserId);
+
+        const myOwnedGroupIds = myOwnedGroups ? myOwnedGroups.map(g => g.id) : [];
+        let groupJoinReqs = [];
+        
+        if (myOwnedGroupIds.length > 0) {
+            const { data } = await supabaseClient
+                .from('group_members')
+                .select(`user_id, group_id, profiles!inner(full_name, username, avatar_url), groups!inner(title)`)
+                .in('group_id', myOwnedGroupIds)
+                .eq('status', 'pending');
+            groupJoinReqs = data || [];
+        }
 
         const badge = document.getElementById('notif-badge');
         const list = document.getElementById('notif-list');
+        const totalNotifs = (friendReqs?.length || 0) + groupJoinReqs.length;
 
-        const safeReqs = friendReqs || [];
-        const safeGroups = newGroups || [];
-        
-        // Check local storage for groups we've already opened the menu for
-        const seenGroups = JSON.parse(localStorage.getItem('seen_groups') || '[]');
-        let unreadGroupCount = 0;
-        unreadGroupIds = [];
-
-        safeGroups.forEach(g => {
-            if (!seenGroups.includes(g.id)) {
-                unreadGroupCount++;
-                unreadGroupIds.push(g.id);
-            }
-        });
-
-        // The badge only counts friend requests + GROUPS WE HAVEN'T SEEN
-        const totalNotifs = safeReqs.length + unreadGroupCount;
-
-        if (safeReqs.length === 0 && safeGroups.length === 0) {
+        if (totalNotifs === 0) {
             badge.style.display = 'none';
             list.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); margin: 0; text-align: center;">Không có thông báo mới.</p>';
             return;
         }
 
-        if (totalNotifs > 0) {
-            badge.style.display = 'block';
-            badge.innerText = totalNotifs;
-        } else {
-            badge.style.display = 'none';
-        }
-
+        badge.style.display = 'block';
+        badge.innerText = totalNotifs;
         list.innerHTML = '';
 
-        safeReqs.forEach(req => {
+        groupJoinReqs.forEach(req => {
             const user = req.profiles;
             const name = user.full_name || user.username || "Ẩn danh";
             const avatarHtml = user.avatar_url 
-                ? `<div class="widget-avatar" style="background-image: url(${user.avatar_url}); background-size: cover; flex-shrink: 0;"></div>`
-                : `<div class="widget-avatar" style="flex-shrink: 0;">${name.charAt(0).toUpperCase()}</div>`;
+                ? `<div class="widget-avatar" style="background-image: url(${user.avatar_url}); background-size: cover; flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px;"></div>`
+                : `<div class="widget-avatar" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary);">${name.charAt(0).toUpperCase()}</div>`;
+
+            const notifItem = document.createElement('div');
+            notifItem.style.cssText = "display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px;";
+            notifItem.innerHTML = `
+                <div style="display:flex; gap: 10px; align-items:center;">
+                    ${avatarHtml}
+                    <div style="font-size: 13px; color: var(--text);">
+                        <strong>${name}</strong> xin vào nhóm <strong>${req.groups.title}</strong>.
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-action btn-primary" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="approveGroupReq('${req.group_id}', '${req.user_id}')">Duyệt</button>
+                    <button class="btn-action" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="rejectGroupReq('${req.group_id}', '${req.user_id}')">Từ chối</button>
+                </div>
+            `;
+            list.appendChild(notifItem);
+        });
+
+        (friendReqs || []).forEach(req => {
+            const user = req.profiles;
+            const name = user.full_name || user.username || "Ẩn danh";
+            const avatarHtml = user.avatar_url 
+                ? `<div class="widget-avatar" style="background-image: url(${user.avatar_url}); background-size: cover; flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px;"></div>`
+                : `<div class="widget-avatar" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary);">${name.charAt(0).toUpperCase()}</div>`;
 
             const notifItem = document.createElement('div');
             notifItem.style.cssText = "display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px;";
@@ -301,39 +316,25 @@
                     </div>
                 </div>
                 <div style="display: flex; gap: 8px;">
-                    <button class="btn-action btn-primary" style="flex: 1; padding: 4px;" onclick="acceptRequest('${req.user_id}')">Chấp nhận</button>
-                    <button class="btn-action" style="flex: 1; padding: 4px;" onclick="rejectRequest('${req.user_id}')">Từ chối</button>
+                    <button class="btn-action btn-primary" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="acceptFriendReq('${req.user_id}')">Chấp nhận</button>
+                    <button class="btn-action" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="rejectFriendReq('${req.user_id}')">Từ chối</button>
                 </div>
-            `;
-            list.appendChild(notifItem);
-        });
-
-        safeGroups.forEach(group => {
-            const creator = group.profiles;
-            const name = creator?.full_name || creator?.username || "Ẩn danh";
-            const avatarHtml = creator?.avatar_url 
-                ? `<div class="widget-avatar" style="background-image: url(${creator.avatar_url}); background-size: cover; flex-shrink: 0;"></div>`
-                : `<div class="widget-avatar" style="flex-shrink: 0;">${name.charAt(0).toUpperCase()}</div>`;
-                
-            // Adds a subtle blue dot if the group is unread
-            const isUnread = !seenGroups.includes(group.id);
-            const dotHtml = isUnread ? `<div style="width: 8px; height: 8px; background: var(--primary); border-radius: 50%; flex-shrink: 0;"></div>` : '';
-
-            const notifItem = document.createElement('div');
-            notifItem.style.cssText = "display: flex; gap: 10px; align-items: center; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px; cursor: pointer;";
-            notifItem.onclick = () => window.location.href = `/group.html?id=${group.id}`;
-            notifItem.innerHTML = `
-                ${avatarHtml}
-                <div style="font-size: 13px; color: var(--text); flex: 1;">
-                    <strong>${name}</strong> vừa tạo nhóm mới: <span style="color: var(--primary); font-weight: bold;">${group.title || 'Nhóm không tên'}</span>.
-                </div>
-                ${dotHtml}
             `;
             list.appendChild(notifItem);
         });
     }
 
-    async function acceptRequest(senderId) {
+    async function approveGroupReq(groupId, userId) {
+        await supabaseClient.from('group_members').update({ status: 'member' }).match({ group_id: groupId, user_id: userId });
+        loadNotifications(); 
+    }
+
+    async function rejectGroupReq(groupId, userId) {
+        await supabaseClient.from('group_members').delete().match({ group_id: groupId, user_id: userId });
+        loadNotifications(); 
+    }
+
+    async function acceptFriendReq(senderId) {
         await supabaseClient.from('friends').update({ status: 'accepted' }).match({ user_id: senderId, friend_id: loggedInUserId });
         await supabaseClient.from('friends').upsert({ user_id: loggedInUserId, friend_id: senderId, status: 'accepted' });
         
@@ -341,13 +342,12 @@
         if (currentlyViewingId === senderId) { checkFriendStatus(); loadFriends(loggedInUserId); }
     }
 
-    async function rejectRequest(senderId) {
+    async function rejectFriendReq(senderId) {
         await supabaseClient.from('friends').delete().match({ user_id: senderId, friend_id: loggedInUserId });
         loadNotifications();
         if (currentlyViewingId === senderId) checkFriendStatus();
     }
 
-    // --- MAIN PROFILE LOGIC ---
     async function loadProfile() {
         const urlParams = new URLSearchParams(window.location.search);
         const targetUserId = urlParams.get('id');
@@ -357,13 +357,10 @@
         
         if (currentUser) {
             loggedInUserId = currentUser.id;
-            loadNotifications(); // Fetch bell data
+            loadNotifications(); 
         }
 
-        const idToFetch = targetUserId || loggedInUserId;
-        currentlyViewingId = idToFetch;
-
-        if (!idToFetch) {
+        if (!targetUserId && !currentUser) {
             document.getElementById('user-name').innerText = "Chưa đăng nhập";
             document.getElementById('nav-name').innerText = "Khách";
             document.getElementById('action-buttons').style.display = 'none';
@@ -371,9 +368,13 @@
             return;
         }
 
-        const isOwnProfile = (idToFetch === loggedInUserId);
+        const resolvedUserId = currentUser?.id ?? null;
+        const idToFetch = targetUserId || resolvedUserId;
+        currentlyViewingId = idToFetch;
+
+        const isOwnProfile = resolvedUserId && (idToFetch === resolvedUserId);
         if (isOwnProfile && !urlParams.has('id')) {
-            window.history.replaceState({}, '', window.location.pathname + '?id=' + loggedInUserId);
+            window.history.replaceState({}, '', window.location.pathname + '?id=' + resolvedUserId);
         }
 
         const { data: profileData } = await supabaseClient.from('profiles').select('*').eq('id', idToFetch).single();
@@ -418,69 +419,10 @@
             checkFriendStatus();
         }
 
-        loadUserGroups(idToFetch);
+        loadUserGroups(idToFetch, isOwnProfile);
         loadFriends(idToFetch);
     }
 
-async function checkFriendStatus() {
-        if (!loggedInUserId || !currentlyViewingId) return;
-
-        let { data: myRelation } = await supabaseClient.from('friends').select('status').eq('user_id', loggedInUserId).eq('friend_id', currentlyViewingId).single();
-        let { data: theirRelation } = await supabaseClient.from('friends').select('status').eq('user_id', currentlyViewingId).eq('friend_id', loggedInUserId).single();
-
-        const btn = document.getElementById('add-friend-btn');
-        
-        btn.style.background = '';
-        btn.style.color = '';
-        btn.style.border = '';
-        
-        // CRITICAL FIX: Wipe out any old hover events so they don't glitch when the state changes
-        btn.onmouseenter = null;
-        btn.onmouseleave = null;
-
-        if (myRelation && myRelation.status === 'accepted') {
-            friendState = 'accepted';
-            btn.innerText = "Hủy kết bạn";
-            btn.className = "btn-action";
-            
-            // Hover effect for Unfriend
-            btn.onmouseenter = () => { 
-                btn.style.color = "#ff4d4d"; 
-                btn.style.borderColor = "#ff4d4d"; 
-            };
-            btn.onmouseleave = () => { 
-                btn.style.color = ""; 
-                btn.style.borderColor = ""; 
-            };
-            
-        } else if (myRelation && myRelation.status === 'pending') {
-            friendState = 'pending_sent';
-            btn.innerText = "Đã gửi yêu cầu";
-            btn.className = "btn-action";
-            
-            // CRITICAL FIX: The hover text swap
-            btn.onmouseenter = () => { 
-                btn.innerText = "Hủy yêu cầu"; 
-                btn.style.color = "#ff4d4d"; 
-                btn.style.borderColor = "#ff4d4d"; 
-            };
-            btn.onmouseleave = () => { 
-                btn.innerText = "Đã gửi yêu cầu"; 
-                btn.style.color = ""; 
-                btn.style.borderColor = ""; 
-            };
-            
-        } else if (theirRelation && theirRelation.status === 'pending') {
-            friendState = 'pending_received';
-            btn.innerText = "Chấp nhận";
-            btn.className = "btn-action btn-primary"; 
-            
-        } else {
-            friendState = 'none';
-            btn.innerText = "Kết bạn";
-            btn.className = "btn-action"; 
-        }
-    }
     async function checkFriendStatus() {
         if (!loggedInUserId || !currentlyViewingId) return;
 
@@ -493,7 +435,6 @@ async function checkFriendStatus() {
         btn.style.color = '';
         btn.style.border = '';
         
-        // CRITICAL FIX: Wipe out any old hover events so they don't glitch when the state changes
         btn.onmouseenter = null;
         btn.onmouseleave = null;
 
@@ -502,7 +443,6 @@ async function checkFriendStatus() {
             btn.innerText = "Hủy kết bạn";
             btn.className = "btn-action";
             
-            // Hover effect for Unfriend
             btn.onmouseenter = () => { 
                 btn.style.color = "#ff4d4d"; 
                 btn.style.borderColor = "#ff4d4d"; 
@@ -517,7 +457,6 @@ async function checkFriendStatus() {
             btn.innerText = "Đã gửi yêu cầu";
             btn.className = "btn-action";
             
-            // CRITICAL FIX: The hover text swap
             btn.onmouseenter = () => { 
                 btn.innerText = "Hủy yêu cầu"; 
                 btn.style.color = "#ff4d4d"; 
@@ -551,7 +490,7 @@ async function checkFriendStatus() {
         } else if (friendState === 'pending_sent') {
             await supabaseClient.from('friends').delete().match({ user_id: loggedInUserId, friend_id: currentlyViewingId });
         } else if (friendState === 'pending_received') {
-            await acceptRequest(currentlyViewingId);
+            await acceptFriendReq(currentlyViewingId);
         } else if (friendState === 'accepted') {
             await supabaseClient.from('friends').delete().match({ user_id: loggedInUserId, friend_id: currentlyViewingId });
             await supabaseClient.from('friends').delete().match({ user_id: currentlyViewingId, friend_id: loggedInUserId });
@@ -610,56 +549,102 @@ async function checkFriendStatus() {
         if (data.length > 3 && seeMoreBtn) seeMoreBtn.style.display = 'block'; else if (seeMoreBtn) seeMoreBtn.style.display = 'none';
     }
 
-    async function loadUserGroups(userId) {
+    async function loadUserGroups(userId, isOwnProfile) {
         const container = document.getElementById('groups-container');
         container.innerHTML = '<p style="text-align:center; color:#888;">Đang tải nhóm...</p>';
         
-        // CRITICAL FIX: Added cover_url to the select query
-        const { data } = await supabaseClient
-            .from('groups')
-            .select('id, title, description, cover_url, created_at')
-            .eq('creator_id', userId)
-            .order('created_at', { ascending: false });
+        const { data, error } = await supabaseClient
+            .from('group_members')
+            .select(`status, groups (id, title, description, cover_url, created_at)`)
+            .eq('user_id', userId)
+            .in('status', ['admin', 'member']);
             
-        if (!data || data.length === 0) {
-            container.innerHTML = `<div style="padding: 32px; text-align: center; color: var(--text-muted);"><h2 style="color: var(--text); margin-top: 0;">Chưa có nhóm nào</h2><p>Người dùng này chưa tạo nhóm nào.</p></div>`; 
+        if (error || !data || data.length === 0) {
+            container.innerHTML = `<div style="padding: 32px; text-align: center; color: var(--text-muted);"><h2 style="color: var(--text); margin-top: 0;">Chưa có nhóm nào</h2><p>Người dùng này chưa tham gia hoặc tạo nhóm nào.</p></div>`; 
+            document.querySelectorAll('.stat-item .stat-val').forEach(el => el.innerText = '0');
             return;
         }
+
+        const validGroups = data.filter(m => m.groups !== null).sort((a, b) => new Date(b.groups.created_at) - new Date(a.groups.created_at));
+
+        const createdGroups = validGroups.filter(m => m.status === 'admin');
+        const joinedGroups  = validGroups.filter(m => m.status === 'member'); 
+
+        const statVals = document.querySelectorAll('.stat-item .stat-val');
+        if (statVals.length >= 2) {
+            statVals[0].innerText = createdGroups.length;
+            statVals[1].innerText = joinedGroups.length;
+        }
+
+        const navGroupCount = document.getElementById('nav-group-count');
+        if (navGroupCount) navGroupCount.innerText = `${validGroups.length} Nhóm`;
         
-        document.querySelector('.stat-item:nth-child(1) .stat-val').innerText = data.length;
-        
-        let html = '<div class="group-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px;">';
-        data.forEach(g => {
-            // CRITICAL FIX: Use the actual cover_url, fallback to placeholder if missing
-            const coverImage = g.cover_url || "https://via.placeholder.com/400x160/252525/4a90e2?text=KoNect";
-            
-            html += `<div class="group-card" style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-2); cursor:pointer;" onclick="window.location.href='/group.html?id=${g.id}'">
-                        <img src="${coverImage}" style="width: 100%; height: 120px; object-fit: cover;">
-                        <div style="padding: 15px;">
-                            <h3 style="margin: 0 0 5px 0; font-size: 16px;">${g.title || 'Nhóm không tên'}</h3>
-                            <p style="color: var(--text-muted); font-size: 13px; margin: 0;">${g.description || ''}</p>
-                        </div>
-                    </div>`;
-        });
-        html += '</div>'; 
+        let html = '';
+
+        if (createdGroups.length > 0) {
+            html += `<h4 style="padding: 0 20px; margin: 16px 0 8px; color: var(--text-muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Nhóm đã tạo</h4>`;
+            html += '<div class="group-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 0 20px 20px;">';
+            createdGroups.forEach(m => html += buildGroupCard(m.groups, 'admin', isOwnProfile));
+            html += '</div>';
+        }
+
+        if (joinedGroups.length > 0) {
+            html += `<h4 style="padding: 0 20px; margin: 16px 0 8px; color: var(--text-muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Nhóm đã tham gia</h4>`;
+            html += '<div class="group-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 0 20px 20px;">';
+            joinedGroups.forEach(m => html += buildGroupCard(m.groups, 'member', isOwnProfile));
+            html += '</div>';
+        }
+
+        if (html === '') {
+            html = `<div style="padding: 32px; text-align: center; color: var(--text-muted);"><h2 style="color: var(--text); margin-top: 0;">Chưa có nhóm nào</h2><p>Người dùng này chưa tham gia hoặc tạo nhóm nào.</p></div>`;
+        }
+
         container.innerHTML = html;
     }
 
     async function loadNewestGroups() {
         const sidebarContainer = document.getElementById('newest-groups-widget');
         sidebarContainer.innerHTML = '<h3 class="widget-title text-primary">Nhóm mới tạo</h3><p style="color: var(--text-muted); font-size: 13px;">Đang tải...</p>';
-        const { data: newestGroups } = await supabaseClient.from('groups').select(`id, title, created_at, creator_id, profiles!inner(full_name, username)`).order('created_at', { ascending: false }).limit(3);
+        
+        const { data: newestGroups } = await supabaseClient
+            .from('groups')
+            .select(`id, title, cover_url, created_at, creator_id, profiles!inner(full_name, username)`)
+            .order('created_at', { ascending: false })
+            .limit(3);
+            
         sidebarContainer.innerHTML = '<h3 class="widget-title text-primary">Nhóm mới tạo</h3>';
         if (!newestGroups || newestGroups.length === 0) return;
+        
         newestGroups.forEach(group => {
-            const groupName = group.title || "Nhóm ẩn danh";
+            const groupName = group.title || "Nhóm không tên";
             const creatorName = group.profiles?.full_name || group.profiles?.username || "Ẩn danh";
             const dateStr = new Date(group.created_at).toLocaleDateString('vi-VN');
-            const widgetItem = document.createElement('div');
-            widgetItem.className = 'widget-item'; widgetItem.style.cssText = "padding: 10px; border-bottom: 1px solid var(--border);";
             
-            // CRITICAL FIX: Injected the date string directly into the template next to the creator name
-            widgetItem.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;"><div class="widget-avatar" style="cursor:pointer;" onclick="window.location.href='/group.html?id=${group.id}'">${groupName.charAt(0).toUpperCase()}</div><div class="widget-text"><h4 style="margin:0; cursor:pointer; color:var(--primary);" onclick="window.location.href='/group.html?id=${group.id}'">${groupName}</h4><p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted);">Bởi <span style="color: var(--text); cursor:pointer; font-weight:bold;" onclick="window.location.href='/profile?id=${group.creator_id}'">${creatorName}</span> • ${dateStr}</p></div></div>`;
+            const avatarHtml = group.cover_url 
+                ? `<div class="widget-avatar" style="background-image: url('${group.cover_url}'); background-size: cover; background-position: center; flex-shrink: 0; border: 1px solid var(--border);"></div>`
+                : `<div class="widget-avatar" style="flex-shrink: 0;">${groupName.charAt(0).toUpperCase()}</div>`;
+            
+            const widgetItem = document.createElement('div');
+            widgetItem.className = 'widget-item'; 
+            widgetItem.style.cssText = "padding: 12px 10px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s;";
+            
+            widgetItem.onmouseover = () => widgetItem.style.background = 'var(--border)';
+            widgetItem.onmouseout = () => widgetItem.style.background = 'transparent';
+            
+            widgetItem.onclick = () => window.location.href = `/main?search=${encodeURIComponent(groupName)}`;
+            
+            // CRITICAL FIX: Removed nowrap, added word-wrap, and changed alignment to flex-start
+            widgetItem.innerHTML = `
+                <div style="display:flex; gap: 12px; align-items: flex-start;">
+                    ${avatarHtml}
+                    <div class="widget-text" style="flex: 1; min-width: 0;">
+                        <h4 style="margin: 0 0 6px 0; color: var(--text); line-height: 1.3; word-wrap: break-word;">${groupName}</h4>
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.4; word-wrap: break-word;">
+                            Bởi <span style="color: var(--text); cursor:pointer; font-weight:bold;" onclick="event.stopPropagation(); window.location.href='/profile?id=${group.creator_id}'">${creatorName}</span> • ${dateStr}
+                        </p>
+                    </div>
+                </div>
+            `;
             sidebarContainer.appendChild(widgetItem);
         });
     }
@@ -724,7 +709,10 @@ async function checkFriendStatus() {
         }, 'image/jpeg', 0.8);
     }
 
-    function formatBioText(text) { if (!text) return '<span style="color: var(--text-muted);">Chưa có tiểu sử...</span>'; return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>'); }
+    function formatBioText(text) { 
+        if (!text) return '<span style="color: var(--text-muted);">Chưa có tiểu sử...</span>'; 
+        return marked.parse(text); 
+    }
 
     function validateProfileForm() {
         const nameInput = document.getElementById('edit-name-input'), saveBtn = document.getElementById('save-profile-btn');
@@ -737,9 +725,35 @@ async function checkFriendStatus() {
         } else { bioCounter.style.setProperty('color', 'var(--text-muted)', 'important'); const cm = document.querySelector('.CodeMirror'); if (cm) cm.style.setProperty('border-color', 'var(--border)', 'important'); }
         if (saveBtn) saveBtn.disabled = !isValid;
     }
+
+    // CRITICAL FIX: Applying Marked.js and desc-fade to group cards in profile.html
+    function buildGroupCard(g, role, isClickable) {
+        const coverImage = g.cover_url || "https://via.placeholder.com/400x160/252525/4a90e2?text=KoNect";
+        const roleBadge = role === 'admin' 
+            ? '<span style="color: var(--primary); font-weight: bold;">Chủ nhóm</span>' 
+            : 'Thành viên';
+        const dateStr = new Date(g.created_at).toLocaleDateString('vi-VN');
+        
+        const clickAction = isClickable ? `onclick="window.location.href='/chat?group=${g.id}'"` : '';
+        const cursorStyle = isClickable ? 'cursor:pointer;' : 'cursor:default;';
+        
+        // Parse the raw markdown into clean HTML
+        const parsedDesc = g.description ? marked.parse(g.description) : 'Chưa có mô tả.';
+        
+        return `
+            <div class="group-card" style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-2); ${cursorStyle} display: flex; flex-direction: column;" ${clickAction}>
+                <img src="${coverImage}" style="width: 100%; height: 120px; object-fit: cover;">
+                <div style="padding: 15px; display: flex; flex-direction: column; flex: 1;">
+                    <h3 style="margin: 0 0 5px 0; font-size: 16px;">${g.title || 'Nhóm không tên'}</h3>
+                    <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 8px 0;">Vai trò: ${roleBadge} • ${dateStr}</p>
+                    <div class="desc-fade" style="color: var(--text-muted); font-size: 13px; line-height: 1.4; flex: 1;">${parsedDesc}</div>
+                </div>
+            </div>`;
+    }
     
     document.getElementById('edit-name-input').addEventListener('input', validateProfileForm);
-    window.onload = () => { loadProfile(); loadNewestGroups(); };
+    loadProfile(); 
+    loadNewestGroups();
 </script>
 </body>
 </html>
