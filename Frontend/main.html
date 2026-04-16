@@ -11,13 +11,11 @@
         .nav-icon { color: var(--text); transition: color 0.2s; display: flex; align-items: center; justify-content: center; }
         .nav-icon:hover { color: var(--primary); }
 
-        /* CRITICAL FIX: 1-Line Fade Out */
         .desc-fade {
             display: -webkit-box;
-            -webkit-line-clamp: 1; /* Forced to 1 line */
+            -webkit-line-clamp: 1;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            /* A horizontal fade looks much better for single lines */
             -webkit-mask-image: linear-gradient(to right, #000 70%, transparent 100%);
             mask-image: linear-gradient(to right, #000 70%, transparent 100%);
         }
@@ -79,7 +77,7 @@
 
     <div class="search-wrapper" style="margin-bottom: 24px;">
         <div class="search-container" style="position: relative; display: flex; align-items: center; max-width: 600px;">
-            <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--text-muted)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 16px; top: calc(50% - 2px); transform: translateY(-50%); pointer-events: none;">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--text-muted)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 16px; top: calc(50% - 3px); transform: translateY(-50%); pointer-events: none;">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="16.65" y1="16.65" x2="22" y2="22"></line>
             </svg>
@@ -192,7 +190,6 @@
             const isClickable = (myStatus === 'admin' || myStatus === 'member');
             const isCreator = g.creator_id === loggedInUserId;
             
-            // CRITICAL FIX 1: Limit title to 36 chars exactly
             let rawTitle = g.title || 'Nhóm không tên';
             let displayTitle = rawTitle.length > 36 ? rawTitle.substring(0, 36) + '...' : rawTitle;
             
@@ -207,7 +204,9 @@
             } else if (myStatus === 'pending') {
                 actionBtns += `<button class="btn-action" style="height: 30px; font-size: 13px; padding: 0 12px; background: #333; color: orange; border: none; margin-left: 8px;" disabled onclick="event.stopPropagation();">Đang chờ...</button>`;
             } else {
-                actionBtns += `<button class="btn-action btn-primary" style="height: 30px; font-size: 13px; padding: 0 12px; margin-left: 8px;" onclick="requestJoin('${g.id}', event)">Xin vào</button>`;
+                // If it's a public group, the text says "Vào Nhóm", if private it says "Xin vào"
+                const btnText = g.privacy === 'public' ? 'Vào Nhóm' : 'Xin vào';
+                actionBtns += `<button class="btn-action btn-primary" style="height: 30px; font-size: 13px; padding: 0 12px; margin-left: 8px;" onclick="requestJoin('${g.id}', '${g.privacy}', event)">${btnText}</button>`;
             }
 
             const tagsHtml = g.tags && g.tags.length > 0 
@@ -223,7 +222,6 @@
             card.onmouseleave = () => card.style.transform = 'translateY(0)';
             card.onclick = () => openGroupDetails(g.title, coverImage, g.description);
 
-            // CRITICAL FIX 2: Added display:flex logic to perfectly constrain the title width and protect the member count
             card.innerHTML = `
                 <div style="position: relative; width: 100%; height: 140px;">
                     <img src="${coverImage}" style="width: 100%; height: 100%; object-fit: cover;">
@@ -255,13 +253,40 @@
         });
     }
 
-    async function requestJoin(groupId, event) {
+    // UPDATED: Now accepts privacy status to determine if user should bypass the waiting room
+    async function requestJoin(groupId, privacyStatus, event) {
         event.stopPropagation(); 
         if (!loggedInUserId) { alert("Bạn cần đăng nhập!"); return; }
-        const btn = event.target; btn.innerText = "Đang gửi..."; btn.disabled = true;
-        const { error } = await supabaseClient.from('group_members').upsert({ group_id: groupId, user_id: loggedInUserId, status: 'pending' });
-        if (error) { alert("Lỗi: " + error.message); btn.innerText = "Xin vào"; btn.disabled = false; } 
-        else { btn.innerText = "Đang chờ..."; btn.style.background = "rgba(255, 165, 0, 0.2)"; btn.style.color = "orange"; btn.style.border = "none"; }
+        
+        const btn = event.target; 
+        btn.innerText = "Đang xử lý..."; 
+        btn.disabled = true;
+        
+        // If public, grant immediate access. If private, set to pending.
+        const newStatus = privacyStatus === 'public' ? 'member' : 'pending';
+
+        const { error } = await supabaseClient.from('group_members').upsert({ 
+            group_id: groupId, 
+            user_id: loggedInUserId, 
+            status: newStatus 
+        });
+
+        if (error) { 
+            alert("Lỗi: " + error.message); 
+            btn.innerText = privacyStatus === 'public' ? "Vào Nhóm" : "Xin vào"; 
+            btn.disabled = false; 
+        } 
+        else { 
+            if (newStatus === 'member') {
+                // Instantly teleport them into the chat if it's public
+                window.location.href = `/chat?group=${groupId}`;
+            } else {
+                btn.innerText = "Đang chờ..."; 
+                btn.style.background = "rgba(255, 165, 0, 0.2)"; 
+                btn.style.color = "orange"; 
+                btn.style.border = "none"; 
+            }
+        }
     }
 
     function renderUsers(data, isSearching) {
