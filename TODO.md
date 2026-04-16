@@ -1,4 +1,5 @@
-git commit -m "feat: cập nhật giao diện và tính năng chat/profile" -m "Main:
+Ở đây là các chỉnh sửa mình đề xuất, nếu mọi người có đọc thì có thể vận hành dựa trên danh sách này.
+Main:
 - Chỉnh icon công khai/nhóm kín/xem thêm
 - Màu hover xanh hơn
 
