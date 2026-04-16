@@ -309,12 +309,13 @@
 
             if (dbError) throw dbError;
 
-            // 3. Make the creator an admin in group_members
+            // 3. Make the creator an admin in group_members using the correct columns
             if (dbData && dbData[0]) {
                 await supabaseClient.from('group_members').insert([{
                     group_id: dbData[0].id, 
                     user_id: session.user.id, 
-                    status: 'admin'
+                    status: 'joined',
+                    role: 'admin'
                 }]);
             }
 
