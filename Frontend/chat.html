@@ -151,7 +151,7 @@
     async function loadGroupMembers(groupId) {
         const { data } = await mySupabase
             .from('group_members')
-            .select(`status, profiles!inner(id, full_name, username, avatar_url)`)
+            .select(`role, status, profiles!inner(id, full_name, username, avatar_url)`)
             .eq('group_id', groupId);
 
         const list = document.getElementById('members-list');
@@ -161,12 +161,13 @@
             document.getElementById('member-count').innerText = data.length;
             document.getElementById('chat-subtitle').innerText = `${data.length} thành viên`;
             
-            data.sort((a, b) => (a.status === 'admin' ? -1 : 1));
+            data.sort((a, b) => (a.role === 'admin' ? -1 : 1));
 
             data.forEach(m => {
                 const user = m.profiles;
                 const name = user.full_name || user.username || "Ẩn danh";
-                const isAdmin = m.status === 'admin';
+
+                const isAdmin = m.role === 'admin';
                 
                 const roleBadge = isAdmin ? `<span style="font-size: 10px; background: rgba(255, 215, 0, 0.2); color: gold; padding: 2px 6px; border-radius: 4px; flex-shrink: 0;">Admin</span>` : '';
                 
@@ -202,40 +203,55 @@
     async function loadSidebar() {
         const { data: friendsData } = await mySupabase
             .from('friends')
-            .select(`friend_id, profiles!friends_friend_id_fkey(full_name, username, avatar_url)`)
-            .eq('user_id', globalUserId)
+            .select(`
+            user_id,
+            friend_id,
+            user_p:profiles!friends_user_id_fkey(full_name, username, avatar_url),
+            friend_p:profiles!friends_friend_id_fkey(full_name, username, avatar_url)
+    `   )
+            .or(`user_id.eq.${globalUserId},friend_id.eq.${globalUserId}`)
             .eq('status', 'accepted');
 
         const friendsContainer = document.getElementById('friends-list');
         friendsContainer.innerHTML = '';
-        
+
         if (friendsData && friendsData.length > 0) {
             friendsData.forEach(f => {
-                const friend = f.profiles;
+                // LOGIC QUAN TRỌNG: Nếu user_id là mình thì lấy profile thằng friend_p, và ngược lại
+                const friend = (f.user_id === globalUserId) ? f.friend_p : f.user_p;
+
+                // Nếu vì lý do gì đó không lấy được profile (user bị xóa chẳng hạn) thì bỏ qua
+                if (!friend) return;
+
                 const name = friend.full_name || friend.username || "Ẩn danh";
-                const avatarHtml = friend.avatar_url 
+                const avatarHtml = friend.avatar_url
                     ? `<div class="widget-avatar" style="background-image: url(${friend.avatar_url}); background-size: cover; width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;"></div>`
-                    : `<div class="widget-avatar" style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;">${name.charAt(0).toUpperCase()}</div>`;
-                    
+                    : `<div class="widget-avatar" style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary); font-size: 14px;">${name.charAt(0).toUpperCase()}</div>`;
+
                 const div = document.createElement('div');
                 div.className = 'widget-item';
                 div.style.cssText = "padding: 8px; border-radius: 8px; margin-bottom: 4px; transition: background 0.2s; cursor: pointer;";
                 div.onmouseover = () => div.style.background = 'var(--border)';
                 div.onmouseout = () => div.style.background = 'transparent';
-                div.onclick = () => alert("Chat 1-1 chưa được hỗ trợ."); 
-                
-                div.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div class="widget-text"><h4 style="margin:0; color:var(--text); font-size:14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${name}</h4></div></div>`;
+                div.onclick = () => alert("Chat 1-1 chưa được hỗ trợ.");
+
+                div.innerHTML = `
+            <div style="display:flex; gap: 10px; align-items:center;">
+                ${avatarHtml}
+                <div class="widget-text">
+                    <h4 style="margin:0; color:var(--text); font-size:14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${name}</h4>
+                </div>
+            </div>`;
                 friendsContainer.appendChild(div);
             });
         } else {
-            friendsContainer.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); text-align: center;">Chưa có ai ở đây cả...</p>';
+            friendsContainer.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); text-align: center;">Không có mống bạn nào ở đây cả...</p>';
         }
-
         const { data: groupsData } = await mySupabase
             .from('group_members')
             .select(`groups ( id, title, cover_url )`)
             .eq('user_id', globalUserId)
-            .in('status', ['member', 'admin']);
+            .eq('status', 'joined');
 
         const groupsContainer = document.getElementById('groups-list');
         groupsContainer.innerHTML = '';
