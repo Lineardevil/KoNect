@@ -151,7 +151,7 @@
     async function loadGroupMembers(groupId) {
         const { data } = await mySupabase
             .from('group_members')
-            .select(`status, profiles!inner(id, full_name, username, avatar_url)`)
+            .select(`role, status, profiles!inner(id, full_name, username, avatar_url)`)
             .eq('group_id', groupId);
 
         const list = document.getElementById('members-list');
@@ -161,12 +161,13 @@
             document.getElementById('member-count').innerText = data.length;
             document.getElementById('chat-subtitle').innerText = `${data.length} thành viên`;
             
-            data.sort((a, b) => (a.status === 'admin' ? -1 : 1));
+            data.sort((a, b) => (a.role === 'admin' ? -1 : 1));
 
             data.forEach(m => {
                 const user = m.profiles;
                 const name = user.full_name || user.username || "Ẩn danh";
-                const isAdmin = m.status === 'admin';
+
+                const isAdmin = m.role === 'admin';
                 
                 const roleBadge = isAdmin ? `<span style="font-size: 10px; background: rgba(255, 215, 0, 0.2); color: gold; padding: 2px 6px; border-radius: 4px; flex-shrink: 0;">Admin</span>` : '';
                 
