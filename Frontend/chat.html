@@ -236,7 +236,7 @@
             .from('group_members')
             .select(`groups ( id, title, cover_url )`)
             .eq('user_id', globalUserId)
-            .in('status', ['member', 'admin']);
+            .eq('status', 'joined');
 
         const groupsContainer = document.getElementById('groups-list');
         groupsContainer.innerHTML = '';
