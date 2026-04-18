@@ -24,8 +24,18 @@
 <div class="app-layout" style="height: 100vh; overflow: hidden; margin: 0; padding: 0; max-width: 100%; border: none;">
     <div id="sidebar" style="width: 320px; background: var(--bg-2); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; z-index: 10;">
         <div class="sidebar-header" style="padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
-            <div class="logo" style="font-size: 20px; cursor: pointer;" onclick="window.location.href='/main'">KoNect</div>
-            <button class="btn-action" style="height: 30px; font-size: 12px; padding: 0 10px;" onclick="window.location.href='/main'">Trang chủ</button>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button onclick="toggleLeftSidebar()" style="background: none; border: none; color: var(--text); cursor: pointer; padding: 0; display: flex; align-items: center;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                <div class="logo" style="font-size: 20px; font-weight: bold; cursor: pointer; color: var(--primary);" onclick="window.location.href='/main'">KoNect</div>
+            </div>
+
+            <button class="btn-action" style="height: 32px; font-size: 12px; padding: 0 12px; border-radius: 16px;" onclick="window.location.href='/main'">Trang chủ</button>
         </div>
         <div class="friend-list" style="overflow-y: auto; flex: 1; padding: 16px;">
             <h3 class="widget-title text-primary" style="font-size: 14px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">BẠN BÈ - FRIENDS</h3>
@@ -223,8 +233,17 @@
                 }
             });
             groupsData.forEach(async (item) => {
-                const group = item.groups; if (!group) return;
-                const { data: latestMsg } = await mySupabase.from('messages').select(`content, sender_id, profiles(full_name, username)`).eq('group_id', group.id).order('created_at', { ascending: false }).limit(1).single();
+                const group = item.groups;
+                if (!group) return;
+
+                const { data: latestMsg } = await mySupabase
+                    .from('messages')
+                    .select(`content, sender_id, profiles(full_name, username)`)
+                    .eq('group_id', group.id)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+
                 const snippetEl = document.getElementById(`sidebar-snippet-${group.id}`);
                 if (snippetEl) {
                     if (latestMsg) {
@@ -332,6 +351,22 @@
         else { const nameLabel = document.createElement('div'); nameLabel.className = 'sender-name'; nameLabel.innerText = senderName; wrapper.appendChild(nameLabel); wrapper.appendChild(bubble); }
         chatBox.appendChild(wrapper);
         setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
+    }
+
+    function toggleLeftSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        // Nếu đang rộng thì thu nhỏ, đang nhỏ thì nở ra
+        if (sidebar.style.width !== '70px') {
+            sidebar.style.width = '70px';
+            sidebar.style.minWidth = '70px';
+            // Ẩn tiêu đề "BẠN BÈ", "CÁC NHÓM" và các đoạn text
+            sidebar.querySelectorAll('.widget-title, .widget-text, .sender-name').forEach(el => el.style.display = 'none');
+        } else {
+            sidebar.style.width = '320px';
+            sidebar.style.minWidth = '320px';
+            // Hiện lại mọi thứ
+            sidebar.querySelectorAll('.widget-title, .widget-text, .sender-name').forEach(el => el.style.display = 'block');
+        }
     }
 
     document.getElementById('send-btn').onclick = sendMessage;
