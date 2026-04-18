@@ -10,28 +10,10 @@
     <style>
         .nav-icon { color: var(--text); transition: color 0.2s; display: flex; align-items: center; justify-content: center; }
         .nav-icon:hover { color: var(--primary); }
-
-        .desc-fade {
-            display: -webkit-box;
-            -webkit-line-clamp: 1;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            -webkit-mask-image: linear-gradient(to right, #000 70%, transparent 100%);
-            mask-image: linear-gradient(to right, #000 70%, transparent 100%);
-        }
-        
+        .desc-fade { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; -webkit-mask-image: linear-gradient(to right, #000 70%, transparent 100%); mask-image: linear-gradient(to right, #000 70%, transparent 100%); }
         .desc-fade p { margin: 0 0 5px 0; }
-
-        .group-card .xem-them-badge {
-            opacity: 0;
-            transform: translateY(-5px);
-            transition: all 0.2s ease;
-        }
-        .group-card:hover .xem-them-badge {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
+        .group-card .xem-them-badge { opacity: 0; transform: translateY(-5px); transition: all 0.2s ease; }
+        .group-card:hover .xem-them-badge { opacity: 1; transform: translateY(0); }
         #modal-desc h1, #modal-desc h2, #modal-desc h3 { color: var(--text); margin-top: 0; margin-bottom: 10px; }
         #modal-desc a { color: var(--primary); text-decoration: none; }
         #modal-desc a:hover { text-decoration: underline; }
@@ -43,7 +25,7 @@
 </head>
 <body class="main-page">
     <canvas id="starfield" style="position: absolute; top: 0; left: 0; width: 100%; height: 450px; z-index: -1; pointer-events: none; opacity: 0.75; mask-image: linear-gradient(to bottom, black 40%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%); background: radial-gradient(circle at top right, rgba(30, 41, 59, 0.4) 0%, transparent 70%);"></canvas>
-<nav style="position: relative;">
+<nav style="position: relative; z-index: 9999;">
     <div class="logo" onclick="location.reload()">KoNect</div>
     <div class="nav-right" style="display: flex; align-items: center; gap: 15px;">
         <span id="uName" style="color: #888; font-size: 13px; font-weight: bold;">Đang tải...</span>
@@ -56,7 +38,7 @@
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
                 <span id="notif-badge" style="display: none; position: absolute; top: -5px; right: -5px; background: #ff4d4d; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold;">0</span>
             </div>
-            <div id="notif-dropdown" style="display: none; position: absolute; top: 35px; right: 0; width: 340px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; padding: 15px; flex-direction: column; gap: 10px; text-align: left;">
+            <div id="notif-dropdown" style="display: none; position: absolute; top: 35px; right: 0; width: 340px; max-width: 90vw; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; padding: 15px; flex-direction: column; gap: 10px; text-align: left;">
                 <h4 style="margin: 0; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text);">Thông báo</h4>
                 <div id="notif-list" style="max-height: 350px; overflow-y: auto;">
                     <p style="font-size: 13px; color: var(--text-muted); margin: 0; text-align: center;">Đang tải...</p>
@@ -73,9 +55,7 @@
 </nav>
 
 <div style="max-width: 1400px; margin: 0 auto; padding: 24px 4%;">
-    <h2 style="font-size: 56px; font-weight: 900; background: none; -webkit-text-stroke: 0.5px var(--primary); color: transparent; display: block; text-align: center; margin-top: 20px; margin-bottom: 30px; letter-spacing: 2px; position: relative; z-index: 1;">
-        Khám phá KoNect
-    </h2>    
+    <h2 style="font-size: 56px; font-weight: 900; background: none; -webkit-text-stroke: 0.5px var(--primary); color: transparent; display: block; text-align: center; margin-top: 20px; margin-bottom: 30px; letter-spacing: 2px; position: relative; z-index: 1;">Khám phá KoNect</h2>    
     
     <div class="search-wrapper" style="margin-bottom: 24px;">
         <div class="search-container" style="position: relative; display: flex; align-items: center; max-width: 600px;">
@@ -83,7 +63,6 @@
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="16.65" y1="16.65" x2="22" y2="22"></line>
             </svg>
-            
             <input type="text" id="sInput" class="edit-input" style="width: 100%; padding: 14px 20px 14px 48px; border-radius: 30px; border: 1px solid var(--border); background: var(--bg-2); color: var(--text);" placeholder="Tìm kiếm nhóm, người dùng, tags..." oninput="search()">
         </div>
     </div>
@@ -103,7 +82,7 @@
             <img id="modal-cover" src="" style="width: 100%; height: 250px; object-fit: cover; display: block;">
             <button onclick="closeGroupDetails()" style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; transition: background 0.2s;">✕</button>
         </div>
-        <div style="padding: 24px; overflow-y: auto;">
+        <div style="padding: 24px; overflow-y: auto;">A
             <h2 id="modal-title" style="margin: 0 0 16px 0; color: var(--text); font-size: 24px;"></h2>
             <div id="modal-desc" style="color: var(--text); font-size: 15px; line-height: 1.6; margin: 0;"></div>
         </div>
@@ -123,7 +102,19 @@
             loggedInUserId = session.user.id;
             const { data: profileData } = await supabaseClient.from('profiles').select('full_name, username').eq('id', loggedInUserId).single();
             document.getElementById('uName').innerText = "Chào, " + (profileData?.full_name || profileData?.username || session.user.email.split('@')[0]);
+            
+            // 1. Check notifications on load
             loadNotifications(); 
+
+            // CRITICAL FIX: 2. Listen LIVE for new messages while staring at main.html
+            supabaseClient.channel('main-live-notifications')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                    // Only trigger the bell if the message came from someone else!
+                    if (payload.new.sender_id !== loggedInUserId) {
+                        loadNotifications(); 
+                    }
+                }).subscribe();
+
         } else { window.location.href = '/'; return; }
 
         const { data: groupData } = await supabaseClient.from('groups').select(`id, title, description, cover_url, privacy, max_members, created_at, tags, creator_id, profiles!inner(full_name, username, avatar_url), group_members ( user_id, status )`).order('created_at', { ascending: false });
@@ -152,10 +143,7 @@
 
     async function deleteGroup(groupId, event) {
         event.stopPropagation();
-        
-        if (!confirm("⚠️ CẢNH BÁO!\nBạn có chắc chắn muốn xóa nhóm này không?\nToàn bộ tin nhắn và thành viên sẽ bị xóa vĩnh viễn. Không thể hoàn tác!")) {
-            return;
-        }
+        if (!confirm("⚠️ CẢNH BÁO!\nBạn có chắc chắn muốn xóa nhóm này không?\nToàn bộ tin nhắn và thành viên sẽ bị xóa vĩnh viễn. Không thể hoàn tác!")) return;
 
         const btn = event.target;
         const originalText = btn.innerText;
@@ -175,6 +163,17 @@
             btn.innerText = originalText;
             btn.disabled = false;
         }
+// Inside your init() function in main.html, add this second listener:
+    supabaseClient.channel('notifications-clear-sync')
+        .on('postgres_changes', { 
+            event: 'UPDATE', 
+            schema: 'public', 
+            table: 'group_members', 
+            filter: `user_id=eq.${loggedInUserId}` 
+        }, payload => {
+            console.log("[Sync] Read status updated, refreshing badge...");
+            loadNotifications(); 
+        }).subscribe();
     }
 
     function renderGroups(data) {
@@ -186,10 +185,10 @@
             const coverImage = g.cover_url || 'https://via.placeholder.com/400x160/252525/4a90e2?text=KoNect';
             
             const members = g.group_members || [];
-            const activeMemberCount = members.filter(m => m.status === 'member' || m.status === 'admin').length;
+            const activeMemberCount = members.filter(m => ['member', 'admin', 'joined'].includes(m.status)).length;
             const myStatus = members.find(m => m.user_id === loggedInUserId)?.status || null;
 
-            const isClickable = (myStatus === 'admin' || myStatus === 'member');
+            const isClickable = ['admin', 'member', 'joined'].includes(myStatus);
             const isCreator = g.creator_id === loggedInUserId;
             
             let rawTitle = g.title || 'Nhóm không tên';
@@ -206,14 +205,11 @@
             } else if (myStatus === 'pending') {
                 actionBtns += `<button class="btn-action" style="height: 30px; font-size: 13px; padding: 0 12px; background: #333; color: orange; border: none; margin-left: 8px;" disabled onclick="event.stopPropagation();">Đang chờ...</button>`;
             } else {
-                // If it's a public group, the text says "Vào Nhóm", if private it says "Xin vào"
                 const btnText = g.privacy === 'public' ? 'Vào Nhóm' : 'Xin vào';
                 actionBtns += `<button class="btn-action btn-primary" style="height: 30px; font-size: 13px; padding: 0 12px; margin-left: 8px;" onclick="requestJoin('${g.id}', '${g.privacy}', event)">${btnText}</button>`;
             }
 
-            const tagsHtml = g.tags && g.tags.length > 0 
-                ? `<div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px;">` + g.tags.map(t => `<span style="background: rgba(74, 144, 226, 0.15); color: var(--primary); font-size: 11px; font-weight: bold; padding: 4px 8px; border-radius: 12px;">#${t}</span>`).join('') + `</div>` : '';
-
+            const tagsHtml = g.tags && g.tags.length > 0 ? `<div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px;">` + g.tags.map(t => `<span style="background: rgba(74, 144, 226, 0.15); color: var(--primary); font-size: 11px; font-weight: bold; padding: 4px 8px; border-radius: 12px;">#${t}</span>`).join('') + `</div>` : '';
             const parsedDesc = g.description ? marked.parse(g.description) : 'Chưa có mô tả.';
 
             const card = document.createElement('div');
@@ -230,12 +226,10 @@
                     <div class="xem-them-badge" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold;">🔍 Xem thêm</div>
                 </div>
                 <div style="padding: 16px; flex: 1; display: flex; flex-direction: column;">
-                    
                     <div style="font-size: 18px; font-weight: bold; color: var(--text); margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
                         <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0;" title="${rawTitle}">${displayTitle}</span>
                         <span style="font-size: 13px; color: var(--text-muted); font-weight: normal; background: var(--bg); padding: 2px 8px; border-radius: 12px; flex-shrink: 0; white-space: nowrap;">👤 ${activeMemberCount}/${g.max_members}</span>
                     </div>
-
                     <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 10px 0;">
                         Bởi <strong style="color: var(--text); cursor: pointer;" onmouseover="this.style.textDecoration='underline'; this.style.color='var(--primary)';" onmouseout="this.style.textDecoration='none'; this.style.color='var(--text)';" onclick="event.stopPropagation(); window.location.href='/profile?id=${g.creator_id}'">${creatorName}</strong>
                     </p>
@@ -243,51 +237,26 @@
                     ${tagsHtml}
                 </div>
                 <div style="padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);" onclick="event.stopPropagation();">
-                    <span style="font-size: 13px; color: var(--text-muted); font-weight: bold;">
-                        ${g.privacy === 'private' ? '🔒 Nhóm kín' : '🌍 Công khai'}
-                    </span>
-                    <div style="display: flex; align-items: center;">
-                        ${actionBtns}
-                    </div>
+                    <span style="font-size: 13px; color: var(--text-muted); font-weight: bold;">${g.privacy === 'private' ? '🔒 Nhóm kín' : '🌍 Công khai'}</span>
+                    <div style="display: flex; align-items: center;">${actionBtns}</div>
                 </div>
             `;
             list.appendChild(card);
         });
     }
 
-    // UPDATED: Now accepts privacy status to determine if user should bypass the waiting room
     async function requestJoin(groupId, privacyStatus, event) {
         event.stopPropagation(); 
         if (!loggedInUserId) { alert("Bạn cần đăng nhập!"); return; }
+        const btn = event.target; btn.innerText = "Đang xử lý..."; btn.disabled = true;
         
-        const btn = event.target; 
-        btn.innerText = "Đang xử lý..."; 
-        btn.disabled = true;
-        
-        // If public, grant immediate access. If private, set to pending.
         const newStatus = privacyStatus === 'public' ? 'member' : 'pending';
+        const { error } = await supabaseClient.from('group_members').upsert({ group_id: groupId, user_id: loggedInUserId, status: newStatus });
 
-        const { error } = await supabaseClient.from('group_members').upsert({ 
-            group_id: groupId, 
-            user_id: loggedInUserId, 
-            status: newStatus 
-        });
-
-        if (error) { 
-            alert("Lỗi: " + error.message); 
-            btn.innerText = privacyStatus === 'public' ? "Vào Nhóm" : "Xin vào"; 
-            btn.disabled = false; 
-        } 
+        if (error) { alert("Lỗi: " + error.message); btn.innerText = privacyStatus === 'public' ? "Vào Nhóm" : "Xin vào"; btn.disabled = false; } 
         else { 
-            if (newStatus === 'member') {
-                // Instantly teleport them into the chat if it's public
-                window.location.href = `/chat?group=${groupId}`;
-            } else {
-                btn.innerText = "Đang chờ..."; 
-                btn.style.background = "rgba(255, 165, 0, 0.2)"; 
-                btn.style.color = "orange"; 
-                btn.style.border = "none"; 
-            }
+            if (newStatus === 'member') window.location.href = `/chat?group=${groupId}`;
+            else { btn.innerText = "Đang chờ..."; btn.style.background = "rgba(255, 165, 0, 0.2)"; btn.style.color = "orange"; btn.style.border = "none"; }
         }
     }
 
@@ -326,9 +295,10 @@
     function toggleNotifs() { const drop = document.getElementById('notif-dropdown'); drop.style.display = drop.style.display === 'none' ? 'flex' : 'none'; }
     document.addEventListener('click', function(event) { const wrapper = document.getElementById('notif-wrapper'); const drop = document.getElementById('notif-dropdown'); if (wrapper && !wrapper.contains(event.target) && drop && drop.style.display !== 'none') { drop.style.display = 'none'; } });
 
-    async function loadNotifications() {
+async function loadNotifications() {
         if (!loggedInUserId) return;
         document.getElementById('bell-icon').style.display = 'flex'; document.getElementById('msg-icon').style.display = 'flex';
+        
         const { data: friendReqs } = await supabaseClient.from('friends').select(`user_id, profiles!friends_user_id_fkey(full_name, username, avatar_url)`).eq('friend_id', loggedInUserId).eq('status', 'pending');
         const { data: myOwnedGroups } = await supabaseClient.from('groups').select('id').eq('creator_id', loggedInUserId);
         const myOwnedGroupIds = myOwnedGroups ? myOwnedGroups.map(g => g.id) : [];
@@ -338,10 +308,50 @@
             groupJoinReqs = data || [];
         }
 
+        // CRITICAL FIX: Added 'cover_url' to the database query here
+        const { data: myActiveGroups } = await supabaseClient.from('group_members').select('group_id, last_read_at, groups!inner(title, cover_url)').eq('user_id', loggedInUserId).in('status', ['member', 'admin', 'joined']);
+        let unreadMsgs = [];
+
+        if (myActiveGroups) {
+            for (let mg of myActiveGroups) {
+                const readTime = mg.last_read_at || new Date(0).toISOString(); 
+                const { data: newMsgs } = await supabaseClient
+                    .from('messages')
+                    .select('id')
+                    .eq('group_id', mg.group_id)
+                    .gt('created_at', readTime)
+                    .neq('sender_id', loggedInUserId);
+                    
+                if (newMsgs && newMsgs.length > 0) {
+                    // Passed cover_url into our unread array
+                    unreadMsgs.push({ groupId: mg.group_id, groupName: mg.groups.title, coverUrl: mg.groups.cover_url, count: newMsgs.length });
+                }
+            }
+        }
+
         const badge = document.getElementById('notif-badge'), list = document.getElementById('notif-list');
-        const totalNotifs = (friendReqs?.length || 0) + groupJoinReqs.length;
+        const totalNotifs = (friendReqs?.length || 0) + groupJoinReqs.length + unreadMsgs.length;
+        
         if (totalNotifs === 0) { badge.style.display = 'none'; list.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); margin: 0; text-align: center;">Không có thông báo mới.</p>'; return; }
         badge.style.display = 'block'; badge.innerText = totalNotifs; list.innerHTML = '';
+
+        unreadMsgs.forEach(msg => {
+            // CRITICAL FIX: Replaced emoji with dynamic group avatar (Image or Letter)
+            const avatarHtml = msg.coverUrl 
+                ? `<div class="widget-avatar" style="background-image: url('${msg.coverUrl}'); background-size: cover; background-position: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px;"></div>`
+                : `<div class="widget-avatar" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; background: rgba(74, 144, 226, 0.15); border: 1px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: var(--primary);">${msg.groupName.charAt(0).toUpperCase()}</div>`;
+
+            const notifItem = document.createElement('div');
+            notifItem.style.cssText = "display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px;";
+            notifItem.innerHTML = `
+                <div style="display:flex; gap: 10px; align-items:center;">
+                    ${avatarHtml}
+                    <div style="font-size: 13px; color: var(--text); line-height: 1.4;">Nhóm <strong style="color: var(--primary);">${msg.groupName}</strong> có <strong>${msg.count}</strong> tin nhắn mới.</div>
+                </div>
+                <button class="btn-action btn-primary" style="width: 100%; padding: 4px; height: 30px; font-size: 12px;" onclick="window.location.href='/chat?group=${msg.groupId}'">Đọc ngay</button>
+            `;
+            list.appendChild(notifItem);
+        });
 
         groupJoinReqs.forEach(req => {
             const user = req.profiles; const name = user.full_name || user.username || "Ẩn danh";
@@ -368,68 +378,33 @@
     async function rejectFriendReq(senderId) { await supabaseClient.from('friends').delete().match({ user_id: senderId, friend_id: loggedInUserId }); loadNotifications(); }
 
     init();
-// ================= NIGHT SKY ANIMATION =================
+    
     function initNightSky() {
         const canvas = document.getElementById('starfield');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         let width, height;
 
-        // CRITICAL FIX: Extract the exact hex code from your CSS variables
         const rootStyles = getComputedStyle(document.documentElement);
-        // Fallback to a nice KoNect blue (#4a90e2) just in case the CSS hasn't loaded yet
         const primaryColor = rootStyles.getPropertyValue('--primary').trim() || '#4a90e2';
 
-        // Auto-resize canvas to fit the screen
-        function resize() {
-            width = window.innerWidth;
-            height = 450;
-            canvas.width = width;
-            canvas.height = height;
-        }
+        function resize() { width = window.innerWidth; height = 450; canvas.width = width; canvas.height = height; }
         window.addEventListener('resize', resize);
         resize();
 
-        // Generate 150 particles
-        const stars = Array.from({ length: 150 }, () => ({
-            x: Math.random() * width,
-            y: Math.random() * height,
-            r: Math.random() * 2, // Made them slightly larger so the color pops
-            vx: (Math.random() - 0.5) * 0.3 - 0.1, 
-            vy: (Math.random() - 0.5) * 0.1 - 0.1, 
-            alpha: Math.random() * 0.8 + 0.2 
-        }));
+        const stars = Array.from({ length: 150 }, () => ({ x: Math.random() * width, y: Math.random() * height, r: Math.random() * 2, vx: (Math.random() - 0.5) * 0.3 - 0.1, vy: (Math.random() - 0.5) * 0.1 - 0.1, alpha: Math.random() * 0.8 + 0.2 }));
 
-        // Animate the particles frame by frame
         function draw() {
             ctx.clearRect(0, 0, width, height);
             stars.forEach(s => {
-                // Apply the opacity, then paint with your CSS primary color
-                ctx.globalAlpha = s.alpha;
-                ctx.fillStyle = primaryColor;
-                ctx.beginPath();
-                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Reset alpha so it doesn't bleed
-                ctx.globalAlpha = 1.0;
-
-                // Move the particle
-                s.x += s.vx;
-                s.y += s.vy;
-
-                // Loop particles back around when they float off-screen
-                if (s.x < 0) s.x = width;
-                if (s.x > width) s.x = 0;
-                if (s.y < 0) s.y = height;
-                if (s.y > height) s.y = 0;
+                ctx.globalAlpha = s.alpha; ctx.fillStyle = primaryColor; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1.0;
+                s.x += s.vx; s.y += s.vy;
+                if (s.x < 0) s.x = width; if (s.x > width) s.x = 0; if (s.y < 0) s.y = height; if (s.y > height) s.y = 0;
             });
             requestAnimationFrame(draw);
         }
         draw();
     }
-    
-    // Start the sky
     initNightSky();
 </script>
 </body>

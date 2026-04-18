@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="/assets/style.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* --- CHAT BUBBLES --- */
         .message-wrapper { display: flex; flex-direction: column; max-width: 75%; margin-bottom: 8px; }
         .message-wrapper.left { align-self: flex-start; }
         .message-wrapper.right { align-self: flex-end; align-items: flex-end; }
@@ -15,47 +14,34 @@
         .message { max-width: 100%; padding: 10px 16px; border-radius: 18px; font-size: 15px; line-height: 1.4; word-wrap: break-word; }
         .message.other { background-color: var(--bg-2); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
         .message.self { background-color: var(--primary); color: #ffffff; border-bottom-right-radius: 4px; }
-        
         #members-list::-webkit-scrollbar { width: 4px; }
         #members-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-        
         .chat-image { max-width: 250px; border-radius: 12px; border: 1px solid var(--border); object-fit: cover; }
     </style>
 </head>
 <body class="chat-page">
 
 <div class="app-layout" style="height: 100vh; overflow: hidden; margin: 0; padding: 0; max-width: 100%; border: none;">
-    
     <div id="sidebar" style="width: 320px; background: var(--bg-2); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; z-index: 10;">
         <div class="sidebar-header" style="padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
             <div class="logo" style="font-size: 20px; cursor: pointer;" onclick="window.location.href='/main'">KoNect</div>
             <button class="btn-action" style="height: 30px; font-size: 12px; padding: 0 10px;" onclick="window.location.href='/main'">Trang chủ</button>
         </div>
-        
         <div class="friend-list" style="overflow-y: auto; flex: 1; padding: 16px;">
             <h3 class="widget-title text-primary" style="font-size: 14px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">BẠN BÈ - FRIENDS</h3>
-            <div id="friends-list" style="margin-bottom: 24px;">
-                <p style="font-size: 13px; color: var(--text-muted); text-align: center;">Đang tải...</p>
-            </div>
-
+            <div id="friends-list" style="margin-bottom: 24px;"><p style="font-size: 13px; color: var(--text-muted); text-align: center;">Đang tải...</p></div>
             <h3 class="widget-title text-primary" style="font-size: 14px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">CÁC NHÓM - GROUPS</h3>
-            <div id="groups-list">
-                <p style="font-size: 13px; color: var(--text-muted); text-align: center;">Đang tải...</p>
-            </div>
+            <div id="groups-list"><p style="font-size: 13px; color: var(--text-muted); text-align: center;">Đang tải...</p></div>
         </div>
     </div>
 
     <div id="chat-container" style="flex: 1; display: flex; flex-direction: column; position: relative; background: var(--bg);">
-        
         <div id="empty-state" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; color: var(--text-muted);">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 16px; opacity: 0.5;">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-            </svg>
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 16px; opacity: 0.5;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
             <p>Chọn một đoạn chat để bắt đầu.</p>
         </div>
 
         <div id="chat-ui" style="display: none; flex-direction: row; height: 100%; width: 100%;">
-            
             <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
                 <div id="chat-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(12px);">
                     <div id="chat-avatar" class="widget-avatar" style="margin-right: 12px; flex-shrink: 0;"></div>
@@ -63,17 +49,10 @@
                         <span id="chat-title" style="font-weight: 800; font-size: 18px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Tên Nhóm Chat</span>
                         <span id="chat-subtitle" style="font-size: 13px; color: var(--text-muted);">...</span>
                     </div>
-                    
                     <div style="display: flex; gap: 10px; align-items: center;">
                         <button class="btn-action" style="height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid #ff4d4f; color: #ff4d4f; background: transparent; font-size: 13px; font-weight: bold;" onclick="leaveCurrentGroup()">Rời nhóm</button>
-
                         <button id="toggle-members-btn" class="btn-action" style="height: 36px; width: 36px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: none; background: transparent; color: var(--text);" onclick="toggleMembersSidebar()" title="Ẩn/Hiện thành viên">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                         </button>
                     </div>
                 </div>
@@ -85,23 +64,16 @@
                     <button class="btn-action" style="height: 44px; width: 44px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid var(--border); color: var(--text); flex-shrink: 0;" onclick="document.getElementById('image-upload').click()" title="Gửi ảnh">
                         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                     </button>
-
                     <input type="text" id="message-input" class="edit-input" style="margin: 0; border-radius: 24px; padding: 12px 20px; background: var(--bg); border: 1px solid var(--border);" placeholder="Nhập tin nhắn...">
                     <button id="send-btn" class="btn-action btn-primary" style="height: 44px; border-radius: 24px; padding: 0 24px;">Gửi</button>
                 </div>
             </div>
 
             <div id="members-sidebar" style="width: 260px; background: var(--bg-2); border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; transition: width 0.2s;">
-                <div style="padding: 18px 20px; border-bottom: 1px solid var(--border); font-weight: bold; color: var(--text); font-size: 15px;">
-                    Thành viên (<span id="member-count">0</span>)
-                </div>
-                <div id="members-list" style="flex: 1; overflow-y: auto; padding: 10px;">
-                    <p style="text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 20px;">Đang tải...</p>
-                </div>
+                <div style="padding: 18px 20px; border-bottom: 1px solid var(--border); font-weight: bold; color: var(--text); font-size: 15px;">Thành viên (<span id="member-count">0</span>)</div>
+                <div id="members-list" style="flex: 1; overflow-y: auto; padding: 10px;"><p style="text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 20px;">Đang tải...</p></div>
             </div>
-
         </div>
-
     </div>
 </div>
 
@@ -113,8 +85,6 @@
     let globalUserId = null;
     let currentGroupId = null;
     let globalMessagesChannel = null; 
-    
-    // CRITICAL: The tracker to prevent double-rendering without blocking same-account tests
     const recentlySentIds = new Set(); 
 
     async function initApp() {
@@ -122,7 +92,6 @@
         if (session) {
             globalUserId = session.user.id;
             loadSidebar();
-            
             setupGlobalRealtimeListener();
             
             const urlParams = new URLSearchParams(window.location.search);
@@ -136,173 +105,126 @@
         }
     }
 
-    function toggleMembersSidebar() {
-        const sidebar = document.getElementById('members-sidebar');
-        const btn = document.getElementById('toggle-members-btn');
-        if (sidebar.style.display === 'none') {
-            sidebar.style.display = 'flex';
-            btn.style.color = 'var(--primary)';
+// BULLETPROOF DIAGNOSTIC VERSION
+    async function resetUnreadCount(groupId) {
+        const { data: { session } } = await mySupabase.auth.getSession();
+        if (!session || !groupId) {
+            console.error("[KoNect] Missing Session or GroupID. Reset aborted.");
+            return;
+        }
+
+        const activeUserId = session.user.id;
+
+        // 1. Get the latest message timestamp from the server
+        const { data: latestMsg } = await mySupabase
+            .from('messages')
+            .select('created_at')
+            .eq('group_id', groupId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+        // 2. If no messages, set to now + 1 min. If message exists, set to message time + 1 min.
+        // We add 1 minute to ensure it's mathematically impossible for precision to fail.
+        let targetDate = latestMsg ? new Date(latestMsg.created_at) : new Date();
+        targetDate.setMinutes(targetDate.getMinutes() + 1);
+        const timestamp = targetDate.toISOString();
+
+        console.log(`[KoNect Diagnostic] Attempting update for User: ${activeUserId} in Group: ${groupId}`);
+
+        // 3. Perform the update with .select() to verify the row exists
+        const { data: verifyData, error: updateError } = await mySupabase
+            .from('group_members')
+            .update({ last_read_at: timestamp })
+            .eq('group_id', groupId)
+            .eq('user_id', activeUserId)
+            .select(); // <--- THIS IS CRITICAL
+
+        if (updateError) {
+            console.error("[KoNect Error] Database rejected update:", updateError.message);
+        } else if (!verifyData || verifyData.length === 0) {
+            // IF THIS PRINTS: Your member is NOT actually in this group in the database!
+            console.error(`[KoNect FATAL] The database found 0 rows for this User/Group combo. The Member account is NOT registered as a member of this group in the 'group_members' table.`);
+            alert("Bug Detected: Your account is a ghost. You are not in the group_members table!");
         } else {
-            sidebar.style.display = 'none';
-            btn.style.color = 'var(--text)';
+            console.log("✅ REAL SUCCESS: Notification cleared in database:", verifyData[0].last_read_at);
         }
     }
 
-    async function loadGroupMembers(groupId) {
-        const { data } = await mySupabase
-            .from('group_members')
-            .select(`role, status, profiles!inner(id, full_name, username, avatar_url)`)
-            .eq('group_id', groupId);
+    function toggleMembersSidebar() {
+        const sidebar = document.getElementById('members-sidebar');
+        const btn = document.getElementById('toggle-members-btn');
+        if (sidebar.style.display === 'none') { sidebar.style.display = 'flex'; btn.style.color = 'var(--primary)'; } 
+        else { sidebar.style.display = 'none'; btn.style.color = 'var(--text)'; }
+    }
 
+    async function loadGroupMembers(groupId) {
+        const { data } = await mySupabase.from('group_members').select(`role, status, profiles!inner(id, full_name, username, avatar_url)`).eq('group_id', groupId);
         const list = document.getElementById('members-list');
         list.innerHTML = '';
         
         if (data && data.length > 0) {
             document.getElementById('member-count').innerText = data.length;
             document.getElementById('chat-subtitle').innerText = `${data.length} thành viên`;
-            
             data.sort((a, b) => (a.role === 'admin' ? -1 : 1));
 
             data.forEach(m => {
                 const user = m.profiles;
                 const name = user.full_name || user.username || "Ẩn danh";
-
-                const isAdmin = m.role === 'admin';
-                
+                const isAdmin = m.role === 'admin' || m.status === 'admin'; 
                 const roleBadge = isAdmin ? `<span style="font-size: 10px; background: rgba(255, 215, 0, 0.2); color: gold; padding: 2px 6px; border-radius: 4px; flex-shrink: 0;">Admin</span>` : '';
-                
-                const avatarHtml = user.avatar_url 
-                    ? `<div class="widget-avatar" style="background-image: url(${user.avatar_url}); background-size: cover; width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;"></div>`
-                    : `<div class="widget-avatar" style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary); font-size: 14px;">${name.charAt(0).toUpperCase()}</div>`;
+                const avatarHtml = user.avatar_url ? `<div class="widget-avatar" style="background-image: url(${user.avatar_url}); background-size: cover; width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;"></div>` : `<div class="widget-avatar" style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary); font-size: 14px;">${name.charAt(0).toUpperCase()}</div>`;
                 
                 const div = document.createElement('div');
                 div.style.cssText = "display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 2px;";
                 div.onmouseover = () => div.style.background = 'var(--border)';
                 div.onmouseout = () => div.style.background = 'transparent';
                 div.onclick = () => window.location.href = `/profile?id=${user.id}`;
-
-                div.innerHTML = `
-                    ${avatarHtml}
-                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
-                        <div style="display: flex; align-items: center; gap: 6px; width: 100%;">
-                            <div style="font-size: 14px; font-weight: bold; color: ${isAdmin ? 'var(--primary)' : 'var(--text)'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${name}</div>
-                            ${roleBadge}
-                        </div>
-                        <div style="font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@${user.username || 'user'}</div>
-                    </div>
-                `;
+                div.innerHTML = `${avatarHtml}<div style="flex: 1; min-width: 0; display: flex; flex-direction: column;"><div style="display: flex; align-items: center; gap: 6px; width: 100%;"><div style="font-size: 14px; font-weight: bold; color: ${isAdmin ? 'var(--primary)' : 'var(--text)'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${name}</div>${roleBadge}</div><div style="font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@${user.username || 'user'}</div></div>`;
                 list.appendChild(div);
             });
         } else {
-            document.getElementById('member-count').innerText = 0;
-            document.getElementById('chat-subtitle').innerText = "0 thành viên";
+            document.getElementById('member-count').innerText = 0; document.getElementById('chat-subtitle').innerText = "0 thành viên";
             list.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 20px;">Lỗi tải thành viên.</p>';
         }
     }
 
     async function loadSidebar() {
-        const { data: friendsData } = await mySupabase
-            .from('friends')
-            .select(`
-            user_id,
-            friend_id,
-            user_p:profiles!friends_user_id_fkey(full_name, username, avatar_url),
-            friend_p:profiles!friends_friend_id_fkey(full_name, username, avatar_url)
-    `   )
-            .or(`user_id.eq.${globalUserId},friend_id.eq.${globalUserId}`)
-            .eq('status', 'accepted');
-
-        const friendsContainer = document.getElementById('friends-list');
-        friendsContainer.innerHTML = '';
-
+        const { data: friendsData } = await mySupabase.from('friends').select(`user_id, friend_id, user_p:profiles!friends_user_id_fkey(full_name, username, avatar_url), friend_p:profiles!friends_friend_id_fkey(full_name, username, avatar_url)`).or(`user_id.eq.${globalUserId},friend_id.eq.${globalUserId}`).eq('status', 'accepted');
+        const friendsContainer = document.getElementById('friends-list'); friendsContainer.innerHTML = '';
         if (friendsData && friendsData.length > 0) {
             friendsData.forEach(f => {
-                // LOGIC QUAN TRỌNG: Nếu user_id là mình thì lấy profile thằng friend_p, và ngược lại
                 const friend = (f.user_id === globalUserId) ? f.friend_p : f.user_p;
-
-                // Nếu vì lý do gì đó không lấy được profile (user bị xóa chẳng hạn) thì bỏ qua
                 if (!friend) return;
-
                 const name = friend.full_name || friend.username || "Ẩn danh";
-                const avatarHtml = friend.avatar_url
-                    ? `<div class="widget-avatar" style="background-image: url(${friend.avatar_url}); background-size: cover; width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;"></div>`
-                    : `<div class="widget-avatar" style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary); font-size: 14px;">${name.charAt(0).toUpperCase()}</div>`;
-
+                const avatarHtml = friend.avatar_url ? `<div class="widget-avatar" style="background-image: url(${friend.avatar_url}); background-size: cover; width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;"></div>` : `<div class="widget-avatar" style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary); font-size: 14px;">${name.charAt(0).toUpperCase()}</div>`;
                 const div = document.createElement('div');
-                div.className = 'widget-item';
-                div.style.cssText = "padding: 8px; border-radius: 8px; margin-bottom: 4px; transition: background 0.2s; cursor: pointer;";
-                div.onmouseover = () => div.style.background = 'var(--border)';
-                div.onmouseout = () => div.style.background = 'transparent';
-                div.onclick = () => alert("Chat 1-1 chưa được hỗ trợ.");
-
-                div.innerHTML = `
-            <div style="display:flex; gap: 10px; align-items:center;">
-                ${avatarHtml}
-                <div class="widget-text">
-                    <h4 style="margin:0; color:var(--text); font-size:14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${name}</h4>
-                </div>
-            </div>`;
+                div.className = 'widget-item'; div.style.cssText = "padding: 8px; border-radius: 8px; margin-bottom: 4px; transition: background 0.2s; cursor: pointer;";
+                div.onmouseover = () => div.style.background = 'var(--border)'; div.onmouseout = () => div.style.background = 'transparent'; div.onclick = () => alert("Chat 1-1 chưa được hỗ trợ.");
+                div.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div class="widget-text"><h4 style="margin:0; color:var(--text); font-size:14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${name}</h4></div></div>`;
                 friendsContainer.appendChild(div);
             });
-        } else {
-            friendsContainer.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); text-align: center;">Không có mống bạn nào ở đây cả...</p>';
-        }
-        const { data: groupsData } = await mySupabase
-            .from('group_members')
-            .select(`groups ( id, title, cover_url )`)
-            .eq('user_id', globalUserId)
-            .eq('status', 'joined');
-
-        const groupsContainer = document.getElementById('groups-list');
-        groupsContainer.innerHTML = '';
-
+        } else friendsContainer.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); text-align: center;">Không có mống bạn nào ở đây cả...</p>';
+        
+        const { data: groupsData } = await mySupabase.from('group_members').select(`groups ( id, title, cover_url )`).eq('user_id', globalUserId).in('status', ['joined', 'member', 'admin']);
+        const groupsContainer = document.getElementById('groups-list'); groupsContainer.innerHTML = '';
         if (groupsData && groupsData.length > 0) {
             groupsData.forEach(item => {
                 const group = item.groups;
                 if (group) {
-                    const avatarHtml = group.cover_url 
-                        ? `<div class="widget-avatar" style="background-image: url(${group.cover_url}); background-size: cover; width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;"></div>`
-                        : `<div class="widget-avatar" style="width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;">${(group.title || "G").charAt(0).toUpperCase()}</div>`;
-                        
+                    const avatarHtml = group.cover_url ? `<div class="widget-avatar" style="background-image: url(${group.cover_url}); background-size: cover; width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;"></div>` : `<div class="widget-avatar" style="width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;">${(group.title || "G").charAt(0).toUpperCase()}</div>`;
                     const div = document.createElement('div');
-                    div.className = 'widget-item';
-                    div.style.cssText = "padding: 8px; border-radius: 8px; margin-bottom: 4px; transition: background 0.2s; cursor: pointer;";
-                    div.onmouseover = () => div.style.background = 'var(--border)';
-                    div.onmouseout = () => div.style.background = 'transparent';
-                    
+                    div.className = 'widget-item'; div.style.cssText = "padding: 8px; border-radius: 8px; margin-bottom: 4px; transition: background 0.2s; cursor: pointer;";
+                    div.onmouseover = () => div.style.background = 'var(--border)'; div.onmouseout = () => div.style.background = 'transparent';
                     if (group.id === currentGroupId) div.style.background = 'rgba(74, 144, 226, 0.15)';
-                    
-                    div.onclick = () => {
-                        window.history.replaceState({}, '', `/chat?group=${group.id}`);
-                        openChatRoom(group.id, group.title, group.cover_url);
-                        loadSidebar(); 
-                    };
-                    
-                    div.innerHTML = `
-                        <div style="display:flex; gap: 10px; align-items:center; overflow: hidden;">
-                            ${avatarHtml}
-                            <div class="widget-text" style="flex: 1; min-width: 0;">
-                                <h4 style="margin:0; color:var(--text); font-size:14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${group.title || "Nhóm ẩn danh"}</h4>
-                                <p id="sidebar-snippet-${group.id}" style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">...</p>
-                            </div>
-                        </div>
-                    `;
+                    div.onclick = () => { window.history.replaceState({}, '', `/chat?group=${group.id}`); openChatRoom(group.id, group.title, group.cover_url); loadSidebar(); };
+                    div.innerHTML = `<div style="display:flex; gap: 10px; align-items:center; overflow: hidden;">${avatarHtml}<div class="widget-text" style="flex: 1; min-width: 0;"><h4 style="margin:0; color:var(--text); font-size:14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${group.title || "Nhóm ẩn danh"}</h4><p id="sidebar-snippet-${group.id}" style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">...</p></div></div>`;
                     groupsContainer.appendChild(div);
                 }
             });
-
             groupsData.forEach(async (item) => {
-                const group = item.groups;
-                if (!group) return;
-
-                const { data: latestMsg } = await mySupabase
-                    .from('messages')
-                    .select(`content, sender_id, profiles(full_name, username)`)
-                    .eq('group_id', group.id)
-                    .order('created_at', { ascending: false })
-                    .limit(1)
-                    .single();
-
+                const group = item.groups; if (!group) return;
+                const { data: latestMsg } = await mySupabase.from('messages').select(`content, sender_id, profiles(full_name, username)`).eq('group_id', group.id).order('created_at', { ascending: false }).limit(1).single();
                 const snippetEl = document.getElementById(`sidebar-snippet-${group.id}`);
                 if (snippetEl) {
                     if (latestMsg) {
@@ -310,32 +232,19 @@
                         const senderName = isSelf ? "Bạn" : (latestMsg.profiles?.full_name || latestMsg.profiles?.username || "Ai đó");
                         let text = latestMsg.content.startsWith('[IMG]') ? '[Hình ảnh]' : latestMsg.content;
                         snippetEl.innerText = `${senderName}: ${text}`;
-                    } else {
-                        snippetEl.innerText = "Chưa có tin nhắn.";
-                    }
+                    } else snippetEl.innerText = "Chưa có tin nhắn.";
                 }
             });
-
-        } else {
-            groupsContainer.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); text-align: center;">Bạn chưa vào nhóm nào cả!</p>';
-        }
+        } else groupsContainer.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); text-align: center;">Bạn chưa vào nhóm nào cả!</p>';
     }
 
     async function openChatRoom(groupId, groupTitle, coverUrl = null) {
         currentGroupId = groupId;
-        
         document.getElementById('chat-title').innerText = groupTitle || "Nhóm ẩn danh";
         document.getElementById('chat-subtitle').innerText = "Đang tải...";
-        
         const avatarDiv = document.getElementById('chat-avatar');
-        if (coverUrl) {
-            avatarDiv.innerText = '';
-            avatarDiv.style.backgroundImage = `url(${coverUrl})`;
-            avatarDiv.style.backgroundSize = 'cover';
-        } else {
-            avatarDiv.style.backgroundImage = 'none';
-            avatarDiv.innerText = (groupTitle || "G").charAt(0).toUpperCase();
-        }
+        if (coverUrl) { avatarDiv.innerText = ''; avatarDiv.style.backgroundImage = `url(${coverUrl})`; avatarDiv.style.backgroundSize = 'cover'; } 
+        else { avatarDiv.style.backgroundImage = 'none'; avatarDiv.innerText = (groupTitle || "G").charAt(0).toUpperCase(); }
         
         document.getElementById('empty-state').style.display = 'none';
         document.getElementById('chat-ui').style.display = 'flex';
@@ -343,171 +252,90 @@
         document.getElementById('toggle-members-btn').style.color = 'var(--primary)'; 
 
         await loadGroupMembers(groupId); 
-        await loadChatHistory(groupId);  
+        await loadChatHistory(groupId); 
+        resetUnreadCount(groupId); // Trigger reset on open!
     }
 
     async function leaveCurrentGroup() {
         if (!currentGroupId || !globalUserId) return;
         if (!confirm("Bạn có chắc chắn muốn rời nhóm này không?")) return;
-
-        const { error } = await mySupabase
-            .from('group_members')
-            .delete()
-            .match({ group_id: currentGroupId, user_id: globalUserId });
-
-        if (error) {
-            alert("Lỗi khi rời nhóm: " + error.message);
-        } else {
-            window.location.href = '/main';
-        }
+        const { error } = await mySupabase.from('group_members').delete().match({ group_id: currentGroupId, user_id: globalUserId });
+        if (error) alert("Lỗi khi rời nhóm: " + error.message); else window.location.href = '/main';
     }
 
     async function loadChatHistory(groupId) {
-        const { data } = await mySupabase
-            .from('messages')
-            .select(`*, sender:profiles ( full_name, username )`)
-            .eq('group_id', groupId)
-            .order('created_at', { ascending: true });
-
-        if (data) {
-            data.forEach(msg => {
-                const displayName = msg.sender?.full_name || msg.sender?.username || "User-" + msg.sender_id.substring(0, 4);
-                displayNewMessage(msg, displayName);
-            });
-        }
+        const { data } = await mySupabase.from('messages').select(`*, sender:profiles ( full_name, username )`).eq('group_id', groupId).order('created_at', { ascending: true });
+        if (data) data.forEach(msg => { const displayName = msg.sender?.full_name || msg.sender?.username || "User-" + msg.sender_id.substring(0, 4); displayNewMessage(msg, displayName); });
     }
 
     function setupGlobalRealtimeListener() {
         if (globalMessagesChannel) return;
-
         globalMessagesChannel = mySupabase.channel('global-messages')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
                 const msg = payload.new;
-                
-                // CRITICAL FIX: The robust block that prevents double-rendering 
-                // but allows same-user tabs to sync perfectly.
-                if (recentlySentIds.has(msg.id)) {
-                    recentlySentIds.delete(msg.id); // Clean up memory
-                    return; 
-                }
-
+                if (recentlySentIds.has(msg.id)) { recentlySentIds.delete(msg.id); return; }
                 const isSelf = msg.sender_id === globalUserId;
-
                 mySupabase.from('profiles').select('full_name, username').eq('id', msg.sender_id).single()
                 .then(({data}) => {
                     const senderName = isSelf ? "Bạn" : (data?.full_name || data?.username || "User");
                     let text = msg.content.startsWith('[IMG]') ? '[Hình ảnh]' : msg.content;
-                    
                     const snippetEl = document.getElementById(`sidebar-snippet-${msg.group_id}`);
-                    if (snippetEl) {
-                        snippetEl.innerText = `${senderName}: ${text}`;
-                    }
-
+                    if (snippetEl) snippetEl.innerText = `${senderName}: ${text}`;
                     if (String(msg.group_id) === String(currentGroupId)) {
                         displayNewMessage(msg, senderName);
+                        resetUnreadCount(currentGroupId); // Keep resetting if we are staring at it!
                     } 
                 });
             }).subscribe();
     }
 
     async function uploadImage(event) {
-        const file = event.target.files[0];
-        if (!file || !currentGroupId) return;
-
+        const file = event.target.files[0]; if (!file || !currentGroupId) return;
         event.target.value = ''; 
-
         const fileName = `${globalUserId}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
         const { data, error } = await mySupabase.storage.from('chat_images').upload(fileName, file);
-
-        if (error) {
-            alert("Lỗi tải ảnh: " + error.message + "\n(Bạn đã tạo bucket 'chat_images' ở chế độ Public trên Supabase chưa?)");
-            return;
-        }
-
+        if (error) return alert("Lỗi tải ảnh: " + error.message);
         const { data: { publicUrl } } = mySupabase.storage.from('chat_images').getPublicUrl(fileName);
         const imgContent = `[IMG]${publicUrl}`;
-        
         displayNewMessage({ content: imgContent, sender_id: globalUserId }, "Tôi");
-
         const snippetEl = document.getElementById(`sidebar-snippet-${currentGroupId}`);
         if (snippetEl) snippetEl.innerText = `Bạn: [Hình ảnh]`;
-
-        const { data: dbData, error: dbError } = await mySupabase.from('messages').insert([{
-            content: imgContent,
-            group_id: currentGroupId,
-            sender_id: globalUserId
-        }]).select(); // MUST have .select() to grab the new ID
-
-        if (dbError) {
-            alert("Lỗi lưu ảnh vào Database: " + dbError.message);
-        } else if (dbData && dbData[0]) {
-            recentlySentIds.add(dbData[0].id); // Track it!
-        }
+        const { data: dbData, error: dbError } = await mySupabase.from('messages').insert([{ content: imgContent, group_id: currentGroupId, sender_id: globalUserId }]).select(); 
+        if (dbError) alert("Lỗi lưu ảnh vào Database: " + dbError.message);
+        else if (dbData && dbData[0]) { recentlySentIds.add(dbData[0].id); resetUnreadCount(currentGroupId); }
     }
 
     async function sendMessage() {
-        const input = document.getElementById('message-input');
-        const content = input.value.trim();
+        const input = document.getElementById('message-input'); const content = input.value.trim();
         if (!content || !currentGroupId) return;
-        
         input.value = ''; 
-        
         displayNewMessage({ content, sender_id: globalUserId }, "Tôi");
-        
         const snippetEl = document.getElementById(`sidebar-snippet-${currentGroupId}`);
         if (snippetEl) snippetEl.innerText = `Bạn: ${content}`;
-        
-        const { data: dbData, error } = await mySupabase.from('messages').insert([{
-            content: content,
-            group_id: currentGroupId,
-            sender_id: globalUserId
-        }]).select(); // MUST have .select() to grab the new ID
-
-        if (error) {
-            alert("Lỗi gửi tin: " + error.message);
-        } else if (dbData && dbData[0]) {
-            recentlySentIds.add(dbData[0].id); // Track it!
-        }
+        const { data: dbData, error } = await mySupabase.from('messages').insert([{ content: content, group_id: currentGroupId, sender_id: globalUserId }]).select(); 
+        if (error) alert("Lỗi gửi tin: " + error.message);
+        else if (dbData && dbData[0]) { recentlySentIds.add(dbData[0].id); resetUnreadCount(currentGroupId); }
     }
 
     function displayNewMessage(msg, senderName) {
-        const chatBox = document.getElementById('chat-box');
-        if (!chatBox) return;
-
+        const chatBox = document.getElementById('chat-box'); if (!chatBox) return;
         const isSelf = msg.sender_id === globalUserId;
-        const wrapper = document.createElement('div');
-        wrapper.className = `message-wrapper ${isSelf ? 'right' : 'left'}`;
-
+        const wrapper = document.createElement('div'); wrapper.className = `message-wrapper ${isSelf ? 'right' : 'left'}`;
         const bubble = document.createElement('div');
-        
         if (msg.content.startsWith('[IMG]')) {
             const imgUrl = msg.content.replace('[IMG]', '');
-            bubble.style.padding = '0';
-            bubble.style.backgroundColor = 'transparent';
-            bubble.style.border = 'none';
-            bubble.innerHTML = `<img src="${imgUrl}" class="chat-image">`;
+            bubble.style.padding = '0'; bubble.style.backgroundColor = 'transparent'; bubble.style.border = 'none'; bubble.innerHTML = `<img src="${imgUrl}" class="chat-image">`;
         } else {
-            bubble.className = `message ${isSelf ? 'self' : 'other'}`;
-            bubble.innerText = msg.content;
+            bubble.className = `message ${isSelf ? 'self' : 'other'}`; bubble.innerText = msg.content;
         }
-
-        if (isSelf) {
-            wrapper.appendChild(bubble);
-        } else {
-            const nameLabel = document.createElement('div');
-            nameLabel.className = 'sender-name';
-            nameLabel.innerText = senderName;
-            wrapper.appendChild(nameLabel);
-            wrapper.appendChild(bubble);
-        }
-        
+        if (isSelf) { wrapper.appendChild(bubble); } 
+        else { const nameLabel = document.createElement('div'); nameLabel.className = 'sender-name'; nameLabel.innerText = senderName; wrapper.appendChild(nameLabel); wrapper.appendChild(bubble); }
         chatBox.appendChild(wrapper);
         setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
     }
 
     document.getElementById('send-btn').onclick = sendMessage;
     document.getElementById('message-input').onkeydown = (e) => { if (e.key === 'Enter') sendMessage(); };
-    
     initApp();
 </script>
 </body>

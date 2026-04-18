@@ -14,16 +14,7 @@
     <style>
         .nav-icon { color: var(--text); transition: color 0.2s; display: flex; align-items: center; justify-content: center; }
         .nav-icon:hover { color: var(--primary); }
-        
-        /* 1-Line fade out to keep group cards clean and compact */
-        .desc-fade {
-            display: -webkit-box;
-            -webkit-line-clamp: 1;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            -webkit-mask-image: linear-gradient(to right, #000 70%, transparent 100%);
-            mask-image: linear-gradient(to right, #000 70%, transparent 100%);
-        }
+        .desc-fade { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; -webkit-mask-image: linear-gradient(to right, #000 70%, transparent 100%); mask-image: linear-gradient(to right, #000 70%, transparent 100%); }
         .desc-fade p { margin: 0; }
     </style>
 </head>
@@ -36,7 +27,7 @@
     </div>
     
     <div class="main-wrapper">
-        <div class="top-nav" style="position: relative;">
+        <div class="top-nav" style="position: relative; z-index: 9999;">
             <div class="back-arrow" onclick="window.location.href='/main'">
                 <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 20px; fill: var(--text);"><g><path d="M7.414 13l5.043 5.04-1.414 1.42L3.586 12l7.457-7.46 1.414 1.42L7.414 11H21v2H7.414z"></path></g></svg>
             </div>
@@ -56,7 +47,7 @@
                     <span id="notif-badge" style="display: none; position: absolute; top: -5px; right: -5px; background: #ff4d4d; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold;">0</span>
                 </div>
                 
-                <div id="notif-dropdown" style="display: none; position: absolute; top: 35px; right: 0; width: 340px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; padding: 15px; flex-direction: column; gap: 10px; text-align: left;">
+                <div id="notif-dropdown" style="display: none; position: absolute; top: 35px; right: 0; width: 340px; max-width: 90vw; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; padding: 15px; flex-direction: column; gap: 10px; text-align: left;">
                     <h4 style="margin: 0; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text);">Thông báo</h4>
                     <div id="notif-list" style="max-height: 350px; overflow-y: auto;">
                         <p style="font-size: 13px; color: var(--text-muted); margin: 0; text-align: center;">Đang tải...</p>
@@ -71,7 +62,6 @@
                 <svg viewBox="0 0 24 24"><path d="M12 9c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 4.5c-.827 0-1.5-.673-1.5-1.5s.673-1.5 1.5-1.5 1.5 .673 1.5 1.5-.673 1.5-1.5 1.5zM19.993 6h-2.246l-1.446-2.169A1.5 1.5 0 0 0 15.053 3H8.947a1.5 1.5 0 0 0-1.248.831L6.253 6H4.007C2.9 6 2 6.9 2 8.007v10.986C2 20.1 2.9 21 4.007 21h15.986C21.1 21 22 20.1 22 18.993V8.007C22 6.9 21.1 6 19.993 6zm-7.993 11.5c-2.481 0-4.5-2.019-4.5-4.5s2.019-4.5 4.5-4.5 4.5 2.019 4.5 4.5-2.019 4.5-4.5 4.5z"/></svg>
                 <span>Thay đổi bìa</span>
             </div>
-            
             <input type="file" id="banner-upload" accept="image/*" style="display: none;" onchange="uploadBanner(event)">
         </div>
 
@@ -79,28 +69,20 @@
             <div class="avatar-wrapper" onclick="document.getElementById('avatar-upload').click()">
                 <div class="avatar-container">
                     <div id="user-avatar" class="avatar-img"></div>
-                    
                     <div class="edit-overlay">
                         <svg viewBox="0 0 24 24"><path d="M12 9c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 4.5c-.827 0-1.5-.673-1.5-1.5s.673-1.5 1.5-1.5 1.5 .673 1.5 1.5-.673 1.5-1.5 1.5zM19.993 6h-2.246l-1.446-2.169A1.5 1.5 0 0 0 15.053 3H8.947a1.5 1.5 0 0 0-1.248.831L6.253 6H4.007C2.9 6 2 6.9 2 8.007v10.986C2 20.1 2.9 21 4.007 21h15.986C21.1 21 22 20.1 22 18.993V8.007C22 6.9 21.1 6 19.993 6zm-7.993 11.5c-2.481 0-4.5-2.019-4.5-4.5s2.019-4.5 4.5-4.5 4.5 2.019 4.5 4.5-2.019 4.5-4.5 4.5z"/></svg>
                         <span>Sửa ảnh</span>
                     </div>
-
                 </div>
                 <input type="file" id="avatar-upload" accept="image/*" style="display: none;" onchange="uploadAvatar(event)">
             </div>            
             <div id="action-buttons">
                 <button id="edit-profile-btn" class="btn-action" onclick="toggleEditMode()">Sửa hồ sơ</button>
-                
                 <button id="copy-link-btn" class="btn-action" style="margin-left: 8px; display: none;" onclick="copyMyLink()">Chia sẻ</button>
-                
                 <button id="cancel-profile-btn" class="btn-action" style="display: none; margin-right: 8px;" onclick="cancelEditMode()">Hủy</button>
                 <button id="save-profile-btn" class="btn-action btn-primary" style="display: none;" onclick="saveProfile()">Lưu</button>            
-                
                 <button id="add-friend-btn" class="btn-action" style="display: none; margin-left: 8px;" onclick="toggleFriend()">Kết bạn</button>
-                <button id="message-profile-btn" class="btn-action btn-pop" onclick="window.location.href='/chat'" style="margin-left: 8px; display: none;">
-                        KoNect!
-                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
-                </button>
+                <button id="message-profile-btn" class="btn-action btn-pop" onclick="window.location.href='/chat'" style="margin-left: 8px; display: none;">KoNect! <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg></button>
             </div>
         </div>
 
@@ -233,97 +215,6 @@
         }
     });
 
-    async function loadNotifications() {
-        if (!loggedInUserId) return;
-        document.getElementById('bell-icon').style.display = 'flex';
-        document.getElementById('msg-icon').style.display = 'flex';
-
-        const { data: friendReqs } = await supabaseClient
-            .from('friends')
-            .select(`user_id, profiles!friends_user_id_fkey(full_name, username, avatar_url)`)
-            .eq('friend_id', loggedInUserId)
-            .eq('status', 'pending');
-
-        const { data: myOwnedGroups } = await supabaseClient
-            .from('groups')
-            .select('id')
-            .eq('creator_id', loggedInUserId);
-
-        const myOwnedGroupIds = myOwnedGroups ? myOwnedGroups.map(g => g.id) : [];
-        let groupJoinReqs = [];
-        
-        if (myOwnedGroupIds.length > 0) {
-            const { data } = await supabaseClient
-                .from('group_members')
-                .select(`user_id, group_id, profiles!inner(full_name, username, avatar_url), groups!inner(title)`)
-                .in('group_id', myOwnedGroupIds)
-                .eq('status', 'pending');
-            groupJoinReqs = data || [];
-        }
-
-        const badge = document.getElementById('notif-badge');
-        const list = document.getElementById('notif-list');
-        const totalNotifs = (friendReqs?.length || 0) + groupJoinReqs.length;
-
-        if (totalNotifs === 0) {
-            badge.style.display = 'none';
-            list.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); margin: 0; text-align: center;">Không có thông báo mới.</p>';
-            return;
-        }
-
-        badge.style.display = 'block';
-        badge.innerText = totalNotifs;
-        list.innerHTML = '';
-
-        groupJoinReqs.forEach(req => {
-            const user = req.profiles;
-            const name = user.full_name || user.username || "Ẩn danh";
-            const avatarHtml = user.avatar_url 
-                ? `<div class="widget-avatar" style="background-image: url(${user.avatar_url}); background-size: cover; flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px;"></div>`
-                : `<div class="widget-avatar" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary);">${name.charAt(0).toUpperCase()}</div>`;
-
-            const notifItem = document.createElement('div');
-            notifItem.style.cssText = "display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px;";
-            notifItem.innerHTML = `
-                <div style="display:flex; gap: 10px; align-items:center;">
-                    ${avatarHtml}
-                    <div style="font-size: 13px; color: var(--text);">
-                        <strong>${name}</strong> xin vào nhóm <strong>${req.groups.title}</strong>.
-                    </div>
-                </div>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn-action btn-primary" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="approveGroupReq('${req.group_id}', '${req.user_id}')">Duyệt</button>
-                    <button class="btn-action" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="rejectGroupReq('${req.group_id}', '${req.user_id}')">Từ chối</button>
-                </div>
-            `;
-            list.appendChild(notifItem);
-        });
-
-        (friendReqs || []).forEach(req => {
-            const user = req.profiles;
-            const name = user.full_name || user.username || "Ẩn danh";
-            const avatarHtml = user.avatar_url 
-                ? `<div class="widget-avatar" style="background-image: url(${user.avatar_url}); background-size: cover; flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px;"></div>`
-                : `<div class="widget-avatar" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary);">${name.charAt(0).toUpperCase()}</div>`;
-
-            const notifItem = document.createElement('div');
-            notifItem.style.cssText = "display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px;";
-            notifItem.innerHTML = `
-                <div style="display:flex; gap: 10px; align-items:center;">
-                    ${avatarHtml}
-                    <div style="font-size: 13px; color: var(--text);">
-                        <strong>${name}</strong> đã gửi yêu cầu kết bạn.
-                    </div>
-                </div>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn-action btn-primary" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="acceptFriendReq('${req.user_id}')">Chấp nhận</button>
-                    <button class="btn-action" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="rejectFriendReq('${req.user_id}')">Từ chối</button>
-                </div>
-            `;
-            list.appendChild(notifItem);
-        });
-    }
-
     async function approveGroupReq(groupId, userId) {
         await supabaseClient.from('group_members').update({ status: 'member' }).match({ group_id: groupId, user_id: userId });
         loadNotifications(); 
@@ -357,7 +248,17 @@
         
         if (currentUser) {
             loggedInUserId = currentUser.id;
+            
+            // 1. Check for notifications on load
             loadNotifications(); 
+            
+            // CRITICAL FIX: 2. Listen LIVE for new messages
+            supabaseClient.channel('profile-live-notifications')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                    if (payload.new.sender_id !== loggedInUserId) {
+                        loadNotifications(); 
+                    }
+                }).subscribe();
         }
 
         if (!targetUserId && !currentUser) {
@@ -430,49 +331,25 @@
         let { data: theirRelation } = await supabaseClient.from('friends').select('status').eq('user_id', currentlyViewingId).eq('friend_id', loggedInUserId).single();
 
         const btn = document.getElementById('add-friend-btn');
-        
-        btn.style.background = '';
-        btn.style.color = '';
-        btn.style.border = '';
-        
-        btn.onmouseenter = null;
-        btn.onmouseleave = null;
+        btn.style.background = ''; btn.style.color = ''; btn.style.border = '';
+        btn.onmouseenter = null; btn.onmouseleave = null;
 
         if (myRelation && myRelation.status === 'accepted') {
             friendState = 'accepted';
             btn.innerText = "Hủy kết bạn";
             btn.className = "btn-action";
-            
-            btn.onmouseenter = () => { 
-                btn.style.color = "#ff4d4d"; 
-                btn.style.borderColor = "#ff4d4d"; 
-            };
-            btn.onmouseleave = () => { 
-                btn.style.color = ""; 
-                btn.style.borderColor = ""; 
-            };
-            
+            btn.onmouseenter = () => { btn.style.color = "#ff4d4d"; btn.style.borderColor = "#ff4d4d"; };
+            btn.onmouseleave = () => { btn.style.color = ""; btn.style.borderColor = ""; };
         } else if (myRelation && myRelation.status === 'pending') {
             friendState = 'pending_sent';
             btn.innerText = "Đã gửi yêu cầu";
             btn.className = "btn-action";
-            
-            btn.onmouseenter = () => { 
-                btn.innerText = "Hủy yêu cầu"; 
-                btn.style.color = "#ff4d4d"; 
-                btn.style.borderColor = "#ff4d4d"; 
-            };
-            btn.onmouseleave = () => { 
-                btn.innerText = "Đã gửi yêu cầu"; 
-                btn.style.color = ""; 
-                btn.style.borderColor = ""; 
-            };
-            
+            btn.onmouseenter = () => { btn.innerText = "Hủy yêu cầu"; btn.style.color = "#ff4d4d"; btn.style.borderColor = "#ff4d4d"; };
+            btn.onmouseleave = () => { btn.innerText = "Đã gửi yêu cầu"; btn.style.color = ""; btn.style.borderColor = ""; };
         } else if (theirRelation && theirRelation.status === 'pending') {
             friendState = 'pending_received';
             btn.innerText = "Chấp nhận";
             btn.className = "btn-action btn-primary"; 
-            
         } else {
             friendState = 'none';
             btn.innerText = "Kết bạn";
@@ -535,15 +412,7 @@
             item.className = 'widget-item';
             item.style.cssText = "padding: 10px; border-bottom: 1px solid var(--border); cursor:pointer;";
             item.onclick = () => window.location.href = `/profile?id=${data[i].friend_id}`;
-            item.innerHTML = `
-                <div style="display:flex; gap: 10px; align-items:center;">
-                    ${avatarHtml}
-                    <div class="widget-text">
-                        <h4 style="margin:0; color:var(--text);">${name}</h4>
-                        <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted);">@${friend.username || 'user'}</p>
-                    </div>
-                </div>
-            `;
+            item.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div class="widget-text"><h4 style="margin:0; color:var(--text);">${name}</h4><p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted);">@${friend.username || 'user'}</p></div></div>`;
             container.appendChild(item);
         }
         if (data.length > 3 && seeMoreBtn) seeMoreBtn.style.display = 'block'; else if (seeMoreBtn) seeMoreBtn.style.display = 'none';
@@ -553,11 +422,12 @@
         const container = document.getElementById('groups-container');
         container.innerHTML = '<p style="text-align:center; color:#888;">Đang tải nhóm...</p>';
         
+        // CRITICAL FIX: Query 'role' and include 'joined' in the filter
         const { data, error } = await supabaseClient
             .from('group_members')
-            .select(`status, groups (id, title, description, cover_url, created_at)`)
+            .select(`status, role, groups (id, title, description, cover_url, created_at)`)
             .eq('user_id', userId)
-            .in('status', ['admin', 'member']);
+            .in('status', ['admin', 'member', 'joined']);
             
         if (error || !data || data.length === 0) {
             container.innerHTML = `<div style="padding: 32px; text-align: center; color: var(--text-muted);"><h2 style="color: var(--text); margin-top: 0;">Chưa có nhóm nào</h2><p>Người dùng này chưa tham gia hoặc tạo nhóm nào.</p></div>`; 
@@ -567,8 +437,9 @@
 
         const validGroups = data.filter(m => m.groups !== null).sort((a, b) => new Date(b.groups.created_at) - new Date(a.groups.created_at));
 
-        const createdGroups = validGroups.filter(m => m.status === 'admin');
-        const joinedGroups  = validGroups.filter(m => m.status === 'member'); 
+        // Sort out the mixed database terminology
+        const createdGroups = validGroups.filter(m => m.status === 'admin' || m.role === 'admin');
+        const joinedGroups  = validGroups.filter(m => m.status === 'member' || (m.status === 'joined' && m.role !== 'admin')); 
 
         const statVals = document.querySelectorAll('.stat-item .stat-val');
         if (statVals.length >= 2) {
@@ -605,13 +476,7 @@
     async function loadNewestGroups() {
         const sidebarContainer = document.getElementById('newest-groups-widget');
         sidebarContainer.innerHTML = '<h3 class="widget-title text-primary">Nhóm mới tạo</h3><p style="color: var(--text-muted); font-size: 13px;">Đang tải...</p>';
-        
-        const { data: newestGroups } = await supabaseClient
-            .from('groups')
-            .select(`id, title, cover_url, created_at, creator_id, profiles!inner(full_name, username)`)
-            .order('created_at', { ascending: false })
-            .limit(3);
-            
+        const { data: newestGroups } = await supabaseClient.from('groups').select(`id, title, cover_url, created_at, creator_id, profiles!inner(full_name, username)`).order('created_at', { ascending: false }).limit(3);
         sidebarContainer.innerHTML = '<h3 class="widget-title text-primary">Nhóm mới tạo</h3>';
         if (!newestGroups || newestGroups.length === 0) return;
         
@@ -619,32 +484,15 @@
             const groupName = group.title || "Nhóm không tên";
             const creatorName = group.profiles?.full_name || group.profiles?.username || "Ẩn danh";
             const dateStr = new Date(group.created_at).toLocaleDateString('vi-VN');
-            
-            const avatarHtml = group.cover_url 
-                ? `<div class="widget-avatar" style="background-image: url('${group.cover_url}'); background-size: cover; background-position: center; flex-shrink: 0; border: 1px solid var(--border);"></div>`
-                : `<div class="widget-avatar" style="flex-shrink: 0;">${groupName.charAt(0).toUpperCase()}</div>`;
+            const avatarHtml = group.cover_url ? `<div class="widget-avatar" style="background-image: url('${group.cover_url}'); background-size: cover; background-position: center; flex-shrink: 0; border: 1px solid var(--border);"></div>` : `<div class="widget-avatar" style="flex-shrink: 0;">${groupName.charAt(0).toUpperCase()}</div>`;
             
             const widgetItem = document.createElement('div');
             widgetItem.className = 'widget-item'; 
             widgetItem.style.cssText = "padding: 12px 10px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s;";
-            
             widgetItem.onmouseover = () => widgetItem.style.background = 'var(--border)';
             widgetItem.onmouseout = () => widgetItem.style.background = 'transparent';
-            
             widgetItem.onclick = () => window.location.href = `/main?search=${encodeURIComponent(groupName)}`;
-            
-            // CRITICAL FIX: Removed nowrap, added word-wrap, and changed alignment to flex-start
-            widgetItem.innerHTML = `
-                <div style="display:flex; gap: 12px; align-items: flex-start;">
-                    ${avatarHtml}
-                    <div class="widget-text" style="flex: 1; min-width: 0;">
-                        <h4 style="margin: 0 0 6px 0; color: var(--text); line-height: 1.3; word-wrap: break-word;">${groupName}</h4>
-                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.4; word-wrap: break-word;">
-                            Bởi <span style="color: var(--text); cursor:pointer; font-weight:bold;" onclick="event.stopPropagation(); window.location.href='/profile?id=${group.creator_id}'">${creatorName}</span> • ${dateStr}
-                        </p>
-                    </div>
-                </div>
-            `;
+            widgetItem.innerHTML = `<div style="display:flex; gap: 12px; align-items: flex-start;">${avatarHtml}<div class="widget-text" style="flex: 1; min-width: 0;"><h4 style="margin: 0 0 6px 0; color: var(--text); line-height: 1.3; word-wrap: break-word;">${groupName}</h4><p style="margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.4; word-wrap: break-word;">Bởi <span style="color: var(--text); cursor:pointer; font-weight:bold;" onclick="event.stopPropagation(); window.location.href='/profile?id=${group.creator_id}'">${creatorName}</span> • ${dateStr}</p></div></div>`;
             sidebarContainer.appendChild(widgetItem);
         });
     }
@@ -726,18 +574,12 @@
         if (saveBtn) saveBtn.disabled = !isValid;
     }
 
-    // CRITICAL FIX: Applying Marked.js and desc-fade to group cards in profile.html
     function buildGroupCard(g, role, isClickable) {
         const coverImage = g.cover_url || "https://via.placeholder.com/400x160/252525/4a90e2?text=KoNect";
-        const roleBadge = role === 'admin' 
-            ? '<span style="color: var(--primary); font-weight: bold;">Chủ nhóm</span>' 
-            : 'Thành viên';
+        const roleBadge = role === 'admin' ? '<span style="color: var(--primary); font-weight: bold;">Chủ nhóm</span>' : 'Thành viên';
         const dateStr = new Date(g.created_at).toLocaleDateString('vi-VN');
-        
         const clickAction = isClickable ? `onclick="window.location.href='/chat?group=${g.id}'"` : '';
         const cursorStyle = isClickable ? 'cursor:pointer;' : 'cursor:default;';
-        
-        // Parse the raw markdown into clean HTML
         const parsedDesc = g.description ? marked.parse(g.description) : 'Chưa có mô tả.';
         
         return `
@@ -754,6 +596,83 @@
     document.getElementById('edit-name-input').addEventListener('input', validateProfileForm);
     loadProfile(); 
     loadNewestGroups();
+
+async function loadNotifications() {
+        if (!loggedInUserId) return;
+        document.getElementById('bell-icon').style.display = 'flex'; document.getElementById('msg-icon').style.display = 'flex';
+        
+        const { data: friendReqs } = await supabaseClient.from('friends').select(`user_id, profiles!friends_user_id_fkey(full_name, username, avatar_url)`).eq('friend_id', loggedInUserId).eq('status', 'pending');
+        const { data: myOwnedGroups } = await supabaseClient.from('groups').select('id').eq('creator_id', loggedInUserId);
+        const myOwnedGroupIds = myOwnedGroups ? myOwnedGroups.map(g => g.id) : [];
+        let groupJoinReqs = [];
+        if (myOwnedGroupIds.length > 0) {
+            const { data } = await supabaseClient.from('group_members').select(`user_id, group_id, profiles!inner(full_name, username, avatar_url), groups!inner(title)`).in('group_id', myOwnedGroupIds).eq('status', 'pending');
+            groupJoinReqs = data || [];
+        }
+
+        // CRITICAL FIX: Added 'cover_url' to the database query here
+        const { data: myActiveGroups } = await supabaseClient.from('group_members').select('group_id, last_read_at, groups!inner(title, cover_url)').eq('user_id', loggedInUserId).in('status', ['member', 'admin', 'joined']);
+        let unreadMsgs = [];
+
+        if (myActiveGroups) {
+            for (let mg of myActiveGroups) {
+                const readTime = mg.last_read_at || new Date(0).toISOString(); 
+                const { data: newMsgs } = await supabaseClient
+                    .from('messages')
+                    .select('id')
+                    .eq('group_id', mg.group_id)
+                    .gt('created_at', readTime)
+                    .neq('sender_id', loggedInUserId);
+                    
+                if (newMsgs && newMsgs.length > 0) {
+                    // Passed cover_url into our unread array
+                    unreadMsgs.push({ groupId: mg.group_id, groupName: mg.groups.title, coverUrl: mg.groups.cover_url, count: newMsgs.length });
+                }
+            }
+        }
+
+        const badge = document.getElementById('notif-badge'), list = document.getElementById('notif-list');
+        const totalNotifs = (friendReqs?.length || 0) + groupJoinReqs.length + unreadMsgs.length;
+        
+        if (totalNotifs === 0) { badge.style.display = 'none'; list.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); margin: 0; text-align: center;">Không có thông báo mới.</p>'; return; }
+        badge.style.display = 'block'; badge.innerText = totalNotifs; list.innerHTML = '';
+
+        unreadMsgs.forEach(msg => {
+            // CRITICAL FIX: Replaced emoji with dynamic group avatar (Image or Letter)
+            const avatarHtml = msg.coverUrl 
+                ? `<div class="widget-avatar" style="background-image: url('${msg.coverUrl}'); background-size: cover; background-position: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px;"></div>`
+                : `<div class="widget-avatar" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; background: rgba(74, 144, 226, 0.15); border: 1px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: var(--primary);">${msg.groupName.charAt(0).toUpperCase()}</div>`;
+
+            const notifItem = document.createElement('div');
+            notifItem.style.cssText = "display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px;";
+            notifItem.innerHTML = `
+                <div style="display:flex; gap: 10px; align-items:center;">
+                    ${avatarHtml}
+                    <div style="font-size: 13px; color: var(--text); line-height: 1.4;">Nhóm <strong style="color: var(--primary);">${msg.groupName}</strong> có <strong>${msg.count}</strong> tin nhắn mới.</div>
+                </div>
+                <button class="btn-action btn-primary" style="width: 100%; padding: 4px; height: 30px; font-size: 12px;" onclick="window.location.href='/chat?group=${msg.groupId}'">Đọc ngay</button>
+            `;
+            list.appendChild(notifItem);
+        });
+
+        groupJoinReqs.forEach(req => {
+            const user = req.profiles; const name = user.full_name || user.username || "Ẩn danh";
+            const avatarHtml = user.avatar_url ? `<div class="widget-avatar" style="background-image: url(${user.avatar_url}); background-size: cover; flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px;"></div>` : `<div class="widget-avatar" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary);">${name.charAt(0).toUpperCase()}</div>`;
+            const notifItem = document.createElement('div');
+            notifItem.style.cssText = "display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px;";
+            notifItem.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div style="font-size: 13px; color: var(--text);"><strong>${name}</strong> xin vào nhóm <strong>${req.groups.title}</strong>.</div></div><div style="display: flex; gap: 8px;"><button class="btn-action btn-primary" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="approveGroupReq('${req.group_id}', '${req.user_id}')">Duyệt</button><button class="btn-action" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="rejectGroupReq('${req.group_id}', '${req.user_id}')">Từ chối</button></div>`;
+            list.appendChild(notifItem);
+        });
+
+        (friendReqs || []).forEach(req => {
+            const user = req.profiles; const name = user.full_name || user.username || "Ẩn danh";
+            const avatarHtml = user.avatar_url ? `<div class="widget-avatar" style="background-image: url(${user.avatar_url}); background-size: cover; flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px;"></div>` : `<div class="widget-avatar" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary);">${name.charAt(0).toUpperCase()}</div>`;
+            const notifItem = document.createElement('div');
+            notifItem.style.cssText = "display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px;";
+            notifItem.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div style="font-size: 13px; color: var(--text);"><strong>${name}</strong> đã gửi yêu cầu kết bạn.</div></div><div style="display: flex; gap: 8px;"><button class="btn-action btn-primary" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="acceptFriendReq('${req.user_id}')">Chấp nhận</button><button class="btn-action" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="rejectFriendReq('${req.user_id}')">Từ chối</button></div>`;
+            list.appendChild(notifItem);
+        });
+    }
 </script>
 </body>
 </html>
