@@ -13,17 +13,17 @@
     <div id="sidebar" style="width: 320px; background: var(--bg-2); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; z-index: 10;">
         <div class="sidebar-header" style="padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 12px;">
-                <button onclick="toggleLeftSidebar()" style="background: none; border: none; color: var(--text); cursor: pointer; padding: 0; display: flex; align-items: center;">
+                <button id="hamburger-btn" onclick="toggleLeftSidebar()" style="background: none; border: none; color: var(--primary); cursor: pointer; padding: 0; display: flex; align-items: center; transition: color 0.2s;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="3" y1="12" x2="21" y2="12"></line>
                         <line x1="3" y1="6" x2="21" y2="6"></line>
                         <line x1="3" y1="18" x2="21" y2="18"></line>
                     </svg>
                 </button>
-                <div class="logo" style="font-size: 20px; font-weight: bold; cursor: pointer; color: var(--primary);" onclick="window.location.href='/main'">KoNect</div>
+                <div id="sidebar-logo" class="logo" style="font-size: 20px; font-weight: bold; cursor: pointer; color: var(--primary);" onclick="window.location.href='/main'">KoNect</div>
             </div>
 
-            <button class="btn-action" style="height: 32px; font-size: 12px; padding: 0 12px; border-radius: 16px;" onclick="window.location.href='/main'">Trang chủ</button>
+            <button id="sidebar-home-btn" class="btn-action btn-profile" style="height: 32px; font-size: 12px; padding: 0 12px; border-radius: 16px;" onclick="window.location.href='/main'">Trang chủ</button>
         </div>
         <div class="friend-list" style="overflow-y: auto; flex: 1; padding: 16px;">
             <h3 class="widget-title text-primary" style="font-size: 14px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">BẠN BÈ - FRIENDS</h3>
@@ -128,7 +128,6 @@
             .eq('user_id', activeUserId);
     }
 
-    // HELPER: Di chuyển Group đang chat lên vị trí đầu tiên
     function moveGroupToTop(groupId) {
         const snippetEl = document.getElementById(`sidebar-snippet-${groupId}`);
         if (!snippetEl) return;
@@ -173,7 +172,7 @@
                 
                 const div = document.createElement('div');
                 div.style.cssText = "display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 2px;";
-                div.onmouseover = () => div.style.background = 'rgba(7, 37, 77, 0.4)'; // BLUE HOVER
+                div.onmouseover = () => div.style.background = 'rgba(7, 37, 77, 0.4)'; 
                 div.onmouseout = () => div.style.background = 'transparent';
                 div.onclick = () => window.location.href = `/profile?id=${user.id}`;
                 div.innerHTML = `${avatarHtml}<div style="flex: 1; min-width: 0; display: flex; flex-direction: column;"><div style="display: flex; align-items: center; gap: 6px; width: 100%;"><div style="font-size: 14px; font-weight: bold; color: ${isAdmin ? 'var(--primary)' : 'var(--text)'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${name}</div>${roleBadge}</div><div style="font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@${user.username || 'user'}</div></div>`;
@@ -193,15 +192,15 @@
                 const friend = (f.user_id === globalUserId) ? f.friend_p : f.user_p;
                 if (!friend) return;
                 const name = friend.full_name || friend.username || "Ẩn danh";
-                const avatarHtml = friend.avatar_url ? `<div class="widget-avatar" style="background-image: url(${friend.avatar_url}); background-size: cover; width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;"></div>` : `<div class="widget-avatar" style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary); font-size: 14px;">${name.charAt(0).toUpperCase()}</div>`;
+                const avatarHtml = friend.avatar_url ? `<div class="widget-avatar" style="background-image: url(${friend.avatar_url}); background-size: cover; width: 36px; height: 36px; border-radius: 0; flex-shrink: 0;"></div>` : `<div class="widget-avatar" style="width: 36px; height: 36px; border-radius: 0; flex-shrink: 0; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary); font-size: 14px;">${name.charAt(0).toUpperCase()}</div>`;
                 const div = document.createElement('div');
                 div.className = 'widget-item'; div.style.cssText = "padding: 8px; border-radius: 8px; margin-bottom: 4px; transition: background 0.2s; cursor: pointer;";
-                div.onmouseover = () => div.style.background = 'rgba(7, 37, 77, 0.4)'; // BLUE HOVER
+                div.onmouseover = () => div.style.background = 'rgba(7, 37, 77, 0.4)'; 
                 div.onmouseout = () => div.style.background = 'transparent'; div.onclick = () => alert("Chat 1-1 chưa được hỗ trợ.");
                 div.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div class="widget-text"><h4 style="margin:0; color:var(--text); font-size:14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${name}</h4></div></div>`;
                 friendsContainer.appendChild(div);
             });
-        } else friendsContainer.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); text-align: center;">Không có mống bạn nào ở đây cả...</p>';
+        } else friendsContainer.innerHTML = '<p class="empty-msg" style="font-size: 13px; color: var(--text-muted); text-align: center;">Không có mống bạn nào ở đây cả...</p>';
         
         const { data: groupsData } = await mySupabase.from('group_members').select(`groups ( id, title, cover_url, created_at )`).eq('user_id', globalUserId).in('status', ['joined', 'member', 'admin']);
         const groupsContainer = document.getElementById('groups-list'); groupsContainer.innerHTML = '';
@@ -233,13 +232,13 @@
             groupsData.forEach(item => {
                 const group = item.groups;
                 if (group) {
-                    const avatarHtml = group.cover_url ? `<div class="widget-avatar" style="background-image: url(${group.cover_url}); background-size: cover; width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;"></div>` : `<div class="widget-avatar" style="width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;">${(group.title || "G").charAt(0).toUpperCase()}</div>`;
+                    const avatarHtml = group.cover_url ? `<div class="widget-avatar" style="background-image: url(${group.cover_url}); background-size: cover; width: 36px; height: 36px; border-radius: 0; flex-shrink: 0;"></div>` : `<div class="widget-avatar" style="width: 36px; height: 36px; border-radius: 0; flex-shrink: 0; background: var(--bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--text);">${(group.title || "G").charAt(0).toUpperCase()}</div>`;
                     const div = document.createElement('div');
                     
                     div.className = 'widget-item group-sidebar-item'; 
                     div.style.cssText = "padding: 8px; border-radius: 8px; margin-bottom: 4px; transition: background 0.2s; cursor: pointer;";
                     
-                    div.onmouseover = () => { if(currentGroupId !== group.id) div.style.background = 'rgba(7, 37, 77, 0.4)'; }; // BLUE HOVER
+                    div.onmouseover = () => { if(currentGroupId !== group.id) div.style.background = 'rgba(7, 37, 77, 0.4)'; };
                     div.onmouseout = () => { if(currentGroupId !== group.id) div.style.background = 'transparent'; };
                     
                     if (group.id === currentGroupId) div.style.background = 'rgba(74, 144, 226, 0.15)';
@@ -260,13 +259,13 @@
                         snippetText = `${senderName}: ${text}`;
                     }
                     
-                    div.innerHTML = `<div style="display:flex; gap: 10px; align-items:center; overflow: hidden;">${avatarHtml}<div class="widget-text" style="flex: 1; min-width: 0;"><h4 style="margin:0; color:var(--text); font-size:14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${group.title || "Nhóm ẩn danh"}</h4><p id="sidebar-snippet-${group.id}" style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${snippetText}</p></div></div>`;
+                    div.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div class="widget-text" style="flex: 1; min-width: 0;"><h4 style="margin:0; color:var(--text); font-size:14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${group.title || "Nhóm ẩn danh"}</h4><p id="sidebar-snippet-${group.id}" style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${snippetText}</p></div></div>`;
                     groupsContainer.appendChild(div);
                 }
             });
 
         } else {
-            groupsContainer.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); text-align: center;">Bạn chưa vào nhóm nào cả!</p>';
+            groupsContainer.innerHTML = '<p class="empty-msg" style="font-size: 13px; color: var(--text-muted); text-align: center;">Bạn chưa vào nhóm nào cả!</p>';
         }
     }
 
@@ -285,7 +284,7 @@
 
         await loadGroupMembers(groupId); 
         await loadChatHistory(groupId); 
-        resetUnreadCount(groupId); // Trigger reset on open!
+        resetUnreadCount(groupId); 
     }
 
     async function leaveCurrentGroup() {
@@ -370,8 +369,10 @@
         const bubble = document.createElement('div');
         if (msg.content.startsWith('[IMG]')) {
             const imgUrl = msg.content.replace('[IMG]', '');
-            bubble.style.padding = '0'; bubble.style.backgroundColor = 'transparent'; bubble.style.border = 'none'; bubble.innerHTML = `<img src="${imgUrl}" class="chat-image">`;
-        } else {
+            bubble.style.padding = '0'; bubble.style.backgroundColor = 'transparent'; bubble.style.border = 'none'; 
+            bubble.innerHTML = `<img src="${imgUrl}" class="chat-image" style="cursor: zoom-in;" onclick="openImageViewer('${imgUrl}')">`;
+        }
+        else {
             bubble.className = `message ${isSelf ? 'self' : 'other'}`; bubble.innerText = msg.content;
         }
         if (isSelf) { wrapper.appendChild(bubble); } 
@@ -382,15 +383,72 @@
 
     function toggleLeftSidebar() {
         const sidebar = document.getElementById('sidebar');
+        const logo = document.getElementById('sidebar-logo');
+        const homeBtn = document.getElementById('sidebar-home-btn');
+        const header = sidebar.querySelector('.sidebar-header');
+        const contentList = sidebar.querySelector('.friend-list');
+        const friendsList = document.getElementById('friends-list');
+        const hamburgerBtn = document.getElementById('hamburger-btn');
+        
         if (sidebar.style.width !== '70px') {
             sidebar.style.width = '70px';
             sidebar.style.minWidth = '70px';
-            sidebar.querySelectorAll('.widget-title, .widget-text, .sender-name').forEach(el => el.style.display = 'none');
+            sidebar.querySelectorAll('.widget-title, .widget-text, .sender-name, .empty-msg').forEach(el => el.style.display = 'none');
+            if (logo) logo.style.display = 'none';
+            if (homeBtn) homeBtn.style.display = 'none';
+            if (header) { header.style.justifyContent = 'center'; header.style.padding = '16px 0'; }
+            if (contentList) { contentList.style.padding = '16px 0'; } 
+            if (friendsList) { friendsList.style.marginBottom = '0'; }
+            if (hamburgerBtn) { hamburgerBtn.style.color = 'var(--text)'; } 
+            sidebar.querySelectorAll('.widget-item').forEach(el => {
+                el.style.justifyContent = 'center';
+                el.style.padding = '8px 0'; 
+            });
+            sidebar.querySelectorAll('.widget-item > div').forEach(el => el.style.overflow = 'visible');
         } else {
             sidebar.style.width = '320px';
             sidebar.style.minWidth = '320px';
-            sidebar.querySelectorAll('.widget-title, .widget-text, .sender-name').forEach(el => el.style.display = 'block');
+            sidebar.querySelectorAll('.widget-title, .widget-text, .sender-name, .empty-msg').forEach(el => el.style.display = 'block');
+            if (logo) logo.style.display = 'block';
+            if (homeBtn) homeBtn.style.display = 'block';
+            if (header) { header.style.justifyContent = 'space-between'; header.style.padding = '16px'; }
+            if (contentList) { contentList.style.padding = '16px'; }
+            if (friendsList) { friendsList.style.marginBottom = '24px'; }
+            if (hamburgerBtn) { hamburgerBtn.style.color = 'var(--primary)'; } 
+            sidebar.querySelectorAll('.widget-item').forEach(el => {
+                el.style.justifyContent = 'flex-start';
+                el.style.padding = '8px';
+            });
+            sidebar.querySelectorAll('.widget-item > div').forEach(el => el.style.overflow = 'hidden');
         }
+    }
+
+    function openImageViewer(src) {
+        if (!src || src === 'none') return;
+        let viewer = document.getElementById('global-image-viewer');
+        let img = document.getElementById('global-image-viewer-img');
+
+        if (!viewer) {
+            viewer = document.createElement('div');
+            viewer.id = 'global-image-viewer';
+            viewer.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(5px); opacity: 0; transition: opacity 0.2s; overflow: hidden;';
+            viewer.innerHTML = `
+                <span style="position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; text-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 10001;">&times;</span>
+                <img id="global-image-viewer-img" src="" style="max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 5px 30px rgba(0,0,0,0.6); object-fit: contain; cursor: grab; transition: transform 0.1s ease-out;" draggable="false">
+            `;
+            img = viewer.querySelector('#global-image-viewer-img');
+            viewer.scale = 1; viewer.tx = 0; viewer.ty = 0; viewer.isDragging = false; viewer.startX = 0; viewer.startY = 0;
+            viewer.onclick = (e) => { if(e.target.id !== 'global-image-viewer-img') { viewer.style.opacity = '0'; setTimeout(() => { viewer.style.display = 'none'; }, 200); } };
+            viewer.addEventListener('wheel', (e) => { e.preventDefault(); viewer.scale += e.deltaY * -0.002; viewer.scale = Math.min(Math.max(0.2, viewer.scale), 5); img.style.transform = `translate(${viewer.tx}px, ${viewer.ty}px) scale(${viewer.scale})`; }, { passive: false });
+            img.addEventListener('mousedown', (e) => { e.preventDefault(); viewer.isDragging = true; viewer.startX = e.clientX - viewer.tx; viewer.startY = e.clientY - viewer.ty; img.style.cursor = 'grabbing'; img.style.transition = 'none'; });
+            window.addEventListener('mouseup', () => { if (!viewer.isDragging) return; viewer.isDragging = false; img.style.cursor = 'grab'; img.style.transition = 'transform 0.1s ease-out'; });
+            window.addEventListener('mousemove', (e) => { if (!viewer.isDragging) return; e.preventDefault(); viewer.tx = e.clientX - viewer.startX; viewer.ty = e.clientY - viewer.startY; img.style.transform = `translate(${viewer.tx}px, ${viewer.ty}px) scale(${viewer.scale})`; });
+            document.body.appendChild(viewer);
+        } else {
+            img = document.getElementById('global-image-viewer-img');
+        }
+        viewer.scale = 1; viewer.tx = 0; viewer.ty = 0; img.style.transform = `translate(0px, 0px) scale(1)`; img.src = src;
+        viewer.style.display = 'flex'; setTimeout(() => viewer.style.opacity = '1', 10);
     }
 
     document.getElementById('send-btn').onclick = sendMessage;

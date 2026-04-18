@@ -49,7 +49,7 @@
                 </div>
             </div>
         </div>
-        <div class="banner-container" onclick="document.getElementById('banner-upload').click()">
+        <div class="banner-container" id="banner-container-el">
             <img id="profile-banner-img" class="banner-img" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2000&auto=format&fit=crop" alt="Banner">
             
             <div class="edit-overlay">
@@ -60,7 +60,7 @@
         </div>
 
         <div class="setup-row">
-            <div class="avatar-wrapper" onclick="document.getElementById('avatar-upload').click()">
+            <div class="avatar-wrapper" id="avatar-wrapper-el">
                 <div class="avatar-container">
                     <div id="user-avatar" class="avatar-img"></div>
                     <div class="edit-overlay">
@@ -243,10 +243,8 @@
         if (currentUser) {
             loggedInUserId = currentUser.id;
             
-            // 1. Check for notifications on load
             loadNotifications(); 
             
-            // CRITICAL FIX: 2. Listen LIVE for new messages
             supabaseClient.channel('profile-live-notifications')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
                     if (payload.new.sender_id !== loggedInUserId) {
@@ -300,6 +298,9 @@
             document.getElementById('add-friend-btn').style.display = 'none';
             document.getElementById('edit-profile-btn').style.display = 'inline-block';
             document.getElementById('copy-link-btn').style.display = 'inline-block'; 
+
+            document.getElementById('banner-container-el').onclick = () => document.getElementById('banner-upload').click();
+            document.getElementById('avatar-wrapper-el').onclick = () => document.getElementById('avatar-upload').click();
         } else {
             document.getElementById('edit-profile-btn').style.display = 'none';
             document.getElementById('copy-link-btn').style.display = 'none'; 
@@ -307,8 +308,11 @@
             document.getElementById('add-friend-btn').style.display = 'inline-block';
             
             document.querySelectorAll('.edit-overlay').forEach(el => el.style.display = 'none');
-            document.querySelector('.banner-container').removeAttribute('onclick');
-            document.querySelector('.avatar-wrapper').removeAttribute('onclick');
+            
+            document.getElementById('banner-container-el').onclick = () => { if(bannerUrl) openImageViewer(bannerUrl); };
+            document.getElementById('avatar-wrapper-el').onclick = () => { if(avatarUrl) openImageViewer(avatarUrl); };
+            document.getElementById('banner-container-el').style.cursor = bannerUrl ? 'zoom-in' : 'default';
+            document.getElementById('avatar-wrapper-el').style.cursor = avatarUrl ? 'zoom-in' : 'default';
             
             document.getElementById('user-email').innerText = "@" + (profileData?.username || "user");
             checkFriendStatus();
@@ -406,6 +410,8 @@
             item.className = 'widget-item';
             item.style.cssText = "padding: 10px; border-bottom: 1px solid var(--border); cursor:pointer;";
             item.onclick = () => window.location.href = `/profile?id=${data[i].friend_id}`;
+            item.onmouseenter = () => item.style.background = 'rgba(7, 37, 77, 0.4)';
+            item.onmouseleave = () => item.style.background = 'transparent';
             item.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div class="widget-text"><h4 style="margin:0; color:var(--text);">${name}</h4><p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted);">@${friend.username || 'user'}</p></div></div>`;
             container.appendChild(item);
         }
@@ -416,10 +422,9 @@
         const container = document.getElementById('groups-container');
         container.innerHTML = '<p style="text-align:center; color:#888;">Đang tải nhóm...</p>';
         
-        // CRITICAL FIX: Query 'role' and include 'joined' in the filter
         const { data, error } = await supabaseClient
             .from('group_members')
-            .select(`status, role, groups (id, title, description, cover_url, created_at)`)
+            .select(`status, role, groups (id, title, description, goal, requirements, cover_url, created_at)`)
             .eq('user_id', userId)
             .in('status', ['admin', 'member', 'joined']);
             
@@ -431,7 +436,6 @@
 
         const validGroups = data.filter(m => m.groups !== null).sort((a, b) => new Date(b.groups.created_at) - new Date(a.groups.created_at));
 
-        // Sort out the mixed database terminology
         const createdGroups = validGroups.filter(m => m.status === 'admin' || m.role === 'admin');
         const joinedGroups  = validGroups.filter(m => m.status === 'member' || (m.status === 'joined' && m.role !== 'admin')); 
 
@@ -478,15 +482,29 @@
             const groupName = group.title || "Nhóm không tên";
             const creatorName = group.profiles?.full_name || group.profiles?.username || "Ẩn danh";
             const dateStr = new Date(group.created_at).toLocaleDateString('vi-VN');
-            const avatarHtml = group.cover_url ? `<div class="widget-avatar" style="background-image: url('${group.cover_url}'); background-size: cover; background-position: center; flex-shrink: 0; border: 1px solid var(--border);"></div>` : `<div class="widget-avatar" style="flex-shrink: 0;">${groupName.charAt(0).toUpperCase()}</div>`;
+            
+            const avatarHtml = group.cover_url 
+                ? `<div class="widget-avatar" style="background-image: url('${group.cover_url}'); background-size: cover; background-position: center; flex-shrink: 0; border: 1px solid var(--border);"></div>` 
+                : `<div class="widget-avatar" style="flex-shrink: 0;">${groupName.charAt(0).toUpperCase()}</div>`;
             
             const widgetItem = document.createElement('div');
             widgetItem.className = 'widget-item'; 
             widgetItem.style.cssText = "padding: 12px 10px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s;";
-            widgetItem.onmouseover = () => widgetItem.style.background = 'var(--border)';
+            widgetItem.onmouseover = () => widgetItem.style.background = 'rgba(7, 37, 77, 0.4)';
             widgetItem.onmouseout = () => widgetItem.style.background = 'transparent';
             widgetItem.onclick = () => window.location.href = `/main?search=${encodeURIComponent(groupName)}`;
-            widgetItem.innerHTML = `<div style="display:flex; gap: 12px; align-items: flex-start;">${avatarHtml}<div class="widget-text" style="flex: 1; min-width: 0;"><h4 style="margin: 0 0 6px 0; color: var(--text); line-height: 1.3; word-wrap: break-word;">${groupName}</h4><p style="margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.4; word-wrap: break-word;">Bởi <span style="color: var(--text); cursor:pointer; font-weight:bold;" onclick="event.stopPropagation(); window.location.href='/profile?id=${group.creator_id}'">${creatorName}</span> • ${dateStr}</p></div></div>`;
+            
+            widgetItem.innerHTML = `
+                <div style="display:flex; gap: 12px; align-items: flex-start;">
+                    ${avatarHtml}
+                    <div class="widget-text" style="flex: 1; min-width: 0;">
+                        <h4 style="margin: 0 0 6px 0; color: var(--text); line-height: 1.3; word-wrap: break-word;">${groupName}</h4>
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.4; word-wrap: break-word;">
+                            Bởi <span style="color: var(--primary); cursor:pointer; font-weight:bold;" onclick="event.stopPropagation(); window.location.href='/profile?id=${group.creator_id}'">${creatorName}</span> • ${dateStr}
+                        </p>
+                    </div>
+                </div>`;
+                
             sidebarContainer.appendChild(widgetItem);
         });
     }
@@ -568,19 +586,35 @@
         if (saveBtn) saveBtn.disabled = !isValid;
     }
 
-    function buildGroupCard(g, role, isClickable) {
+     function buildGroupCard(g, role, isClickable) {
         const coverImage = g.cover_url || "https://via.placeholder.com/400x160/252525/4a90e2?text=KoNect";
         const roleBadge = role === 'admin' ? '<span style="color: var(--primary); font-weight: bold;">Chủ nhóm</span>' : 'Thành viên';
         const dateStr = new Date(g.created_at).toLocaleDateString('vi-VN');
-        const clickAction = isClickable ? `onclick="window.location.href='/chat?group=${g.id}'"` : '';
-        const cursorStyle = isClickable ? 'cursor:pointer;' : 'cursor:default;';
-        const parsedDesc = g.description ? marked.parse(g.description) : 'Chưa có mô tả.';
+        const groupTitle = g.title || 'Nhóm không tên';
+        
+        const clickAction = `onclick="window.location.href='/main?search=${encodeURIComponent(groupTitle)}'"`;
+        
+        // PREVIEW: Show Description, OR smartly combine Req + Goal if Desc is missing
+        let previewContent = "";
+        if (g.description && g.description.trim() !== '') {
+            previewContent = g.description;
+        } else {
+            let fallbacks = [];
+            if (g.requirements && g.requirements.trim() !== '') fallbacks.push("**Yêu cầu:** " + g.requirements.trim());
+            if (g.goal && g.goal.trim() !== '') fallbacks.push("**Mục tiêu:** " + g.goal.trim());
+            previewContent = fallbacks.join(" &nbsp;•&nbsp; ");
+        }
+        const parsedDesc = previewContent ? marked.parse(previewContent) : 'Không có thông tin.';
         
         return `
-            <div class="group-card" style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-2); ${cursorStyle} display: flex; flex-direction: column;" ${clickAction}>
-                <img src="${coverImage}" style="width: 100%; height: 120px; object-fit: cover;">
+            <div class="group-card" style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-2); cursor: pointer; display: flex; flex-direction: column; transition: all 0.2s ease;" onmouseenter="this.style.transform='translateY(-3px)'; this.style.borderColor='var(--primary)'; this.style.boxShadow='0 8px 24px rgba(7, 37, 77, 0.4)';" onmouseleave="this.style.transform='translateY(0)'; this.style.borderColor='var(--border)'; this.style.boxShadow='none';" ${clickAction}>
+                
+                <div style="position: relative; width: 100%; padding-top: 33.33%; flex-shrink: 0; background: var(--bg-2); overflow: hidden;">
+                    <img src="${coverImage}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                
                 <div style="padding: 15px; display: flex; flex-direction: column; flex: 1;">
-                    <h3 style="margin: 0 0 5px 0; font-size: 16px;">${g.title || 'Nhóm không tên'}</h3>
+                    <h3 style="margin: 0 0 5px 0; font-size: 16px;">${groupTitle}</h3>
                     <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 8px 0;">Vai trò: ${roleBadge} • ${dateStr}</p>
                     <div class="desc-fade" style="color: var(--text-muted); font-size: 13px; line-height: 1.4; flex: 1;">${parsedDesc}</div>
                 </div>
@@ -591,7 +625,84 @@
     loadProfile(); 
     loadNewestGroups();
 
-async function loadNotifications() {
+    function openImageViewer(src) {
+        if (!src || src === 'none') return;
+        let viewer = document.getElementById('global-image-viewer');
+        let img = document.getElementById('global-image-viewer-img');
+
+        if (!viewer) {
+            viewer = document.createElement('div');
+            viewer.id = 'global-image-viewer';
+            viewer.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(5px); opacity: 0; transition: opacity 0.2s; overflow: hidden;';
+            
+            viewer.innerHTML = `
+                <span style="position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; text-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 10001;">&times;</span>
+                <img id="global-image-viewer-img" src="" style="max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 5px 30px rgba(0,0,0,0.6); object-fit: contain; cursor: grab; transition: transform 0.1s ease-out;" draggable="false">
+            `;
+            
+            img = viewer.querySelector('#global-image-viewer-img');
+
+            viewer.scale = 1;
+            viewer.tx = 0;
+            viewer.ty = 0;
+            viewer.isDragging = false;
+            viewer.startX = 0;
+            viewer.startY = 0;
+
+            viewer.onclick = (e) => { 
+                if(e.target.id !== 'global-image-viewer-img') {
+                    viewer.style.opacity = '0'; 
+                    setTimeout(() => { viewer.style.display = 'none'; }, 200);
+                }
+            };
+
+            viewer.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                viewer.scale += e.deltaY * -0.002;
+                viewer.scale = Math.min(Math.max(0.2, viewer.scale), 5); 
+                img.style.transform = `translate(${viewer.tx}px, ${viewer.ty}px) scale(${viewer.scale})`;
+            }, { passive: false });
+
+            img.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                viewer.isDragging = true;
+                viewer.startX = e.clientX - viewer.tx;
+                viewer.startY = e.clientY - viewer.ty;
+                img.style.cursor = 'grabbing';
+                img.style.transition = 'none'; 
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (!viewer.isDragging) return;
+                viewer.isDragging = false;
+                img.style.cursor = 'grab';
+                img.style.transition = 'transform 0.1s ease-out'; 
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!viewer.isDragging) return;
+                e.preventDefault();
+                viewer.tx = e.clientX - viewer.startX;
+                viewer.ty = e.clientY - viewer.startY;
+                img.style.transform = `translate(${viewer.tx}px, ${viewer.ty}px) scale(${viewer.scale})`;
+            });
+
+            document.body.appendChild(viewer);
+        } else {
+            img = document.getElementById('global-image-viewer-img');
+        }
+
+        viewer.scale = 1;
+        viewer.tx = 0;
+        viewer.ty = 0;
+        img.style.transform = `translate(0px, 0px) scale(1)`;
+        img.src = src;
+        
+        viewer.style.display = 'flex';
+        setTimeout(() => viewer.style.opacity = '1', 10);
+    }
+
+    async function loadNotifications() {
         if (!loggedInUserId) return;
         document.getElementById('bell-icon').style.display = 'flex'; document.getElementById('msg-icon').style.display = 'flex';
         
@@ -604,7 +715,6 @@ async function loadNotifications() {
             groupJoinReqs = data || [];
         }
 
-        // CRITICAL FIX: Added 'cover_url' to the database query here
         const { data: myActiveGroups } = await supabaseClient.from('group_members').select('group_id, last_read_at, groups!inner(title, cover_url)').eq('user_id', loggedInUserId).in('status', ['member', 'admin', 'joined']);
         let unreadMsgs = [];
 
@@ -619,7 +729,6 @@ async function loadNotifications() {
                     .neq('sender_id', loggedInUserId);
                     
                 if (newMsgs && newMsgs.length > 0) {
-                    // Passed cover_url into our unread array
                     unreadMsgs.push({ groupId: mg.group_id, groupName: mg.groups.title, coverUrl: mg.groups.cover_url, count: newMsgs.length });
                 }
             }
@@ -632,7 +741,6 @@ async function loadNotifications() {
         badge.style.display = 'block'; badge.innerText = totalNotifs; list.innerHTML = '';
 
         unreadMsgs.forEach(msg => {
-            // CRITICAL FIX: Replaced emoji with dynamic group avatar (Image or Letter)
             const avatarHtml = msg.coverUrl 
                 ? `<div class="widget-avatar" style="background-image: url('${msg.coverUrl}'); background-size: cover; background-position: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px;"></div>`
                 : `<div class="widget-avatar" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; background: rgba(74, 144, 226, 0.15); border: 1px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: var(--primary);">${msg.groupName.charAt(0).toUpperCase()}</div>`;
@@ -667,6 +775,7 @@ async function loadNotifications() {
             list.appendChild(notifItem);
         });
     }
+
 </script>
 </body>
 </html>

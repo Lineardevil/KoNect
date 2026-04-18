@@ -4,113 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KoNect - Tạo nhóm</title>
-
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.css">
     <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
     <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
-
     <link rel="stylesheet" href="/assets/style.css">
-    
-    <style>
-        /* Force EasyMDE to respect your dark theme */
-        .editor-toolbar { border-color: var(--border, #333); background: var(--bg-2, #222); border-radius: 8px 8px 0 0; }
-        .CodeMirror { border-color: var(--border, #333); background: var(--bg, #111); color: var(--text, #fff); border-radius: 0 0 8px 8px; min-height: 150px; font-family: inherit; }
-        .editor-toolbar button { color: var(--text, #fff) !important; }
-        .editor-toolbar button.active, .editor-toolbar button:hover { background: var(--border, #333) !important; }
-        
-        /* Ensure the wrapper shakes properly on error */
-        .EasyMDEContainer.shake { animation: shake 0.3s; }
-    </style>
 </head>
-
 <body class="create-page">
-
 <div class="header">
     <div class="logo" onclick="goHome()">KoNect</div>
 </div>
-
 <div class="container">
-
-<div class="section">
-    <div class="label">Chọn ảnh bìa cho nhóm của bạn</div>
-    <div class="upload-box" onclick="triggerUpload()">
-        <span id="uploadText">Click để chọn ảnh</span>
-        <input type="file" id="coverInput" accept="image/*" hidden>
-    </div>
-</div>
-
-<div class="section">
-    <div class="label">Tên nhóm</div>
-    <input id="name" maxlength="50" placeholder="Nhập tên nhóm...">
-</div>
-
-<div class="section">
-    <div class="label">Mô tả</div>
-    <textarea id="desc" placeholder="Mô tả nhóm (Hỗ trợ in đậm, nghiêng, list)..."></textarea>
-</div>
-
-<div class="section">
-    <div class="label">Số lượng tối đa</div>
-    <input type="number" id="maxMember" min="1" max="50" placeholder="Tối đa 50" value="50">
-</div>
-
-<div class="section">
-    <div class="label">Quyền riêng tư</div>
-    <div class="privacy-wrapper">
-        <div class="privacy-option active" onclick="selectPrivacy(this)" data-value="public">Public</div>
-        <div class="privacy-option" onclick="selectPrivacy(this)" data-value="private">Private</div>
-    </div>
-</div>
-
-<div class="section" id="tagSection">
-    <div class="label">Tags (<span id="tagCount">0</span>/5)</div>
-
-    <div class="tag-box">
-        <div class="category">
-            <div class="category-title">Thể thao</div>
-            <div class="tags-container">
-                <div class="tag">bóng đá</div>
-                <div class="tag">bóng rổ</div>
-                <div class="tag">gym</div>
-            </div>
-        </div>
-
-        <div class="category">
-            <div class="category-title">Sở thích</div>
-            <div class="tags-container">
-                <div class="tag">đọc sách</div>
-                <div class="tag">nấu ăn</div>
-                <div class="tag">vẽ tranh</div>
-            </div>
-        </div>
-
-        <div class="category">
-            <div class="category-title">Công nghệ</div>
-            <div class="tags-container">
-                <div class="tag">lập trình</div>
-                <div class="tag">AI</div>
-                <div class="tag">web dev</div>
-            </div>
-        </div>
-
-        <div class="custom-container">
-            <b>Custom Tags</b>
-            <div class="tags-container" id="customTags"></div>
-            <input id="customInput" placeholder="Tự tạo custom tag">
+    <div class="section">
+        <div class="label">Chọn ảnh bìa cho nhóm của bạn</div>
+        <div class="upload-box" onclick="triggerUpload()" style="width: 100%; height: auto; aspect-ratio: 3/1;">
+            <span id="uploadText">Click để chọn ảnh</span>
+            <input type="file" id="coverInput" accept="image/*" hidden>
         </div>
     </div>
+    <div class="section">
+        <div class="label">Tên nhóm</div>
+        <input id="name" maxlength="50" placeholder="Ví dụ: Nhóm học Lập trình...">
+    </div>
+    <div class="section">
+        <div class="label" style="display: flex; align-items: center; gap: 8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            Mô tả (Description)
+        </div>
+        <textarea id="desc"></textarea>
+    </div>
+
+    <div class="section">
+        <div class="label" style="display: flex; align-items: center; gap: 8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M9 14h6"></path><path d="M9 18h6"></path><path d="M9 10h.01"></path></svg>
+            Yêu cầu tham gia (Requirements)
+        </div>
+        <textarea id="requirements"></textarea>
+    </div>
+
+    <div class="section">
+        <div class="label" style="display: flex; align-items: center; gap: 8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+            Mục tiêu nhóm (Goal)
+        </div>
+        <textarea id="goal"></textarea>
+    </div>
+    <div class="section">
+        <div class="label">Số lượng tối đa</div>
+        <input type="number" id="maxMember" min="1" max="50" placeholder="Tối đa 50" value="50">
+    </div>
+    <div class="section">
+        <div class="label">Quyền riêng tư</div>
+        <div class="privacy-wrapper">
+            <div class="privacy-option active" onclick="selectPrivacy(this)" data-value="public">Public</div>
+            <div class="privacy-option" onclick="selectPrivacy(this)" data-value="private">Private</div>
+        </div>
+    </div>
+    <div class="section" id="tagSection">
+        <div class="label">Tags (<span id="tagCount">0</span>/5)</div>
+        <div class="tag-box">
+            <div class="category">
+                <div class="category-title">Thể thao</div>
+                <div class="tags-container">
+                    <div class="tag">bóng đá</div><div class="tag">bóng rổ</div><div class="tag">gym</div>
+                </div>
+            </div>
+            <div class="category">
+                <div class="category-title">Sở thích</div>
+                <div class="tags-container">
+                    <div class="tag">đọc sách</div><div class="tag">nấu ăn</div><div class="tag">vẽ tranh</div>
+                </div>
+            </div>
+            <div class="category">
+                <div class="category-title">Công nghệ</div>
+                <div class="tags-container">
+                    <div class="tag">lập trình</div><div class="tag">AI</div><div class="tag">web dev</div>
+                </div>
+            </div>
+            <div class="custom-container">
+                <b>Custom Tags</b>
+                <div class="tags-container" id="customTags"></div>
+                <input id="customInput" placeholder="Tự tạo custom tag">
+            </div>
+        </div>
+    </div>
+    <button class="btn" onclick="create()">Tạo nhóm</button>
 </div>
-
-<button class="btn" onclick="create()">Tạo nhóm</button>
-
-</div>
-
 <div id="toast" class="toast"></div>
-
 <div id="cropModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index: 9999;">
     <div style="background:#222; padding:20px; border-radius:12px; max-width:90%; max-height:90vh; display:flex; flex-direction:column;">
         <div class="crop-container" style="flex:1; min-height:0; background:#000; border-radius:8px;">
@@ -121,216 +102,184 @@
         </div>
     </div>
 </div>
-
 <script>
     const SUPABASE_URL = 'https://dfbklcbregcxzngpiorx.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYmtsY2JyZWdjeHpuZ3Bpb3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTI2MTIsImV4cCI6MjA4OTQyODYxMn0.3EOOOodNiaa46ptAksdTY43_vknTIxhejcJCbVN441w'; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let privacy = "public";
-    let cropper;
-    let croppedBlob;
-    let isSubmitting = false;
+    let privacy = "public"; let cropper; let croppedBlob; let isSubmitting = false; let mdeInstances = [];
 
-    // Initialize EasyMDE 
-    const easyMDE = new EasyMDE({
-        element: document.getElementById('desc'),
-        spellChecker: false,
-        status: false,
-        hideIcons: ["image", "side-by-side", "fullscreen", "guide"],
-    });
+    // Helper to init MDE with Character Counter and Custom Height
+    function initEditor(elementId, limit, placeholderText, editorHeight) {
+        let el = document.getElementById(elementId);
+        let mde = new EasyMDE({ 
+            element: el,
+            spellChecker: false,
+            status: false,
+            hideIcons: ["image", "side-by-side", "fullscreen", "guide"],
+            placeholder: placeholderText,
+            minHeight: editorHeight
+        });
 
-    // ================= UPLOAD =================
+        let container = mde.element.nextElementSibling; 
+        
+        let counter = document.createElement('div');
+        counter.style.textAlign = 'right';
+        counter.style.fontSize = '13px';
+        counter.style.marginTop = '6px';
+        counter.style.fontWeight = 'bold';
+        counter.style.color = '#4a90e2'; // blue
+        counter.innerText = limit;
+        
+        container.parentNode.insertBefore(counter, container.nextSibling);
+
+        function updateCounter() {
+            let text = mde.value() || "";
+            let rem = limit - text.length;
+            counter.innerText = rem;
+            
+            if (rem < 0) {
+                counter.style.color = '#ff4d4f'; // red
+                container.classList.add('is-invalid');
+            } else {
+                counter.style.color = '#4a90e2'; // blue
+                container.classList.remove('is-invalid');
+            }
+            validateForm();
+        }
+
+        mde.codemirror.on('change', updateCounter);
+        mdeInstances.push({ mde, limit });
+        return mde;
+    }
+
+    // Initialize with different heights
+    const descMDE = initEditor('desc', 1024, 'Mô tả nhóm (Hỗ trợ in đậm, nghiêng, list)...', '150px');
+    const reqMDE = initEditor('requirements', 512, 'Ví dụ: Chăm chỉ, on mic, có kiến thức cơ bản...', '70px');
+    const goalMDE = initEditor('goal', 512, 'Ví dụ: Đạt IELTS 7.0+, Xây dựng app mobile...', '70px');
+
+    function validateForm() {
+        let isValid = true;
+        for(let inst of mdeInstances) { if ((inst.mde.value() || "").length > inst.limit) { isValid = false; break; } }
+        let btn = document.querySelector(".btn");
+        if (!isValid) { btn.style.background = "#555"; btn.style.color = "#999"; btn.style.cursor = "not-allowed"; btn.disabled = true; } 
+        else { btn.style.background = "var(--primary)"; btn.style.color = "#fff"; btn.style.cursor = "pointer"; btn.disabled = false; }
+    }
+
     function triggerUpload(){ document.getElementById("coverInput").click(); }
-
     document.getElementById("coverInput").addEventListener("change", handleUpload);
 
     function handleUpload(e){
-        let file = e.target.files[0];
-        if(!file) return;
-
+        let file = e.target.files[0]; if(!file) return;
         if(file.size > 5 * 1024 * 1024){ toast("Ảnh tối đa 5MB","error"); return; }
-
-        let imgURL = URL.createObjectURL(file);
-        let image = document.getElementById("cropImage");
-
-        image.src = imgURL;
-        document.getElementById("cropModal").style.display = "flex";
-
-        setTimeout(() => {
-            if(cropper) cropper.replace(imgURL);
-            else cropper = new Cropper(image, { aspectRatio: 16/9, viewMode: 1 });
-        }, 50);
+        let imgURL = URL.createObjectURL(file); let image = document.getElementById("cropImage");
+        image.src = imgURL; document.getElementById("cropModal").style.display = "flex";
+        setTimeout(() => { if(cropper) cropper.replace(imgURL); else cropper = new Cropper(image, { aspectRatio: 3, viewMode: 1 }); }, 50);
     }
 
     function confirmCrop(){
         if(!cropper){ toast("Lỗi crop ảnh","error"); return; }
-
-        let canvas = cropper.getCroppedCanvas({ width: 1920, height: 1080 });
+        let canvas = cropper.getCroppedCanvas({ width: 1200, height: 400 });
         if(!canvas){ toast("Không thể crop ảnh","error"); return; }
-
         canvas.toBlob(blob => {
             if(!blob){ toast("Lỗi xử lý ảnh","error"); return; }
-
-            croppedBlob = blob;
-            let preview = URL.createObjectURL(blob);
-            let box = document.querySelector(".upload-box");
-            box.innerHTML = `<img src="${preview}" style="width:100%; height:100%; object-fit:cover; border-radius:8px;"> <div class="remove-img" onclick="removeImage(event)" style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.5); color:white; padding:5px 10px; border-radius:5px; cursor:pointer;">×</div>`;
-            document.getElementById("cropModal").style.display = "none";
-            cropper.destroy();
-            cropper = null;
+            croppedBlob = blob; let preview = URL.createObjectURL(blob); let box = document.querySelector(".upload-box");
+            box.innerHTML = `<img src="${preview}" style="width:100%; height:100%; object-fit:cover; border-radius:13px;"> <div class="remove-img" onclick="removeImage(event)">×</div>`;
+            document.getElementById("cropModal").style.display = "none"; cropper.destroy(); cropper = null;
         }, "image/jpeg", 0.9);
     }
 
-    function removeImage(e){
-        e.stopPropagation();
-        croppedBlob = null;
-        let box = document.querySelector(".upload-box");
-        box.innerHTML = `<span id="uploadText">Click để chọn ảnh</span><input type="file" id="coverInput" accept="image/*" hidden>`;
-        document.getElementById("coverInput").addEventListener("change", handleUpload);
-    }
+    function removeImage(e){ e.stopPropagation(); croppedBlob = null; let box = document.querySelector(".upload-box"); box.innerHTML = `<span id="uploadText">Click để chọn ảnh</span><input type="file" id="coverInput" accept="image/*" hidden>`; document.getElementById("coverInput").addEventListener("change", handleUpload); }
 
-    // ================= TAG =================
-    document.addEventListener("click", e=>{
-        if(e.target.classList.contains("tag")){
-            if(e.target.classList.contains("disabled")) return;
-            e.target.classList.toggle("active");
-            updateTags();
-        }
-    });
+    document.addEventListener("click", e=>{ if(e.target.classList.contains("tag")){ if(e.target.classList.contains("disabled")) return; e.target.classList.toggle("active"); updateTags(); } });
 
     function updateTags(){
-        let all=document.querySelectorAll(".tag");
-        let active=document.querySelectorAll(".tag.active");
+        let all=document.querySelectorAll(".tag"); let active=document.querySelectorAll(".tag.active");
         document.getElementById("tagCount").innerText=active.length;
-        if(active.length>=5){
-            all.forEach(t=>{ if(!t.classList.contains("active")) t.classList.add("disabled"); });
-        } else {
-            all.forEach(t=>t.classList.remove("disabled"));
-        }
+        if(active.length>=5){ all.forEach(t=>{ if(!t.classList.contains("active")) t.classList.add("disabled"); }); } else { all.forEach(t=>t.classList.remove("disabled")); }
     }
 
-    // ================= CUSTOM TAG =================
     document.getElementById("customInput").addEventListener("keypress", e=>{
         if(e.key==="Enter"){
-            let val=e.target.value.trim();
-            if(!val) return;
+            let val=e.target.value.trim(); if(!val) return;
             if(document.querySelectorAll(".tag.active").length>=5){ toast("Tối đa 5 tag","error"); return; }
-            let t=document.createElement("div");
-            t.className="tag active";
-            t.innerHTML=val+' <span class="remove" style="margin-left:5px; cursor:pointer;">×</span>';
-            document.getElementById("customTags").appendChild(t);
-            e.target.value="";
-            updateTags();
+            let t=document.createElement("div"); t.className="tag active"; t.innerHTML=val+' <span class="remove" style="margin-left:5px; cursor:pointer;">×</span>';
+            document.getElementById("customTags").appendChild(t); e.target.value=""; updateTags();
         }
     });
 
-    document.addEventListener("click", e=>{
-        if(e.target.classList.contains("remove")){
-            e.target.parentElement.remove();
-            updateTags();
-        }
-    });
+    document.addEventListener("click", e=>{ if(e.target.classList.contains("remove")){ e.target.parentElement.remove(); updateTags(); } });
+    function selectPrivacy(el){ document.querySelectorAll(".privacy-option").forEach(e=>e.classList.remove("active")); el.classList.add("active"); privacy=el.dataset.value; }
+    function shake(el){ if(!el) return; el.classList.add("shake"); setTimeout(()=>el.classList.remove("shake"),300); }
+    function shakeMDE(mdeInstance) { let container = mdeInstance.element.nextElementSibling; if(container && container.classList.contains('EasyMDEContainer')) shake(container); }
+    function toast(msg,type){ let t=document.getElementById("toast"); t.innerText=msg; t.className="toast show "+type; setTimeout(()=>t.classList.remove("show"),2000); }
 
-    // ================= PRIVACY =================
-    function selectPrivacy(el){
-        document.querySelectorAll(".privacy-option").forEach(e=>e.classList.remove("active"));
-        el.classList.add("active");
-        privacy=el.dataset.value;
-    }
-
-    // ================= UI =================
-    function shake(el){
-        el.classList.add("shake");
-        setTimeout(()=>el.classList.remove("shake"),300);
-    }
-
-    function toast(msg,type){
-        let t=document.getElementById("toast");
-        t.innerText=msg;
-        t.className="toast show "+type;
-        setTimeout(()=>t.classList.remove("show"),2000);
-    }
-
-    // ================= CREATE (SUPABASE INTEGRATION) =================
     async function create(){
-        if(isSubmitting) return;
-        isSubmitting = true;
-
+        const saveBtn = document.querySelector(".btn"); if(saveBtn.disabled || isSubmitting) return; isSubmitting = true;
         const { data: { session } } = await supabaseClient.auth.getSession();
-        if (!session) {
-            toast("Vui lòng đăng nhập để tạo nhóm!", "error");
-            isSubmitting = false;
-            return;
-        }
+        if (!session) { toast("Vui lòng đăng nhập để tạo nhóm!", "error"); isSubmitting = false; return; }
 
         let name = document.getElementById("name");
-        let descValue = easyMDE.value().trim(); // Capture Markdown value
-        let member = document.getElementById("maxMember");
+        let descValue = descMDE.value().trim(); 
+        let reqValue = reqMDE.value().trim();
+        let goalValue = goalMDE.value().trim();
+        let member = document.getElementById("maxMember"); 
         let error = false;
 
-        if(!name.value){ shake(name); error=true; }
+        if(!name.value.trim()){ shake(name); error=true; }
         
-        // CRITICAL FIX: Validate EasyMDE value, and shake its container instead of hidden textarea
-        if(!descValue){ 
-            let editorContainer = document.querySelector('.EasyMDEContainer');
-            if(editorContainer) shake(editorContainer);
-            error=true; 
+        // Đòi hỏi điền ít nhất 1 trong 3 trường Markdown
+        if (!descValue && !reqValue && !goalValue) {
+            shakeMDE(descMDE);
+            shakeMDE(reqMDE);
+            shakeMDE(goalMDE);
+            error = true;
         }
-        
-        if(document.querySelectorAll(".tag.active").length==0){ shake(document.getElementById("tagSection")); error=true; }
-        if(member.value<1||member.value>50){ shake(member); error=true; }
 
-        if(error){ toast("Thiếu thông tin!","error"); isSubmitting = false; return; }
+        if(document.querySelectorAll(".tag.active").length==0){ shake(document.getElementById("tagSection")); error=true; }
+        if(!member.value || member.value<1||member.value>50){ shake(member); error=true; }
+
+        if(error){ 
+            if (!descValue && !reqValue && !goalValue) {
+                toast("Vui lòng điền ít nhất 1 mục: Mô tả, Yêu cầu hoặc Mục tiêu!", "error");
+            } else {
+                toast("Thiếu thông tin!","error"); 
+            }
+            isSubmitting = false; 
+            return; 
+        }
         if(!croppedBlob){ toast("Vui lòng chọn ảnh bìa","error"); isSubmitting = false; return; }
 
         let tags = Array.from(document.querySelectorAll(".tag.active")).map(t => t.childNodes[0].nodeValue.trim());
-        const saveBtn = document.querySelector(".btn");
         saveBtn.innerText = "Đang tạo...";
 
         try {
-            // 1. Upload Cover Image to 'group-images' bucket
             const fileName = `${session.user.id}-${Date.now()}.jpg`;
             const { error: uploadError } = await supabaseClient.storage.from('group-images').upload(fileName, croppedBlob, { contentType: 'image/jpeg', upsert: true });
             if (uploadError) throw uploadError;
 
             const { data: { publicUrl } } = supabaseClient.storage.from('group-images').getPublicUrl(fileName);
 
-            // 2. Insert into groups table AND retrieve the generated ID
             const { data: dbData, error: dbError } = await supabaseClient.from('groups').insert({
-                creator_id: session.user.id,
-                title: name.value.trim(),
-                description: descValue,
-                max_members: parseInt(member.value),
-                privacy: privacy,
-                tags: tags,
+                creator_id: session.user.id, 
+                title: name.value.trim(), 
+                goal: goalValue, 
+                requirements: reqValue,
+                description: descValue, 
+                max_members: parseInt(member.value), 
+                privacy: privacy, 
+                tags: tags, 
                 cover_url: publicUrl
-            }).select(); // MUST have .select() to get the ID
+            }).select();
 
             if (dbError) throw dbError;
 
-            // 3. Make the creator an admin in group_members using the correct columns
-            if (dbData && dbData[0]) {
-                await supabaseClient.from('group_members').insert([{
-                    group_id: dbData[0].id, 
-                    user_id: session.user.id, 
-                    status: 'joined',
-                    role: 'admin'
-                }]);
-            }
+            if (dbData && dbData[0]) { await supabaseClient.from('group_members').insert([{ group_id: dbData[0].id, user_id: session.user.id, status: 'joined', role: 'admin' }]); }
 
-            toast("Tạo nhóm thành công!","success");
-            setTimeout(()=> window.location.href="/main", 1200);
-
-        } catch(err){
-            console.error(err);
-            toast("Lỗi: " + err.message, "error");
-            saveBtn.innerText = "Tạo nhóm";
-        }
-
+            toast("Tạo nhóm thành công!","success"); setTimeout(()=> window.location.href="/main", 1200);
+        } catch(err){ console.error(err); toast("Lỗi: " + err.message, "error"); saveBtn.innerText = "Tạo nhóm"; }
         isSubmitting = false;
     }
-
     function goHome(){ window.location.href = "/main"; }
 </script>
 </body>

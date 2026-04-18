@@ -32,7 +32,7 @@
         </div>
 
         <div class="nav-btns" style="display: flex; gap: 10px;">
-            <button class="custom-btn" onclick="window.location.href='/profile?id=' + loggedInUserId">Hồ sơ</button>
+            <button class="custom-btn btn-profile" onclick="window.location.href='/profile?id=' + loggedInUserId">Hồ sơ</button>
             <button class="custom-btn btn-create" onclick="window.location.href='/create'">Tạo nhóm</button>
             <button class="custom-btn btn-logout" onclick="logout()">Đăng xuất</button>
         </div>
@@ -43,11 +43,8 @@
     <h2 style="font-size: 56px; font-weight: 900; background: none; -webkit-text-stroke: 0.5px var(--primary); color: transparent; display: block; text-align: center; margin-top: 20px; margin-bottom: 30px; letter-spacing: 2px; position: relative; z-index: 1;">Khám phá KoNect</h2>    
     
     <div class="search-wrapper" style="margin-bottom: 24px;">
-        <div class="search-container" style="position: relative; display: flex; align-items: center; max-width: 600px;">
-            <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--text-muted)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 16px; top: calc(50% - 3px); transform: translateY(-50%); pointer-events: none;">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="16.65" y1="16.65" x2="22" y2="22"></line>
-            </svg>
+        <div class="search-container" style="position: relative; display: flex; align-items: center; max-width: 600px; margin: 0 auto;">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--text-muted)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 16px; top: calc(50% - 3px); transform: translateY(-50%); pointer-events: none;"><circle cx="11" cy="11" r="8"></circle><line x1="16.65" y1="16.65" x2="22" y2="22"></line></svg>
             <input type="text" id="sInput" class="edit-input" style="width: 100%; padding: 14px 20px 14px 48px; border-radius: 30px; border: 1px solid var(--border); background: var(--bg-2); color: var(--text);" placeholder="Tìm kiếm nhóm, người dùng, tags..." oninput="search()">
         </div>
     </div>
@@ -63,13 +60,29 @@
 
 <div id="group-detail-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
     <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 800px; overflow: hidden; display: flex; flex-direction: column; max-height: 85vh;">
-        <div style="position: relative;">
-            <img id="modal-cover" src="" style="width: 100%; height: 250px; object-fit: cover; display: block;">
-            <button onclick="closeGroupDetails()" style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; transition: background 0.2s;">✕</button>
+        <div style="position: relative; width: 100%; padding-top: 33.33%; background: var(--bg-2); flex-shrink: 0;">
+            <img id="modal-cover" src="" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in;" onclick="openImageViewer(this.src)">
+            <button onclick="closeGroupDetails()" style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; transition: background 0.2s; z-index: 10;">✕</button>
         </div>
         <div style="padding: 24px; overflow-y: auto;">
-            <h2 id="modal-title" style="margin: 0 0 16px 0; color: var(--text); font-size: 24px;"></h2>
+            <h2 id="modal-title" style="margin: 0 0 16px 0; color: var(--text); font-size: 28px; font-weight: 800;"></h2>
             <div id="modal-desc" style="color: var(--text); font-size: 15px; line-height: 1.6; margin: 0;"></div>
+        </div>
+    </div>
+</div>
+
+<div id="custom-confirm-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--bg-2); border: 1px solid #ff4d4f; border-radius: 16px; width: 100%; max-width: 400px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(255, 77, 79, 0.2);">
+        <div style="padding: 24px; text-align: center;">
+            <div style="width: 60px; height: 60px; background: rgba(255, 77, 79, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#ff4d4f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            </div>
+            <h3 style="margin: 0 0 10px 0; color: var(--text); font-size: 20px;">Xóa nhóm này?</h3>
+            <p style="color: var(--text-muted); font-size: 14px; margin: 0; line-height: 1.5;">Toàn bộ tin nhắn và thành viên sẽ bị <strong style="color: #ff4d4f;">xóa vĩnh viễn</strong>. Bạn không thể hoàn tác hành động này.</p>
+        </div>
+        <div style="padding: 16px; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border); display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn-action btn-profile" style="flex: 1; padding: 10px 0; height: auto; border-radius: 8px; font-weight: 600; font-size: 14px;" onclick="closeConfirmModal()">Hủy</button>
+            <button id="confirm-delete-btn" class="btn-action" style="flex: 1; background: #ff4d4f; color: white; border: 1px solid #ff4d4f; transition: all 0.2s ease; border-radius: 8px; font-weight: 600; font-size: 14px;" onmouseenter="this.style.background='rgba(255, 77, 79, 0.15)'; this.style.color='#ff4d4f'; this.style.borderColor='rgba(255, 77, 79, 0.3)';" onmouseleave="this.style.background='#ff4d4f'; this.style.color='white'; this.style.borderColor='#ff4d4f';" onclick="executeGroupDelete()">Xóa Vĩnh Viễn</button>
         </div>
     </div>
 </div>
@@ -80,151 +93,143 @@
     const supabaseClient = supabase.createClient(S_URL, S_KEY);
 
     let allGroups = [], allUsers = [], loggedInUserId = null;
+    let isSubscribed = false;
+    
+    function toggleNotifs() {
+        const drop = document.getElementById('notif-dropdown');
+        drop.style.display = drop.style.display === 'none' ? 'flex' : 'none';
+    }
 
+    document.addEventListener('click', function(event) {
+        const wrapper = document.getElementById('notif-wrapper');
+        const drop = document.getElementById('notif-dropdown');
+        if (wrapper && !wrapper.contains(event.target) && drop && drop.style.display !== 'none') {
+            drop.style.display = 'none';
+        }
+    });
+    
     async function init() {
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session) {
             loggedInUserId = session.user.id;
             const { data: profileData } = await supabaseClient.from('profiles').select('full_name, username').eq('id', loggedInUserId).single();
             document.getElementById('uName').innerText = "Chào, " + (profileData?.full_name || profileData?.username || session.user.email.split('@')[0]);
-            
-            // 1. Check notifications on load
             loadNotifications(); 
-
-            // CRITICAL FIX: 2. Listen LIVE for new messages while staring at main.html
-            supabaseClient.channel('main-live-notifications')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-                    // Only trigger the bell if the message came from someone else!
-                    if (payload.new.sender_id !== loggedInUserId) {
-                        loadNotifications(); 
-                    }
-                }).subscribe();
-
+            
+            if (!isSubscribed) {
+                supabaseClient.channel('main-live-notifications').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => { if (payload.new.sender_id !== loggedInUserId) loadNotifications(); }).subscribe();
+                supabaseClient.channel('notifications-clear-sync').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'group_members', filter: `user_id=eq.${loggedInUserId}` }, payload => { loadNotifications(); }).subscribe();
+                isSubscribed = true;
+            }
         } else { window.location.href = '/'; return; }
 
-        const { data: groupData } = await supabaseClient.from('groups').select(`id, title, description, cover_url, privacy, max_members, created_at, tags, creator_id, profiles!inner(full_name, username, avatar_url), group_members ( user_id, status )`).order('created_at', { ascending: false });
+        const { data: groupData } = await supabaseClient.from('groups').select(`id, title, description, goal, requirements, cover_url, privacy, max_members, created_at, tags, creator_id, profiles!inner(full_name, username, avatar_url), group_members ( user_id, status )`).order('created_at', { ascending: false });
         if (groupData) { allGroups = groupData; renderGroups(allGroups); }
 
         const { data: userData } = await supabaseClient.from('profiles').select('id, full_name, username, avatar_url');
         if (userData) { allUsers = userData; }
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const searchQuery = urlParams.get('search');
-        if (searchQuery) {
-            const searchInput = document.getElementById('sInput');
-            if (searchInput) { searchInput.value = searchQuery; search(); window.history.replaceState({}, document.title, "/main"); }
-        }
+        const urlParams = new URLSearchParams(window.location.search); const searchQuery = urlParams.get('search');
+        if (searchQuery) { const searchInput = document.getElementById('sInput'); if (searchInput) { searchInput.value = searchQuery; search(); window.history.replaceState({}, document.title, "/main"); } }
     }
 
-    function openGroupDetails(title, cover, desc) {
+    function openGroupDetails(title, cover, desc, goal, reqs) {
         document.getElementById('modal-title').innerText = title || 'Nhóm không tên';
         document.getElementById('modal-cover').src = cover || 'https://via.placeholder.com/400x160/222/fff?text=KoNect';
-        document.getElementById('modal-desc').innerHTML = desc ? marked.parse(desc) : 'Chưa có mô tả.';
+        
+        let contentHtml = '';
+        if (goal) contentHtml += `<div style="margin-bottom: 12px; background: rgba(74, 144, 226, 0.1); padding: 12px; border-radius: 8px; border-left: 3px solid var(--primary);"><strong>🎯 Mục tiêu:</strong> ${goal}</div>`;
+        if (reqs) contentHtml += `<div style="margin-bottom: 16px; background: rgba(255, 152, 0, 0.1); padding: 12px; border-radius: 8px; border-left: 3px solid var(--warning);"><strong>📋 Yêu cầu:</strong> ${reqs}</div>`;
+        contentHtml += desc ? marked.parse(desc) : 'Chưa có mô tả.';
+
+        document.getElementById('modal-desc').innerHTML = contentHtml;
         document.getElementById('group-detail-modal').style.display = 'flex';
     }
 
     function closeGroupDetails() { document.getElementById('group-detail-modal').style.display = 'none'; }
     document.getElementById('group-detail-modal').addEventListener('click', function(e) { if (e.target === this) closeGroupDetails(); });
 
-    async function deleteGroup(groupId, event) {
-        event.stopPropagation();
-        if (!confirm("⚠️ CẢNH BÁO!\nBạn có chắc chắn muốn xóa nhóm này không?\nToàn bộ tin nhắn và thành viên sẽ bị xóa vĩnh viễn. Không thể hoàn tác!")) return;
+    let groupToDelete = null;
 
-        const btn = event.target;
-        const originalText = btn.innerText;
-        btn.innerText = "Đang xóa...";
-        btn.disabled = true;
+    function deleteGroup(groupId, event) { event.stopPropagation(); groupToDelete = groupId; document.getElementById('custom-confirm-modal').style.display = 'flex'; }
+    function closeConfirmModal() { document.getElementById('custom-confirm-modal').style.display = 'none'; groupToDelete = null; }
 
+    async function executeGroupDelete() {
+        if (!groupToDelete) return;
+        const btn = document.getElementById('confirm-delete-btn'); const originalText = btn.innerText; btn.innerText = "Đang xóa..."; btn.disabled = true;
         try {
-            await supabaseClient.from('messages').delete().eq('group_id', groupId);
-            await supabaseClient.from('group_members').delete().eq('group_id', groupId);
-            const { error } = await supabaseClient.from('groups').delete().eq('id', groupId);
-
-            if (error) throw error;
-            init();
-            
-        } catch (err) {
-            alert("Lỗi khi xóa nhóm: " + err.message);
-            btn.innerText = originalText;
-            btn.disabled = false;
-        }
-// Inside your init() function in main.html, add this second listener:
-    supabaseClient.channel('notifications-clear-sync')
-        .on('postgres_changes', { 
-            event: 'UPDATE', 
-            schema: 'public', 
-            table: 'group_members', 
-            filter: `user_id=eq.${loggedInUserId}` 
-        }, payload => {
-            console.log("[Sync] Read status updated, refreshing badge...");
-            loadNotifications(); 
-        }).subscribe();
+            const { error: msgErr } = await supabaseClient.from('messages').delete().eq('group_id', groupToDelete); if (msgErr) throw msgErr;
+            const { error: memErr } = await supabaseClient.from('group_members').delete().eq('group_id', groupToDelete); if (memErr) throw memErr;
+            const { error: grpErr } = await supabaseClient.from('groups').delete().eq('id', groupToDelete); if (grpErr) throw grpErr;
+            closeConfirmModal(); await init(); 
+        } catch (err) { console.error("Lỗi xóa nhóm:", err); alert("Lỗi khi xóa nhóm: " + (err.message || "Lỗi không xác định từ máy chủ."));
+        } finally { btn.innerText = originalText; btn.disabled = false; }
     }
 
     function renderGroups(data) {
-        const list = document.getElementById('group-list');
-        list.innerHTML = data.length === 0 ? '<p style="text-align:center; width:100%; color:var(--text-muted); grid-column: 1 / -1;">Không tìm thấy nhóm nào.</p>' : '';
-        
+        const list = document.getElementById('group-list'); list.innerHTML = data.length === 0 ? '<p style="text-align:center; width:100%; color:var(--text-muted); grid-column: 1 / -1;">Không tìm thấy nhóm nào.</p>' : '';
         data.forEach(g => {
             const creatorName = g.profiles?.full_name || g.profiles?.username || "Ẩn danh";
             const coverImage = g.cover_url || 'https://via.placeholder.com/400x160/252525/4a90e2?text=KoNect';
-            
-            const members = g.group_members || [];
-            const activeMemberCount = members.filter(m => ['member', 'admin', 'joined'].includes(m.status)).length;
+            const members = g.group_members || []; const activeMemberCount = members.filter(m => ['member', 'admin', 'joined'].includes(m.status)).length;
             const myStatus = members.find(m => m.user_id === loggedInUserId)?.status || null;
-
-            const isClickable = ['admin', 'member', 'joined'].includes(myStatus);
-            const isCreator = g.creator_id === loggedInUserId;
-            
-            let rawTitle = g.title || 'Nhóm không tên';
-            let displayTitle = rawTitle.length > 36 ? rawTitle.substring(0, 36) + '...' : rawTitle;
-            
+            const isClickable = ['admin', 'member', 'joined'].includes(myStatus); const isCreator = g.creator_id === loggedInUserId;
+            let rawTitle = g.title || 'Nhóm không tên'; let displayTitle = rawTitle.length > 36 ? rawTitle.substring(0, 36) + '...' : rawTitle;
             let actionBtns = '';
 
-            if (isCreator) {
-                actionBtns += `<button class="btn-action" style="height: 30px; font-size: 13px; padding: 0 12px; background: rgba(255, 77, 79, 0.15); color: #ff4d4f; border: 1px solid rgba(255, 77, 79, 0.3);" onclick="deleteGroup('${g.id}', event)">Xóa</button>`;
-            }
-            
-            if (isClickable) {
-                actionBtns += `<button class="btn-action btn-primary" style="height: 30px; font-size: 13px; padding: 0 12px; background: var(--primary); border: none; margin-left: 8px;" onclick="event.stopPropagation(); window.location.href='/chat?group=${g.id}'">Vào Chat</button>`;
-            } else if (myStatus === 'pending') {
-                actionBtns += `<button class="btn-action" style="height: 30px; font-size: 13px; padding: 0 12px; background: #333; color: orange; border: none; margin-left: 8px;" disabled onclick="event.stopPropagation();">Đang chờ...</button>`;
-            } else {
-                const btnText = g.privacy === 'public' ? 'Vào Nhóm' : 'Xin vào';
-                actionBtns += `<button class="btn-action btn-primary" style="height: 30px; font-size: 13px; padding: 0 12px; margin-left: 8px;" onclick="requestJoin('${g.id}', '${g.privacy}', event)">${btnText}</button>`;
-            }
+            if (isCreator) actionBtns += `<button class="btn-action" style="height: 30px; font-size: 13px; padding: 0 12px; background: rgba(255, 77, 79, 0.15); color: #ff4d4f; border: 1px solid rgba(255, 77, 79, 0.3); border-radius: 8px; transition: all 0.2s ease;" onmouseenter="this.style.background='#ff4d4f'; this.style.color='white'; this.style.borderColor='#ff4d4f';" onmouseleave="this.style.background='rgba(255, 77, 79, 0.15)'; this.style.color='#ff4d4f'; this.style.borderColor='rgba(255, 77, 79, 0.3)';" onclick="deleteGroup('${g.id}', event)">Xóa</button>`;
+            if (isClickable) actionBtns += `<button class="btn-action btn-primary" style="height: 30px; font-size: 13px; padding: 0 12px; background: var(--primary); border: none; margin-left: 8px; border-radius: 8px;" onclick="event.stopPropagation(); window.location.href='/chat?group=${g.id}'">Vào Chat</button>`;
+            else if (myStatus === 'pending') actionBtns += `<button class="btn-action" style="height: 30px; font-size: 13px; padding: 0 12px; background: #333; color: orange; border: none; margin-left: 8px; border-radius: 8px;" disabled onclick="event.stopPropagation();">Đang chờ...</button>`;
+            else { const btnText = g.privacy === 'public' ? 'Vào Nhóm' : 'Xin vào'; actionBtns += `<button class="btn-action btn-primary" style="height: 30px; font-size: 13px; padding: 0 12px; margin-left: 8px; border-radius: 8px;" onclick="requestJoin('${g.id}', '${g.privacy}', event)">${btnText}</button>`; }
 
             const tagsHtml = g.tags && g.tags.length > 0 ? `<div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px;">` + g.tags.map(t => `<span style="background: rgba(74, 144, 226, 0.15); color: var(--primary); font-size: 11px; font-weight: bold; padding: 4px 8px; border-radius: 12px;">#${t}</span>`).join('') + `</div>` : '';
-            const parsedDesc = g.description ? marked.parse(g.description) : 'Chưa có mô tả.';
+            
+            // PREVIEW: Show Description, OR smartly combine Req + Goal if Desc is missing
+            let previewContent = "";
+            if (g.description && g.description.trim() !== '') {
+                previewContent = g.description;
+            } else {
+                let fallbacks = [];
+                if (g.requirements && g.requirements.trim() !== '') fallbacks.push("**Yêu cầu:** " + g.requirements.trim());
+                if (g.goal && g.goal.trim() !== '') fallbacks.push("**Mục tiêu:** " + g.goal.trim());
+                previewContent = fallbacks.join(" &nbsp;•&nbsp; ");
+            }
+            const parsedDesc = previewContent ? marked.parse(previewContent) : 'Không có thông tin.';
 
-            // CRITICAL: Colored SVGs and specific text coloring for immediate visual cues
+            // MODAL: Display all three with bold HTML headers and SVGs
+            let modalMarkdown = "";
+            
+            const descIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
+            const reqIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M9 14h6"></path><path d="M9 18h6"></path><path d="M9 10h.01"></path></svg>`;
+            const goalIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>`;
+
+            if (g.description && g.description.trim() !== '') {
+                modalMarkdown += `<div style="display:flex; align-items:center; gap:8px; margin-top: ${modalMarkdown ? '24px' : '0'}; margin-bottom:8px; font-weight:800; font-size:16px; color:var(--text);">${descIcon} MÔ TẢ</div>\n\n` + g.description + "\n\n";
+            }
+            if (g.requirements && g.requirements.trim() !== '') {
+                modalMarkdown += `<div style="display:flex; align-items:center; gap:8px; margin-top: ${modalMarkdown ? '24px' : '0'}; margin-bottom:8px; font-weight:800; font-size:16px; color:var(--text);">${reqIcon} YÊU CẦU</div>\n\n` + g.requirements + "\n\n";
+            }
+            if (g.goal && g.goal.trim() !== '') {
+                modalMarkdown += `<div style="display:flex; align-items:center; gap:8px; margin-top: ${modalMarkdown ? '24px' : '0'}; margin-bottom:8px; font-weight:800; font-size:16px; color:var(--text);">${goalIcon} MỤC TIÊU</div>\n\n` + g.goal + "\n\n";
+            }
+            
+            modalMarkdown = modalMarkdown.trim() || 'Chưa có thông tin.';
+
             const privacyIcon = g.privacy === 'private' 
                 ? `<svg viewBox="0 0 24 24" width="14" height="14" fill="#ff4d4f"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg> <span style="color: #ff4d4f; margin-left: 4px;">Nhóm kín</span>`
                 : `<svg viewBox="0 0 24 24" width="14" height="14" fill="var(--primary)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg> <span style="color: var(--primary); margin-left: 4px;">Công khai</span>`;
 
-            const card = document.createElement('div');
-            card.className = 'group-card';
+            const card = document.createElement('div'); card.className = 'group-card';
             card.style.cssText = `border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--bg-2); display: flex; flex-direction: column; transition: all 0.2s ease; cursor: pointer;`;
-            
-            // CRITICAL: Overwriting the generic hover with the unified Navy Blue UI
-            card.onmouseenter = () => {
-                card.style.transform = 'translateY(-3px)';
-                card.style.borderColor = 'var(--primary)';
-                card.style.boxShadow = '0 8px 24px rgba(7, 37, 77, 0.4)';
-            };
-            card.onmouseleave = () => {
-                card.style.transform = 'translateY(0)';
-                card.style.borderColor = 'var(--border)';
-                card.style.boxShadow = 'none';
-            };
-            card.onclick = () => openGroupDetails(g.title, coverImage, g.description);
+            card.onmouseenter = () => { card.style.transform = 'translateY(-3px)'; card.style.borderColor = 'var(--primary)'; card.style.boxShadow = '0 8px 24px rgba(7, 37, 77, 0.4)'; };
+            card.onmouseleave = () => { card.style.transform = 'translateY(0)'; card.style.borderColor = 'var(--border)'; card.style.boxShadow = 'none'; };
+            card.onclick = () => openGroupDetails(g.title, coverImage, modalMarkdown);
 
             card.innerHTML = `
-                <div style="position: relative; width: 100%; height: 140px;">
-                    <img src="${coverImage}" style="width: 100%; height: 100%; object-fit: cover;">
-                    <div class="xem-them-badge" style="position: absolute; top: 10px; right: 10px; background: rgba(7, 37, 77, 0.85); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 4px;">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        Xem thêm
+                <div style="position: relative; width: 100%; padding-top: 33.33%; flex-shrink: 0; background: var(--bg-2); overflow: hidden;">
+                    <img src="${coverImage}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;">
+                    <div class="xem-them-badge" style="position: absolute; top: 10px; right: 10px; background: rgba(7, 37, 77, 0.85); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 4px; z-index: 10;">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Xem thêm
                     </div>
                 </div>
                 <div style="padding: 16px; flex: 1; display: flex; flex-direction: column;">
@@ -235,7 +240,7 @@
                     <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 10px 0;">
                         Bởi <strong style="color: var(--text); cursor: pointer;" onmouseover="this.style.textDecoration='underline'; this.style.color='var(--primary)';" onmouseout="this.style.textDecoration='none'; this.style.color='var(--text)';" onclick="event.stopPropagation(); window.location.href='/profile?id=${g.creator_id}'">${creatorName}</strong>
                     </p>
-                    <div class="desc-fade" style="color: var(--text-muted); font-size: 14px; margin: 0; line-height: 1.5; flex: 1;">${parsedDesc}</div>
+                    <div class="desc-fade" style="flex: 1;">${parsedDesc}</div>
                     ${tagsHtml}
                 </div>
                 <div style="padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);" onclick="event.stopPropagation();">
@@ -248,18 +253,12 @@
     }
 
     async function requestJoin(groupId, privacyStatus, event) {
-        event.stopPropagation(); 
-        if (!loggedInUserId) { alert("Bạn cần đăng nhập!"); return; }
+        event.stopPropagation(); if (!loggedInUserId) { alert("Bạn cần đăng nhập!"); return; }
         const btn = event.target; btn.innerText = "Đang xử lý..."; btn.disabled = true;
-        
         const newStatus = privacyStatus === 'public' ? 'member' : 'pending';
         const { error } = await supabaseClient.from('group_members').upsert({ group_id: groupId, user_id: loggedInUserId, status: newStatus });
-
         if (error) { alert("Lỗi: " + error.message); btn.innerText = privacyStatus === 'public' ? "Vào Nhóm" : "Xin vào"; btn.disabled = false; } 
-        else { 
-            if (newStatus === 'member') window.location.href = `/chat?group=${groupId}`;
-            else { btn.innerText = "Đang chờ..."; btn.style.background = "rgba(255, 165, 0, 0.2)"; btn.style.color = "orange"; btn.style.border = "none"; }
-        }
+        else { if (newStatus === 'member') window.location.href = `/chat?group=${groupId}`; else { btn.innerText = "Đang chờ..."; btn.style.background = "rgba(255, 165, 0, 0.2)"; btn.style.color = "orange"; btn.style.border = "none"; } }
     }
 
     function renderUsers(data, isSearching) {
@@ -267,25 +266,13 @@
         if (!isSearching) { section.style.display = 'none'; return; }
         section.style.display = 'block'; list.innerHTML = '';
         if (data.length === 0) { list.innerHTML = '<p style="color: var(--text-muted); font-size: 14px; grid-column: 1 / -1;">Không tìm thấy người dùng nào.</p>'; return; }
-
         data.forEach(u => {
             const name = u.full_name || u.username || "Ẩn danh";
             const avatarHtml = u.avatar_url ? `<div class="widget-avatar" style="background-image: url(${u.avatar_url}); background-size: cover; width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;"></div>` : `<div class="widget-avatar" style="width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; background: var(--border); color: var(--primary); font-weight: bold; flex-shrink: 0;">${name.charAt(0).toUpperCase()}</div>`;
             const card = document.createElement('div');
             card.style.cssText = "border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; background: var(--bg-2); display: flex; align-items: center; gap: 15px; cursor: pointer; transition: all 0.2s ease;";
-            
-            // CRITICAL: Applied the Navy Blue UI to User search results
-            card.onmouseenter = () => {
-                card.style.transform = 'translateY(-3px)';
-                card.style.borderColor = 'var(--primary)';
-                card.style.background = 'rgba(7, 37, 77, 0.4)';
-            };
-            card.onmouseleave = () => {
-                card.style.transform = 'translateY(0)';
-                card.style.borderColor = 'var(--border)';
-                card.style.background = 'var(--bg-2)';
-            };
-
+            card.onmouseenter = () => { card.style.transform = 'translateY(-3px)'; card.style.borderColor = 'var(--primary)'; card.style.background = 'rgba(7, 37, 77, 0.4)'; };
+            card.onmouseleave = () => { card.style.transform = 'translateY(0)'; card.style.borderColor = 'var(--border)'; card.style.background = 'var(--bg-2)'; };
             card.onclick = () => window.location.href = `/profile?id=${u.id}`;
             card.innerHTML = `${avatarHtml}<div style="flex: 1; overflow: hidden;"><div style="font-weight: bold; color: var(--text); font-size: 16px;">${name}</div><div style="color: var(--text-muted); font-size: 13px;">@${u.username || 'user'}</div></div><button class="btn-action" style="height: 30px; font-size: 12px; padding: 0 16px; border-color: var(--border); color: var(--text);">Hồ sơ</button>`;
             list.appendChild(card);
@@ -295,10 +282,8 @@
     function search() {
         const v = document.getElementById('sInput').value.toLowerCase().trim(); const isSearching = v.length > 0;
         renderGroups(allGroups.filter(g => {
-            const matchTitle = (g.title || '').toLowerCase().includes(v);
-            const matchTags = g.tags ? g.tags.some(tag => tag.toLowerCase().includes(v)) : false;
-            const creatorName = (g.profiles?.full_name || '').toLowerCase();
-            const creatorUser = (g.profiles?.username || '').toLowerCase();
+            const matchTitle = (g.title || '').toLowerCase().includes(v); const matchTags = g.tags ? g.tags.some(tag => tag.toLowerCase().includes(v)) : false;
+            const creatorName = (g.profiles?.full_name || '').toLowerCase(); const creatorUser = (g.profiles?.username || '').toLowerCase();
             return matchTitle || matchTags || creatorName.includes(v) || creatorUser.includes(v);
         }));
         renderUsers(allUsers.filter(u => (u.full_name || '').toLowerCase().includes(v) || (u.username || '').toLowerCase().includes(v)), isSearching);
@@ -306,13 +291,30 @@
     }
 
     async function logout() { await supabaseClient.auth.signOut(); window.location.href = '/'; }
-    function toggleNotifs() { const drop = document.getElementById('notif-dropdown'); drop.style.display = drop.style.display === 'none' ? 'flex' : 'none'; }
-    document.addEventListener('click', function(event) { const wrapper = document.getElementById('notif-wrapper'); const drop = document.getElementById('notif-dropdown'); if (wrapper && !wrapper.contains(event.target) && drop && drop.style.display !== 'none') { drop.style.display = 'none'; } });
+    
+    function openImageViewer(src) {
+        if (!src || src === 'none') return;
+        let viewer = document.getElementById('global-image-viewer'); let img = document.getElementById('global-image-viewer-img');
+        if (!viewer) {
+            viewer = document.createElement('div'); viewer.id = 'global-image-viewer';
+            viewer.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(5px); opacity: 0; transition: opacity 0.2s; overflow: hidden;';
+            viewer.innerHTML = `<span style="position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; text-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 10001;">&times;</span><img id="global-image-viewer-img" src="" style="max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 5px 30px rgba(0,0,0,0.6); object-fit: contain; cursor: grab; transition: transform 0.1s ease-out;" draggable="false">`;
+            img = viewer.querySelector('#global-image-viewer-img');
+            viewer.scale = 1; viewer.tx = 0; viewer.ty = 0; viewer.isDragging = false; viewer.startX = 0; viewer.startY = 0;
+            viewer.onclick = (e) => { if(e.target.id !== 'global-image-viewer-img') { viewer.style.opacity = '0'; setTimeout(() => { viewer.style.display = 'none'; }, 200); } };
+            viewer.addEventListener('wheel', (e) => { e.preventDefault(); viewer.scale += e.deltaY * -0.002; viewer.scale = Math.min(Math.max(0.2, viewer.scale), 5); img.style.transform = `translate(${viewer.tx}px, ${viewer.ty}px) scale(${viewer.scale})`; }, { passive: false });
+            img.addEventListener('mousedown', (e) => { e.preventDefault(); viewer.isDragging = true; viewer.startX = e.clientX - viewer.tx; viewer.startY = e.clientY - viewer.ty; img.style.cursor = 'grabbing'; img.style.transition = 'none'; });
+            window.addEventListener('mouseup', () => { if (!viewer.isDragging) return; viewer.isDragging = false; img.style.cursor = 'grab'; img.style.transition = 'transform 0.1s ease-out'; });
+            window.addEventListener('mousemove', (e) => { if (!viewer.isDragging) return; e.preventDefault(); viewer.tx = e.clientX - viewer.startX; viewer.ty = e.clientY - viewer.startY; img.style.transform = `translate(${viewer.tx}px, ${viewer.ty}px) scale(${viewer.scale})`; });
+            document.body.appendChild(viewer);
+        } else { img = document.getElementById('global-image-viewer-img'); }
+        viewer.scale = 1; viewer.tx = 0; viewer.ty = 0; img.style.transform = `translate(0px, 0px) scale(1)`; img.src = src;
+        viewer.style.display = 'flex'; setTimeout(() => viewer.style.opacity = '1', 10);
+    }
 
-async function loadNotifications() {
+    async function loadNotifications() {
         if (!loggedInUserId) return;
         document.getElementById('bell-icon').style.display = 'flex'; document.getElementById('msg-icon').style.display = 'flex';
-        
         const { data: friendReqs } = await supabaseClient.from('friends').select(`user_id, profiles!friends_user_id_fkey(full_name, username, avatar_url)`).eq('friend_id', loggedInUserId).eq('status', 'pending');
         const { data: myOwnedGroups } = await supabaseClient.from('groups').select('id').eq('creator_id', loggedInUserId);
         const myOwnedGroupIds = myOwnedGroups ? myOwnedGroups.map(g => g.id) : [];
@@ -321,49 +323,26 @@ async function loadNotifications() {
             const { data } = await supabaseClient.from('group_members').select(`user_id, group_id, profiles!inner(full_name, username, avatar_url), groups!inner(title)`).in('group_id', myOwnedGroupIds).eq('status', 'pending');
             groupJoinReqs = data || [];
         }
-
-        // CRITICAL FIX: Added 'cover_url' to the database query here
         const { data: myActiveGroups } = await supabaseClient.from('group_members').select('group_id, last_read_at, groups!inner(title, cover_url)').eq('user_id', loggedInUserId).in('status', ['member', 'admin', 'joined']);
         let unreadMsgs = [];
-
         if (myActiveGroups) {
             for (let mg of myActiveGroups) {
                 const readTime = mg.last_read_at || new Date(0).toISOString(); 
-                const { data: newMsgs } = await supabaseClient
-                    .from('messages')
-                    .select('id')
-                    .eq('group_id', mg.group_id)
-                    .gt('created_at', readTime)
-                    .neq('sender_id', loggedInUserId);
-                    
-                if (newMsgs && newMsgs.length > 0) {
-                    // Passed cover_url into our unread array
-                    unreadMsgs.push({ groupId: mg.group_id, groupName: mg.groups.title, coverUrl: mg.groups.cover_url, count: newMsgs.length });
-                }
+                const { data: newMsgs } = await supabaseClient.from('messages').select('id').eq('group_id', mg.group_id).gt('created_at', readTime).neq('sender_id', loggedInUserId);
+                if (newMsgs && newMsgs.length > 0) { unreadMsgs.push({ groupId: mg.group_id, groupName: mg.groups.title, coverUrl: mg.groups.cover_url, count: newMsgs.length }); }
             }
         }
 
         const badge = document.getElementById('notif-badge'), list = document.getElementById('notif-list');
         const totalNotifs = (friendReqs?.length || 0) + groupJoinReqs.length + unreadMsgs.length;
-        
         if (totalNotifs === 0) { badge.style.display = 'none'; list.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); margin: 0; text-align: center;">Không có thông báo mới.</p>'; return; }
         badge.style.display = 'block'; badge.innerText = totalNotifs; list.innerHTML = '';
 
         unreadMsgs.forEach(msg => {
-            // CRITICAL FIX: Replaced emoji with dynamic group avatar (Image or Letter)
-            const avatarHtml = msg.coverUrl 
-                ? `<div class="widget-avatar" style="background-image: url('${msg.coverUrl}'); background-size: cover; background-position: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px;"></div>`
-                : `<div class="widget-avatar" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; background: rgba(74, 144, 226, 0.15); border: 1px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: var(--primary);">${msg.groupName.charAt(0).toUpperCase()}</div>`;
-
+            const avatarHtml = msg.coverUrl ? `<div class="widget-avatar" style="background-image: url('${msg.coverUrl}'); background-size: cover; background-position: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px;"></div>` : `<div class="widget-avatar" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; background: rgba(74, 144, 226, 0.15); border: 1px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: var(--primary);">${msg.groupName.charAt(0).toUpperCase()}</div>`;
             const notifItem = document.createElement('div');
             notifItem.style.cssText = "display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px;";
-            notifItem.innerHTML = `
-                <div style="display:flex; gap: 10px; align-items:center;">
-                    ${avatarHtml}
-                    <div style="font-size: 13px; color: var(--text); line-height: 1.4;">Nhóm <strong style="color: var(--primary);">${msg.groupName}</strong> có <strong>${msg.count}</strong> tin nhắn mới.</div>
-                </div>
-                <button class="btn-action btn-primary" style="width: 100%; padding: 4px; height: 30px; font-size: 12px;" onclick="window.location.href='/chat?group=${msg.groupId}'">Đọc ngay</button>
-            `;
+            notifItem.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div style="font-size: 13px; color: var(--text); line-height: 1.4;">Nhóm <strong style="color: var(--primary);">${msg.groupName}</strong> có <strong>${msg.count}</strong> tin nhắn mới.</div></div><button class="btn-action btn-primary" style="width: 100%; padding: 4px; height: 30px; font-size: 12px;" onclick="window.location.href='/chat?group=${msg.groupId}'">Đọc ngay</button>`;
             list.appendChild(notifItem);
         });
 
@@ -394,18 +373,12 @@ async function loadNotifications() {
     init();
     
     function initNightSky() {
-        const canvas = document.getElementById('starfield');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        let width, height;
-
-        const rootStyles = getComputedStyle(document.documentElement);
-        const primaryColor = rootStyles.getPropertyValue('--primary').trim() || '#4a90e2';
+        const canvas = document.getElementById('starfield'); if (!canvas) return;
+        const ctx = canvas.getContext('2d'); let width, height;
+        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4a90e2';
 
         function resize() { width = window.innerWidth; height = 450; canvas.width = width; canvas.height = height; }
-        window.addEventListener('resize', resize);
-        resize();
-
+        window.addEventListener('resize', resize); resize();
         const stars = Array.from({ length: 150 }, () => ({ x: Math.random() * width, y: Math.random() * height, r: Math.random() * 2, vx: (Math.random() - 0.5) * 0.3 - 0.1, vy: (Math.random() - 0.5) * 0.1 - 0.1, alpha: Math.random() * 0.8 + 0.2 }));
 
         function draw() {
