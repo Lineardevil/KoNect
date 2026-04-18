@@ -185,87 +185,110 @@
     }
 
     async function loadSidebar() {
-        const { data: friendsData } = await mySupabase.from('friends').select(`user_id, friend_id, user_p:profiles!friends_user_id_fkey(full_name, username, avatar_url), friend_p:profiles!friends_friend_id_fkey(full_name, username, avatar_url)`).or(`user_id.eq.${globalUserId},friend_id.eq.${globalUserId}`).eq('status', 'accepted');
-        const friendsContainer = document.getElementById('friends-list'); friendsContainer.innerHTML = '';
-        if (friendsData && friendsData.length > 0) {
-            friendsData.forEach(f => {
-                const friend = (f.user_id === globalUserId) ? f.friend_p : f.user_p;
-                if (!friend) return;
-                const name = friend.full_name || friend.username || "Ẩn danh";
-                const avatarHtml = friend.avatar_url ? `<div class="widget-avatar" style="background-image: url(${friend.avatar_url}); background-size: cover; width: 36px; height: 36px; border-radius: 0; flex-shrink: 0;"></div>` : `<div class="widget-avatar" style="width: 36px; height: 36px; border-radius: 0; flex-shrink: 0; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary); font-size: 14px;">${name.charAt(0).toUpperCase()}</div>`;
-                const div = document.createElement('div');
-                div.className = 'widget-item'; div.style.cssText = "padding: 8px; border-radius: 8px; margin-bottom: 4px; transition: background 0.2s; cursor: pointer;";
-                div.onmouseover = () => div.style.background = 'rgba(7, 37, 77, 0.4)'; 
-                div.onmouseout = () => div.style.background = 'transparent'; div.onclick = () => alert("Chat 1-1 chưa được hỗ trợ.");
-                div.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div class="widget-text"><h4 style="margin:0; color:var(--text); font-size:14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${name}</h4></div></div>`;
-                friendsContainer.appendChild(div);
-            });
-        } else friendsContainer.innerHTML = '<p class="empty-msg" style="font-size: 13px; color: var(--text-muted); text-align: center;">Không có mống bạn nào ở đây cả...</p>';
+        const friendsContainer = document.getElementById('friends-list'); 
+        const groupsContainer = document.getElementById('groups-list'); 
         
-        const { data: groupsData } = await mySupabase.from('group_members').select(`groups ( id, title, cover_url, created_at )`).eq('user_id', globalUserId).in('status', ['joined', 'member', 'admin']);
-        const groupsContainer = document.getElementById('groups-list'); groupsContainer.innerHTML = '';
-        
-        if (groupsData && groupsData.length > 0) {
-            await Promise.all(groupsData.map(async (item) => {
-                const group = item.groups;
-                if (!group) return;
+        try {
+            // 1. Fetch Friends
+            const { data: friendsData, error: friendsError } = await mySupabase
+                .from('friends')
+                .select(`user_id, friend_id, user_p:profiles!friends_user_id_fkey(full_name, username, avatar_url), friend_p:profiles!friends_friend_id_fkey(full_name, username, avatar_url)`)
+                .or(`user_id.eq.${globalUserId},friend_id.eq.${globalUserId}`)
+                .eq('status', 'accepted');
 
-                const { data: latestMsg } = await mySupabase
-                    .from('messages')
-                    .select(`content, sender_id, created_at, profiles(full_name, username)`)
-                    .eq('group_id', group.id)
-                    .order('created_at', { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
+            if (friendsError) throw new Error("Friends Error: " + friendsError.message);
 
-                item.latestMsg = latestMsg;
-                
-                if (latestMsg) {
-                    item.sort_time = new Date(latestMsg.created_at).getTime();
-                } else {
-                    item.sort_time = new Date(group.created_at).getTime(); 
-                }
-            }));
-
-            groupsData.sort((a, b) => b.sort_time - a.sort_time);
-
-            groupsData.forEach(item => {
-                const group = item.groups;
-                if (group) {
-                    const avatarHtml = group.cover_url ? `<div class="widget-avatar" style="background-image: url(${group.cover_url}); background-size: cover; width: 36px; height: 36px; border-radius: 0; flex-shrink: 0;"></div>` : `<div class="widget-avatar" style="width: 36px; height: 36px; border-radius: 0; flex-shrink: 0; background: var(--bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--text);">${(group.title || "G").charAt(0).toUpperCase()}</div>`;
+            friendsContainer.innerHTML = '';
+            if (friendsData && friendsData.length > 0) {
+                friendsData.forEach(f => {
+                    const friend = (f.user_id === globalUserId) ? f.friend_p : f.user_p;
+                    if (!friend) return;
+                    const name = friend.full_name || friend.username || "Ẩn danh";
+                    const avatarHtml = friend.avatar_url ? `<div class="widget-avatar" style="background-image: url(${friend.avatar_url}); background-size: cover; width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;"></div>` : `<div class="widget-avatar" style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary); font-size: 14px;">${name.charAt(0).toUpperCase()}</div>`;
                     const div = document.createElement('div');
-                    
-                    div.className = 'widget-item group-sidebar-item'; 
-                    div.style.cssText = "padding: 8px; border-radius: 8px; margin-bottom: 4px; transition: background 0.2s; cursor: pointer;";
-                    
-                    div.onmouseover = () => { if(currentGroupId !== group.id) div.style.background = 'rgba(7, 37, 77, 0.4)'; };
-                    div.onmouseout = () => { if(currentGroupId !== group.id) div.style.background = 'transparent'; };
-                    
-                    if (group.id === currentGroupId) div.style.background = 'rgba(74, 144, 226, 0.15)';
-                    
-                    div.onclick = () => { 
-                        window.history.replaceState({}, '', `/chat?group=${group.id}`); 
-                        openChatRoom(group.id, group.title, group.cover_url); 
+                    div.className = 'widget-item'; div.style.cssText = "padding: 8px; border-radius: 8px; margin-bottom: 4px; transition: background 0.2s; cursor: pointer;";
+                    div.onmouseover = () => div.style.background = 'rgba(7, 37, 77, 0.4)'; 
+                    div.onmouseout = () => div.style.background = 'transparent'; div.onclick = () => alert("Chat 1-1 chưa được hỗ trợ.");
+                    div.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div class="widget-text"><h4 style="margin:0; color:var(--text); font-size:14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${name}</h4></div></div>`;
+                    friendsContainer.appendChild(div);
+                });
+            } else {
+                friendsContainer.innerHTML = '<p class="empty-msg" style="font-size: 13px; color: var(--text-muted); text-align: center;">Không có mống bạn nào ở đây cả...</p>';
+            }
+            
+            // 2. Fetch Groups
+            const { data: groupsData, error: groupsError } = await mySupabase
+                .from('group_members')
+                .select(`groups ( id, title, cover_url, created_at )`)
+                .eq('user_id', globalUserId)
+                .in('status', ['joined', 'member', 'admin']);
+
+            if (groupsError) throw new Error("Groups Error: " + groupsError.message);
+
+            groupsContainer.innerHTML = '';
+            if (groupsData && groupsData.length > 0) {
+                await Promise.all(groupsData.map(async (item) => {
+                    const group = item.groups;
+                    if (!group) return;
+
+                    const { data: latestMsg, error: msgError } = await mySupabase
+                        .from('messages')
+                        .select(`content, sender_id, created_at, profiles(full_name, username)`)
+                        .eq('group_id', group.id)
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+
+                    if (msgError) console.warn("Latest Msg Error for group " + group.id + ":", msgError);
+
+                    item.latestMsg = latestMsg;
+                    item.sort_time = latestMsg ? new Date(latestMsg.created_at).getTime() : new Date(group.created_at).getTime(); 
+                }));
+
+                groupsData.sort((a, b) => b.sort_time - a.sort_time);
+
+                groupsData.forEach(item => {
+                    const group = item.groups;
+                    if (group) {
+                        const avatarHtml = group.cover_url ? `<div class="widget-avatar" style="background-image: url(${group.cover_url}); background-size: cover; width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;"></div>` : `<div class="widget-avatar" style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; background: var(--bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--text);">${(group.title || "G").charAt(0).toUpperCase()}</div>`;
+                        const div = document.createElement('div');
                         
-                        document.querySelectorAll('.group-sidebar-item').forEach(el => el.style.background = 'transparent');
-                        div.style.background = 'rgba(74, 144, 226, 0.15)';
-                    };
+                        div.className = 'widget-item group-sidebar-item'; 
+                        div.style.cssText = "padding: 8px; border-radius: 8px; margin-bottom: 4px; transition: background 0.2s; cursor: pointer;";
+                        
+                        div.onmouseover = () => { if(currentGroupId !== group.id) div.style.background = 'rgba(7, 37, 77, 0.4)'; }; 
+                        div.onmouseout = () => { if(currentGroupId !== group.id) div.style.background = 'transparent'; };
+                        
+                        if (group.id === currentGroupId) div.style.background = 'rgba(74, 144, 226, 0.15)';
+                        
+                        div.onclick = () => { 
+                            window.history.replaceState({}, '', `/chat?group=${group.id}`); 
+                            openChatRoom(group.id, group.title, group.cover_url); 
+                            document.querySelectorAll('.group-sidebar-item').forEach(el => el.style.background = 'transparent');
+                            div.style.background = 'rgba(74, 144, 226, 0.15)';
+                        };
 
-                    let snippetText = "Chưa có tin nhắn.";
-                    if (item.latestMsg) {
-                        const isSelf = item.latestMsg.sender_id === globalUserId;
-                        const senderName = isSelf ? "Bạn" : (item.latestMsg.profiles?.full_name || item.latestMsg.profiles?.username || "Ai đó");
-                        let text = item.latestMsg.content.startsWith('[IMG]') ? '[Hình ảnh]' : item.latestMsg.content;
-                        snippetText = `${senderName}: ${text}`;
+                        let snippetText = "Chưa có tin nhắn.";
+                        if (item.latestMsg) {
+                            const isSelf = item.latestMsg.sender_id === globalUserId;
+                            const senderName = isSelf ? "Bạn" : (item.latestMsg.profiles?.full_name || item.latestMsg.profiles?.username || "Ai đó");
+                            let text = item.latestMsg.content.startsWith('[IMG]') ? '[Hình ảnh]' : item.latestMsg.content;
+                            snippetText = `${senderName}: ${text}`;
+                        }
+                        
+                        div.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div class="widget-text" style="flex: 1; min-width: 0;"><h4 style="margin:0; color:var(--text); font-size:14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${group.title || "Nhóm ẩn danh"}</h4><p id="sidebar-snippet-${group.id}" style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${snippetText}</p></div></div>`;
+                        groupsContainer.appendChild(div);
                     }
-                    
-                    div.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div class="widget-text" style="flex: 1; min-width: 0;"><h4 style="margin:0; color:var(--text); font-size:14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${group.title || "Nhóm ẩn danh"}</h4><p id="sidebar-snippet-${group.id}" style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${snippetText}</p></div></div>`;
-                    groupsContainer.appendChild(div);
-                }
-            });
+                });
+            } else {
+                groupsContainer.innerHTML = '<p class="empty-msg" style="font-size: 13px; color: var(--text-muted); text-align: center;">Bạn chưa vào nhóm nào cả!</p>';
+            }
 
-        } else {
-            groupsContainer.innerHTML = '<p class="empty-msg" style="font-size: 13px; color: var(--text-muted); text-align: center;">Bạn chưa vào nhóm nào cả!</p>';
+        } catch (err) {
+            console.error("FATAL SIDEBAR ERROR:", err);
+            // Stop the infinite loading visually so you know it broke
+            if(friendsContainer.innerHTML.includes('Đang tải...')) friendsContainer.innerHTML = `<p style="color:#ff4d4f; font-size: 12px; padding: 10px;">Lỗi tải bạn bè: Mở F12 Console để xem chi tiết.</p>`;
+            if(groupsContainer.innerHTML.includes('Đang tải...')) groupsContainer.innerHTML = `<p style="color:#ff4d4f; font-size: 12px; padding: 10px;">Lỗi tải nhóm: Mở F12 Console để xem chi tiết.</p>`;
         }
     }
 
