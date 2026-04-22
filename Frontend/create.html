@@ -84,8 +84,11 @@
             </div>
             <div class="custom-container">
                 <b>Custom Tags</b>
-                <div class="tags-container" id="customTags"></div>
-                <input id="customInput" placeholder="Tự tạo custom tag">
+                <div class="tags-container" id="customTags" style="margin-bottom: 10px;"></div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input id="customInput" placeholder="Tự tạo custom tag" style="margin: 0; flex: 1; border-radius: 999px;">
+                    <button class="btn-action btn-primary" onclick="addCustomTag()" style="height: 44px; padding: 0 20px; border-radius: 999px;">Thêm</button>
+                </div>
             </div>
         </div>
     </div>
@@ -199,12 +202,24 @@
         if(active.length>=5){ all.forEach(t=>{ if(!t.classList.contains("active")) t.classList.add("disabled"); }); } else { all.forEach(t=>t.classList.remove("disabled")); }
     }
 
-    document.getElementById("customInput").addEventListener("keypress", e=>{
-        if(e.key==="Enter"){
-            let val=e.target.value.trim(); if(!val) return;
-            if(document.querySelectorAll(".tag.active").length>=5){ toast("Tối đa 5 tag","error"); return; }
-            let t=document.createElement("div"); t.className="tag active"; t.innerHTML=val+' <span class="remove" style="margin-left:5px; cursor:pointer;">×</span>';
-            document.getElementById("customTags").appendChild(t); e.target.value=""; updateTags();
+    function addCustomTag() {
+        let input = document.getElementById("customInput");
+        let val = input.value.trim(); 
+        if (!val) return;
+        if (document.querySelectorAll(".tag.active").length >= 5) { toast("Tối đa 5 tag", "error"); return; }
+        
+        let t = document.createElement("div"); 
+        t.className = "tag active"; 
+        t.innerHTML = val + ' <span class="remove" style="margin-left:5px; cursor:pointer;">×</span>';
+        document.getElementById("customTags").appendChild(t); 
+        input.value = ""; 
+        updateTags();
+    }
+
+    document.getElementById("customInput").addEventListener("keypress", e => {
+        if(e.key === "Enter"){
+            e.preventDefault(); // Ngăn trình duyệt reload trang nếu đang ở trong form
+            addCustomTag();
         }
     });
 
