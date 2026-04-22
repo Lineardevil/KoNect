@@ -94,11 +94,25 @@
             setupGlobalRealtimeListener();
             
             const urlParams = new URLSearchParams(window.location.search);
-            const targetGroupId = urlParams.get('group');
-            if (targetGroupId) {
-                const { data } = await mySupabase.from('groups').select('id, title, cover_url').eq('id', targetGroupId).single();
-                if (data) openChatRoom(data.id, data.title, data.cover_url);
+
+            const targetId = urlParams.get('group');
+            if (targetId) {
+                // Tìm trong bảng Groups trước
+                const { data: groupData } = await mySupabase.from('groups').select('id, title, cover_url').eq('id', targetId).maybeSingle();
+                if (groupData) {
+                    openChatRoom(groupData.id, groupData.title, groupData.cover_url, 'group');
+                }
+
+                else{   // Không thấy trong Groups thì auto là đang chat DM với Friend
+                    const { data: userData } = await mySupabase.from('profiles').select('id, full_name, username, avatar_url').eq('id', targetId).maybeSingle();
+
+                    if (userData) {
+                        const name = userData.full_name || userData.username;
+                        openChatRoom(userData.id, name, userData.avatar_url, 'dm');
+                    }
+                }
             }
+
         } else {
             window.location.href = '/';
         }
@@ -358,7 +372,9 @@
             // 1. NGHE TIN NHẮN NHÓM (Table: messages)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
                 const msg = payload.new;
-                if (recentlySentIds.has(msg.id)) { recentlySentIds.delete(msg.id); return; }
+                if (msg.sender_id === globalUserId) return;
+
+                // if (recentlySentIds.has(msg.id)) { recentlySentIds.delete(msg.id); return; } //Cảm giác sao sao ấy nên giữ lại
                 const isSelf = msg.sender_id === globalUserId;
                 
                 mySupabase.from('profiles').select('full_name, username').eq('id', msg.sender_id).single()
@@ -381,7 +397,9 @@
             // 2. NGHE TIN NHẮN CÁ NHÂN (Table: direct_messages)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'direct_messages' }, (payload) => {
                 const msg = payload.new;
-                if (recentlySentIds.has(msg.id)) { recentlySentIds.delete(msg.id); return; }
+                if (msg.sender_id === globalUserId) return;
+
+                // if (recentlySentIds.has(msg.id)) { recentlySentIds.delete(msg.id); return; } //Ttu như trên
                 const isSelf = msg.sender_id === globalUserId;
 
                 // Xác định ID người kia (nếu mình gửi thì là receiver, nó gửi thì là sender)
@@ -445,7 +463,8 @@
         }
 
         if (dbResult.error) {alert("Lỗi lưu ảnh vào Database: " + dbResult.error.message);}
-        else if (dbResult.data && dbResult.data[0]) {recentlySentIds.add(dbResult.data[0].id);}
+        // else if (dbResult.data && dbResult.data[0]) {recentlySentIds.add(dbResult.data[0].id);}
+        //Tôi thấy có vấn đề lắm, nhưng ko giải thích đc.
     }
 
     async function sendMessage() {
