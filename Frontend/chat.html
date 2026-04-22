@@ -312,7 +312,7 @@
             document.getElementById('toggle-members-btn').style.display = 'flex';
             await loadGroupMembers(targetId);
             await loadChatHistory(targetId);
-            resetUnreadCount(targetId);
+            resetUnreadCount(groupId);
         } else {
             // Chat 1-1 thì ẩn danh sách thành viên cho đỡ rối
             document.getElementById('toggle-members-btn').style.display = 'none';
@@ -410,20 +410,42 @@
 
     async function uploadImage(event) {
         const file = event.target.files[0]; if (!file || !currentGroupId) return;
-        event.target.value = ''; 
+        event.target.value = '';
+
         const fileName = `${globalUserId}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
         const { data, error } = await mySupabase.storage.from('chat_images').upload(fileName, file);
         if (error) return alert("Lỗi tải ảnh: " + error.message);
         
         const { data: { publicUrl } } = mySupabase.storage.from('chat_images').getPublicUrl(fileName);
         const imgContent = `[IMG]${publicUrl}`;
+        //This one for "vẫn hiện dù lỗi"
         displayNewMessage({ content: imgContent, sender_id: globalUserId }, "Tôi");
         
         const snippetEl = document.getElementById(`sidebar-snippet-${currentGroupId}`);
         if (snippetEl) snippetEl.innerText = `Bạn: [Hình ảnh]`;
-        moveGroupToTop(currentGroupId);
-        
-        const { data: dbData, error: dbError } = await mySupabase.from('messages').insert([{ content: imgContent, group_id: currentGroupId, sender_id: globalUserId }]).select(); 
+
+        let dbResult;
+        if (currentChatType === 'group') {  // Gửi vào bảng tin nhắn nhóm
+
+            dbResult = await mySupabase.from('messages').insert([{
+                content: imgContent,
+                group_id: currentGroupId,
+                sender_id: globalUserId
+            }]).select();
+
+            moveGroupToTop(currentGroupId);
+            resetUnreadCount(currentGroupId);
+        }
+        else {                              // Gửi vào bảng tin nhắn cá nhân (DM)
+
+            dbResult = await mySupabase.from('direct_messages').insert([{
+                content: imgContent,
+                receiver_id: currentGroupId,
+                sender_id: globalUserId
+            }]).select();
+
+            // (Tùy chọn) moveFriendToTop(currentGroupId) nếu m đã viết hàm này
+        }
         if (dbError) alert("Lỗi lưu ảnh vào Database: " + dbError.message);
         else if (dbData && dbData[0]) { recentlySentIds.add(dbData[0].id); resetUnreadCount(currentGroupId); }
     }
