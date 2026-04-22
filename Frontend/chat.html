@@ -312,7 +312,7 @@
             document.getElementById('toggle-members-btn').style.display = 'flex';
             await loadGroupMembers(targetId);
             await loadChatHistory(targetId);
-            resetUnreadCount(groupId);
+            resetUnreadCount(targetId);
         } else {
             // Chat 1-1 thì ẩn danh sách thành viên cho đỡ rối
             document.getElementById('toggle-members-btn').style.display = 'none';
@@ -427,16 +427,14 @@
         let dbResult;
         if (currentChatType === 'group') {  // Gửi vào bảng tin nhắn nhóm
 
-            dbResult = await mySupabase.from('messages').insert([{
-                content: imgContent,
-                group_id: currentGroupId,
-                sender_id: globalUserId
-            }]).select();
-
             moveGroupToTop(currentGroupId);
-            resetUnreadCount(currentGroupId);
+
+            dbResult = await mySupabase.from('messages').insert([{content: imgContent, group_id: currentGroupId, sender_id: globalUserId }]).select();
+
         }
         else {                              // Gửi vào bảng tin nhắn cá nhân (DM)
+
+            // moveFriendToTop(currentGroupId) //(Chưa viết hàm/ adjust hàm)
 
             dbResult = await mySupabase.from('direct_messages').insert([{
                 content: imgContent,
@@ -444,7 +442,6 @@
                 sender_id: globalUserId
             }]).select();
 
-            // (Tùy chọn) moveFriendToTop(currentGroupId) nếu m đã viết hàm này
         }
         if (dbError) alert("Lỗi lưu ảnh vào Database: " + dbError.message);
         else if (dbData && dbData[0]) { recentlySentIds.add(dbData[0].id); resetUnreadCount(currentGroupId); }
