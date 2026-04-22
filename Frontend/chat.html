@@ -443,8 +443,9 @@
             }]).select();
 
         }
-        if (dbError) alert("Lỗi lưu ảnh vào Database: " + dbError.message);
-        else if (dbData && dbData[0]) { recentlySentIds.add(dbData[0].id); resetUnreadCount(currentGroupId); }
+
+        if (dbResult.error) {alert("Lỗi lưu ảnh vào Database: " + dbResult.error.message);}
+        else if (dbResult.data && dbResult.data[0]) {recentlySentIds.add(dbResult.data[0].id);}
     }
 
     async function sendMessage() {
