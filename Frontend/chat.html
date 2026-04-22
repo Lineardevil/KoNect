@@ -293,15 +293,16 @@
         }
     }
 
-    async function openChatRoom(groupId, groupTitle, coverUrl = null) {
+    async function openChatRoom(targetId, title, coverUrl = null, type = 'group') {
         currentGroupId = targetId;  // Lưu ID (có thể là GroupID hoặc FriendID)
         currentChatType = type;     // Lưu kiểu chat
 
         document.getElementById('chat-title').innerText = title || "Người dùng";
         document.getElementById('chat-subtitle').innerText = "Đang tải...";
+
         const avatarDiv = document.getElementById('chat-avatar');
         if (coverUrl) { avatarDiv.innerText = ''; avatarDiv.style.backgroundImage = `url(${coverUrl})`; avatarDiv.style.backgroundSize = 'cover'; } 
-        else { avatarDiv.style.backgroundImage = 'none'; avatarDiv.innerText = (groupTitle || "G").charAt(0).toUpperCase(); }
+        else { avatarDiv.style.backgroundImage = 'none'; avatarDiv.innerText = (title || "G").charAt(0).toUpperCase(); }
 
         document.getElementById('empty-state').style.display = 'none';
         document.getElementById('chat-ui').style.display = 'flex';
@@ -311,7 +312,7 @@
             document.getElementById('toggle-members-btn').style.display = 'flex';
             await loadGroupMembers(targetId);
             await loadChatHistory(targetId);
-            resetUnreadCount(groupId);
+            resetUnreadCount(targetId);
         } else {
             // Chat 1-1 thì ẩn danh sách thành viên cho đỡ rối
             document.getElementById('toggle-members-btn').style.display = 'none';
