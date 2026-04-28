@@ -255,10 +255,31 @@
     async function requestJoin(groupId, privacyStatus, event) {
         event.stopPropagation(); if (!loggedInUserId) { alert("Bạn cần đăng nhập!"); return; }
         const btn = event.target; btn.innerText = "Đang xử lý..."; btn.disabled = true;
-        const newStatus = privacyStatus === 'public' ? 'member' : 'pending';
-        const { error } = await supabaseClient.from('group_members').upsert({ group_id: groupId, user_id: loggedInUserId, status: newStatus });
-        if (error) { alert("Lỗi: " + error.message); btn.innerText = privacyStatus === 'public' ? "Vào Nhóm" : "Xin vào"; btn.disabled = false; } 
-        else { if (newStatus === 'member') window.location.href = `/chat?group=${groupId}`; else { btn.innerText = "Đang chờ..."; btn.style.background = "rgba(255, 165, 0, 0.2)"; btn.style.color = "orange"; btn.style.border = "none"; } }
+        
+        // Correctly split Status (joined/pending) and Role (member)
+        const joinStatus = privacyStatus === 'public' ? 'joined' : 'pending';
+        
+        const { error } = await supabaseClient.from('group_members').upsert({ 
+            group_id: groupId, 
+            user_id: loggedInUserId, 
+            status: joinStatus,
+            role: 'member' 
+        });
+        
+        if (error) { 
+            alert("Lỗi: " + error.message); 
+            btn.innerText = privacyStatus === 'public' ? "Vào Nhóm" : "Xin vào"; 
+            btn.disabled = false; 
+        } else { 
+            if (joinStatus === 'joined') {
+                window.location.href = `/chat?group=${groupId}`; 
+            } else { 
+                btn.innerText = "Đang chờ..."; 
+                btn.style.background = "rgba(255, 165, 0, 0.2)"; 
+                btn.style.color = "orange"; 
+                btn.style.border = "none"; 
+            } 
+        }
     }
 
     function renderUsers(data, isSearching) {
@@ -365,7 +386,8 @@
         });
     }
 
-    async function approveGroupReq(groupId, userId) { await supabaseClient.from('group_members').update({ status: 'member' }).match({ group_id: groupId, user_id: userId }); init(); }
+    async function approveGroupReq(groupId, userId) { 
+        await supabaseClient.from('group_members').update({ status: 'joined', role: 'member' }).match({ group_id: groupId, user_id: userId }); init(); }
     async function rejectGroupReq(groupId, userId) { await supabaseClient.from('group_members').delete().match({ group_id: groupId, user_id: userId }); init(); }
     async function acceptFriendReq(senderId) { await supabaseClient.from('friends').update({ status: 'accepted' }).match({ user_id: senderId, friend_id: loggedInUserId }); await supabaseClient.from('friends').upsert({ user_id: loggedInUserId, friend_id: senderId, status: 'accepted' }); loadNotifications(); }
     async function rejectFriendReq(senderId) { await supabaseClient.from('friends').delete().match({ user_id: senderId, friend_id: loggedInUserId }); loadNotifications(); }
