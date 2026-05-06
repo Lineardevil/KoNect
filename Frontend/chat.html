@@ -48,7 +48,7 @@
                         <span id="chat-subtitle" style="font-size: 13px; color: var(--text-muted);">...</span>
                     </div>
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <button class="btn-action" style="height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid #ff4d4f; color: #ff4d4f; background: transparent; font-size: 13px; font-weight: bold;" onclick="leaveCurrentGroup()">Rời nhóm</button>
+                        <button id="leave-btn" class="btn-action" style="height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid #ff4d4f; color: #ff4d4f; background: transparent; font-size: 13px; font-weight: bold;" >Rời nhóm</button>
                         <button id="toggle-members-btn" class="btn-action" style="height: 36px; width: 36px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: none; background: transparent; color: var(--text);" onclick="toggleMembersSidebar()" title="Ẩn/Hiện thành viên">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                         </button>
@@ -323,8 +323,14 @@
         document.getElementById('chat-ui').style.display = 'flex';
         document.getElementById('chat-box').innerHTML = '';
 
+        const leaveBtn = document.getElementById('leave-btn');
+
         if (type === 'group') {
             document.getElementById('toggle-members-btn').style.display = 'flex';
+            if (leaveBtn) {
+                leaveBtn.innerText = "Rời nhóm";
+                leaveBtn.onclick = () => leaveCurrentGroup(); // Quay lại hàm cũ
+            }
             await loadGroupMembers(targetId);
             await loadChatHistory(targetId);
             resetUnreadCount(targetId);
@@ -334,7 +340,6 @@
             document.getElementById('members-sidebar').style.display = 'none';
             document.getElementById('chat-subtitle').innerText = "Trò chuyện trực tiếp";
 
-            const leaveBtn = document.querySelector('.btn-action');
             if (leaveBtn) {
                 leaveBtn.innerText = "Xóa tin nhắn";
                 leaveBtn.onclick = () => alert("Chẳng có gì ở đây cả..."); //deleteDirectChat(targetId); // Gọi hàm xóa DM
