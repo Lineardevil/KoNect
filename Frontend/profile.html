@@ -749,7 +749,7 @@
         }
 
         const badge = document.getElementById('notif-badge'), list = document.getElementById('notif-list');
-        const totalNotifs = (friendReqs?.length || 0) + groupJoinReqs.length + unreadMsgs.length;
+        const totalNotifs = (friendReqs?.length || 0) + groupJoinReqs.length + unreadMsgs.length + unreadDMs.length;
         
         if (totalNotifs === 0) { badge.style.display = 'none'; list.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); margin: 0; text-align: center;">Không có thông báo mới.</p>'; return; }
         badge.style.display = 'block'; badge.innerText = totalNotifs; list.innerHTML = '';
@@ -767,6 +767,22 @@
                     <div style="font-size: 13px; color: var(--text); line-height: 1.4;">Nhóm <strong style="color: var(--primary);">${msg.groupName}</strong> có <strong>${msg.count}</strong> tin nhắn mới.</div>
                 </div>
                 <button class="btn-action btn-primary" style="width: 100%; padding: 4px; height: 30px; font-size: 12px;" onclick="window.location.href='/chat?group=${msg.groupId}'">Đọc ngay</button>
+            `;
+            list.appendChild(notifItem);
+        });
+        unreadDMs.forEach(dm => {
+            const avatarHtml = dm.avatarUrl 
+                ? `<div class="widget-avatar" style="background-image: url('${dm.avatarUrl}'); background-size: cover; background-position: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px;"></div>`
+                : `<div class="widget-avatar" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; background: rgba(74, 144, 226, 0.15); border: 1px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: var(--primary);">${dm.senderName.charAt(0).toUpperCase()}</div>`;
+
+            const notifItem = document.createElement('div');
+            notifItem.style.cssText = "display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px;";
+            notifItem.innerHTML = `
+                <div style="display:flex; gap: 10px; align-items:center;">
+                    ${avatarHtml}
+                    <div style="font-size: 13px; color: var(--text); line-height: 1.4;"><strong style="color: var(--primary);">${dm.senderName}</strong> đã gửi cho bạn <strong>${dm.count}</strong> tin nhắn mới.</div>
+                </div>
+                <button class="btn-action btn-primary" style="width: 100%; padding: 4px; height: 30px; font-size: 12px;" onclick="window.location.href='/chat?group=${dm.senderId}'">Đọc ngay</button>
             `;
             list.appendChild(notifItem);
         });
