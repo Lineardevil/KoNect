@@ -332,15 +332,20 @@
             document.getElementById('toggle-members-btn').style.display = 'none';
             document.getElementById('members-sidebar').style.display = 'none';
             document.getElementById('chat-subtitle').innerText = "Trò chuyện trực tiếp";
+
+            const leaveBtn = document.querySelector('.leave-group-btn');
+            if (leaveBtn) {
+                leaveBtn.innerText = "Xóa tin nhắn";
+                leaveBtn.onclick = () => alert("Chẳng có gì ở đây cả..."); //deleteDirectChat(targetId); // Gọi hàm xóa DM
+            }
+
             await loadDirectChatHistory(targetId); // Hàm mới bên dưới
-
-
         }
 
     }
 
     async function transferAdminAndLeave(newAdminId) {
-        if (!confirm("Xác nhận nhường ngôi và rời nhóm?")) return;
+        if (!confirm("Xác nhận nhường quyền và rời nhóm?")) return;
 
         // 1. Cấp quyền Admin cho người mới
         const { error: upError } = await mySupabase
