@@ -204,11 +204,11 @@
         const groupsContainer = document.getElementById('groups-list'); 
         
         try {
-            // 1. Fetch Friends
+            // 1. Fetch Friends (Fixed duplicate bug)
             const { data: friendsData, error: friendsError } = await mySupabase
                 .from('friends')
-                .select(`user_id, friend_id, user_p:profiles!friends_user_id_fkey(id, full_name, username, avatar_url), friend_p:profiles!friends_friend_id_fkey(id, full_name, username, avatar_url)`)
-                .or(`user_id.eq.${globalUserId},friend_id.eq.${globalUserId}`)  // (phía trên) "Lôi" thêm cái id cho user
+                .select(`friend_id, friend_p:profiles!friends_friend_id_fkey(id, full_name, username, avatar_url)`)
+                .eq('user_id', globalUserId)
                 .eq('status', 'accepted');
 
             if (friendsError) throw new Error("Friends Error: " + friendsError.message);
@@ -216,7 +216,7 @@
             friendsContainer.innerHTML = '';
             if (friendsData && friendsData.length > 0) {
                 friendsData.forEach(f => {
-                    const friend = (f.user_id === globalUserId) ? f.friend_p : f.user_p;
+                    const friend = f.friend_p;
                     if (!friend) return;
                     const name = friend.full_name || friend.username || "Ẩn danh";
                     const avatarHtml = friend.avatar_url ? `<div class="widget-avatar" style="background-image: url(${friend.avatar_url}); background-size: cover; width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;"></div>` : `<div class="widget-avatar" style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary); font-size: 14px;">${name.charAt(0).toUpperCase()}</div>`;
@@ -363,6 +363,14 @@
                 const displayName = msg.sender_id === globalUserId ? "Tôi" : (msg.sender?.full_name || "Bạn");
                 displayNewMessage(msg, displayName);
             });
+            
+            // Mark all unread messages from this friend as read
+            await mySupabase
+                .from('direct_messages')
+                .update({ is_read: true })
+                .eq('sender_id', friendId)
+                .eq('receiver_id', globalUserId)
+                .eq('is_read', false);
         }
     }
 

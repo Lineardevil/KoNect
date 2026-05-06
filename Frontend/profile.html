@@ -717,21 +717,35 @@
 
         const { data: myActiveGroups } = await supabaseClient.from('group_members').select('group_id, last_read_at, groups!inner(title, cover_url)').eq('user_id', loggedInUserId).in('status', ['member', 'admin', 'joined']);
         let unreadMsgs = [];
-
         if (myActiveGroups) {
             for (let mg of myActiveGroups) {
                 const readTime = mg.last_read_at || new Date(0).toISOString(); 
-                const { data: newMsgs } = await supabaseClient
-                    .from('messages')
-                    .select('id')
-                    .eq('group_id', mg.group_id)
-                    .gt('created_at', readTime)
-                    .neq('sender_id', loggedInUserId);
-                    
-                if (newMsgs && newMsgs.length > 0) {
-                    unreadMsgs.push({ groupId: mg.group_id, groupName: mg.groups.title, coverUrl: mg.groups.cover_url, count: newMsgs.length });
-                }
+                const { data: newMsgs } = await supabaseClient.from('messages').select('id').eq('group_id', mg.group_id).gt('created_at', readTime).neq('sender_id', loggedInUserId);
+                if (newMsgs && newMsgs.length > 0) { unreadMsgs.push({ groupId: mg.group_id, groupName: mg.groups.title, coverUrl: mg.groups.cover_url, count: newMsgs.length }); }
             }
+        }
+        // FETCH UNREAD 1-1 MESSAGES
+        const { data: dmData } = await supabaseClient
+            .from('direct_messages')
+            .select('sender_id, profiles!sender_id(full_name, username, avatar_url)')
+            .eq('receiver_id', loggedInUserId)
+            .eq('is_read', false);
+            
+        let unreadDMs = [];
+        if (dmData) {
+            const dmGroups = {};
+            dmData.forEach(dm => {
+                if (!dmGroups[dm.sender_id]) {
+                    dmGroups[dm.sender_id] = {
+                        senderId: dm.sender_id,
+                        senderName: dm.profiles?.full_name || dm.profiles?.username || "Ẩn danh",
+                        avatarUrl: dm.profiles?.avatar_url,
+                        count: 0
+                    };
+                }
+                dmGroups[dm.sender_id].count++;
+            });
+            unreadDMs = Object.values(dmGroups);
         }
 
         const badge = document.getElementById('notif-badge'), list = document.getElementById('notif-list');

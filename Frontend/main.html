@@ -353,6 +353,29 @@
                 if (newMsgs && newMsgs.length > 0) { unreadMsgs.push({ groupId: mg.group_id, groupName: mg.groups.title, coverUrl: mg.groups.cover_url, count: newMsgs.length }); }
             }
         }
+        // FETCH UNREAD 1-1 MESSAGES
+        const { data: dmData } = await supabaseClient
+            .from('direct_messages')
+            .select('sender_id, profiles!sender_id(full_name, username, avatar_url)')
+            .eq('receiver_id', loggedInUserId)
+            .eq('is_read', false);
+            
+        let unreadDMs = [];
+        if (dmData) {
+            const dmGroups = {};
+            dmData.forEach(dm => {
+                if (!dmGroups[dm.sender_id]) {
+                    dmGroups[dm.sender_id] = {
+                        senderId: dm.sender_id,
+                        senderName: dm.profiles?.full_name || dm.profiles?.username || "Ẩn danh",
+                        avatarUrl: dm.profiles?.avatar_url,
+                        count: 0
+                    };
+                }
+                dmGroups[dm.sender_id].count++;
+            });
+            unreadDMs = Object.values(dmGroups);
+        }
 
         const badge = document.getElementById('notif-badge'), list = document.getElementById('notif-list');
         const totalNotifs = (friendReqs?.length || 0) + groupJoinReqs.length + unreadMsgs.length;
