@@ -488,14 +488,14 @@
         }
     }
     async function loadChatHistory(groupId) {
-        const { data } = await mySupabase.from('messages').select(`*, sender:profiles ( full_name, username )`).eq('group_id', groupId).order('created_at', { ascending: true });
+        const { data } = await mySupabase.from('messages').select(`*, sender:profiles ( full_name, username, avatar_url)`).eq('group_id', groupId).order('created_at', { ascending: true });
         if (data) data.forEach(msg => { const displayName = msg.sender?.full_name || msg.sender?.username || "User-" + msg.sender_id.substring(0, 4); displayNewMessage(msg, displayName); });
     }
 
     async function loadDirectChatHistory(friendId) {
         const { data, error } = await mySupabase
             .from('direct_messages')
-            .select(`*, sender:profiles!sender_id(full_name, username)`)
+            .select(`*, sender:profiles!sender_id(full_name, username, avatar_url)`)
             .or(`and(sender_id.eq.${globalUserId},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${globalUserId})`)
             .order('created_at', { ascending: true });
 
@@ -616,38 +616,47 @@
         //Tôi thấy có vấn đề lắm, nhưng ko giải thích đc.
     }
 
-    async function sendMessage() {
-        const input = document.getElementById('message-input'); const content = input.value.trim();
-        if (!content || !currentGroupId) return;
-        input.value = ''; 
-        
-        displayNewMessage({ content, sender_id: globalUserId }, "Tôi");
+    function displayNewMessage(msg, senderName) {
+        const chatBox = document.getElementById('chat-box');
+        if (!chatBox) return;
 
-        const snippetEl = document.getElementById(`sidebar-snippet-${currentGroupId}`);
-        if (snippetEl) snippetEl.innerText = `Bạn: ${content}`;
+        const isSelf = msg.sender_id === globalUserId;
+        const timeStr = timeAgo(msg.created_at || new Date());
 
-        let result;
+        const wrapper = document.createElement('div');
+        // Dùng flex để dàn hàng ngang
+        wrapper.style.cssText = `display: flex; margin-bottom: 15px; width: 100%; justify-content: ${isSelf ? 'flex-end' : 'flex-start'}; align-items: flex-end; gap: 8px;`;
 
-        if (currentChatType === 'group') {
-            result = await mySupabase.from('messages').insert([{ content, group_id: currentGroupId, sender_id: globalUserId }]).select();
+        // 1. Tạo Avatar (Chỉ hiện cho người khác)
+        let avatarHtml = '';
+        if (!isSelf) {
+            const avatarUrl = msg.sender?.avatar_url;
+            avatarHtml = avatarUrl
+                ? `<img src="${avatarUrl}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; margin-bottom: 18px;">`
+                : `<div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; flex-shrink: 0; margin-bottom: 18px;">${senderName.charAt(0).toUpperCase()}</div>`;
+        }
 
-            // Chỉ dọn dẹp thông báo tin nhắn chưa đọc cho NHÓM
-            if (!result.error) resetUnreadCount(currentGroupId);
-            // Đẩy nhóm lên đầu danh sách
-            moveGroupToTop(currentGroupId);
+        // 2. Tạo nội dung tin nhắn (Tên, Bubble, Giờ)
+        let contentHtml = '';
+        if (msg.content.startsWith('[IMG]')) {
+            const imgUrl = msg.content.replace('[IMG]', '');
+            contentHtml = `<img src="${imgUrl}" class="chat-image" style="cursor: zoom-in; max-width: 250px; border-radius: 12px; display: block;" onclick="openImageViewer('${imgUrl}')">`;
         } else {
-            // Gửi vào bảng direct_messages cá nhân
-            result = await mySupabase.from('direct_messages').insert([{ content, receiver_id: currentGroupId, sender_id: globalUserId }]).select();
+            contentHtml = `<div class="message ${isSelf ? 'self' : 'other'}" style="margin: 0; max-width: fit-content; word-break: break-word;">${msg.content}</div>`;
         }
 
-//        moveGroupToTop(currentGroupId);
+        // Ráp mọi thứ lại
+        wrapper.innerHTML = `
+        ${avatarHtml}
+        <div style="display: flex; flex-direction: column; align-items: ${isSelf ? 'flex-end' : 'flex-start'}; max-width: 70%;">
+            ${!isSelf ? `<span style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-left: 4px; margin-bottom: 4px;">${senderName}</span>` : ''}
+            ${contentHtml}
+            <span style="font-size: 10px; color: var(--text-muted); margin-top: 4px; margin-left: 4px; margin-right: 4px;">${timeStr}</span>
+        </div>
+    `;
 
-        if (result.error) {
-            alert("Lỗi gửi tin: " + result.error.message);
-        } else if (result.data && result.data[0]) {
-            // Chặn Realtime lập lại tin nhắn vừa gửi
-            recentlySentIds.add(result.data[0].id);
-        }
+        chatBox.appendChild(wrapper);
+        setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
     }
 
     function displayNewMessage(msg, senderName) {
