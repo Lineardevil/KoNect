@@ -360,6 +360,65 @@
         else window.location.href = '/chat';
     }
 
+    async function showAdminTransferList(otherMembers) {
+        const chatBox = document.getElementById('chat-box');
+        if (!chatBox) return;
+
+        // 1. Dọn dẹp khung chat để hiện danh sách chọn
+        chatBox.innerHTML = `
+        <div style="padding: 30px; text-align: center; color: var(--text); background: rgba(0,0,0,0.2); border-radius: 12px; margin: 20px;">
+            <h3 style="margin-bottom: 10px;">👑 Nhường ngôi Admin</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
+                Admin không thể rời nhóm khi còn thành viên khác! Hãy nhượng quyền (Admin) cho người khác trước khi đi!
+            </p>
+            <div id="transfer-list-container" style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto; padding: 10px;">
+                <p>Đang tải danh sách thành viên...</p>
+            </div>
+            <button onclick="openChatRoom('${currentGroupId}', document.getElementById('chat-title').innerText)"
+                    style="margin-top: 25px; background: none; border: 1px solid var(--border); color: var(--text); padding: 8px 20px; border-radius: 6px; cursor: pointer;">
+                Hủy bỏ
+            </button>
+        </div>
+    `;
+
+        const listContainer = document.getElementById('transfer-list-container');
+        listContainer.innerHTML = ''; // Xóa cái dòng "Đang tải"
+
+        // 2. Lặp qua danh sách những người còn lại để tạo nút chọn
+        for (const m of otherMembers) {
+            // Lấy tên từ profiles để hiển thị cho thân thiện
+            const { data: profile } = await mySupabase
+                .from('profiles')
+                .select('full_name, username')
+                .eq('id', m.user_id)
+                .single();
+
+            const displayName = profile?.full_name || profile?.username || "Ẩn danh";
+
+            const btn = document.createElement('button');
+            btn.style.cssText = `
+            padding: 12px;
+            background: rgba(74, 144, 226, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--text);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+            font-weight: 500;
+        `;
+            btn.innerText = `Chuyển quyền cho: ${displayName}`;
+
+            btn.onmouseover = () => { btn.style.background = 'var(--primary)'; btn.style.color = 'white'; };
+            btn.onmouseout = () => { btn.style.background = 'rgba(74, 144, 226, 0.1)'; btn.style.color = 'var(--text)'; };
+
+            // KHI CLICK: Gọi cái hàm "nhường ngôi" mày đã dán trước đó
+            btn.onclick = () => transferAdminAndLeave(m.user_id);
+
+            listContainer.appendChild(btn);
+        }
+    }
+
     async function leaveCurrentGroup() {
         if (!currentGroupId || !globalUserId || currentChatType === 'dm') return;
 
@@ -383,13 +442,8 @@
                     if (error) alert("Lỗi xóa nhóm: " + error.message);
                     else window.location.href = '/chat'; // Hoặc trang main của m
                 }
-
             } else {
-                alert("Admin không thể rời nhóm khi còn thành viên khác! Hãy nhượng quyền (Admin) cho người khác trước khi đi.");
-
-
-                TransferAdminModal(members.filter(m => m.user_id !== globalUserId));
-                openTransferAdminUI(members.filter(m => m.user_id !== globalUserId));
+                showAdminTransferList(members.filter(m => m.user_id !== globalUserId));
             }
         }
         // --- TRƯỜNG HỢP THÀNH VIÊN THƯỜNG ---
