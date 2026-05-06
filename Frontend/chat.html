@@ -367,7 +367,7 @@
         // 1. Dọn dẹp khung chat để hiện danh sách chọn
         chatBox.innerHTML = `
         <div style="padding: 30px; text-align: center; color: var(--text); background: rgba(0,0,0,0.2); border-radius: 12px; margin: 20px;">
-            <h3 style="margin-bottom: 10px;">👑 Nhường ngôi Admin</h3>
+            <h3 style="margin-bottom: 10px;"> Nhượng quyền Admin</h3>
             <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
                 Admin không thể rời nhóm khi còn thành viên khác! Hãy nhượng quyền (Admin) cho người khác trước khi đi!
             </p>
@@ -407,7 +407,7 @@
             transition: all 0.2s;
             font-weight: 500;
         `;
-            btn.innerText = `Chuyển quyền cho: ${displayName}`;
+            btn.innerText = `${displayName}`;
 
             btn.onmouseover = () => { btn.style.background = 'var(--primary)'; btn.style.color = 'white'; };
             btn.onmouseout = () => { btn.style.background = 'rgba(74, 144, 226, 0.1)'; btn.style.color = 'var(--text)'; };
