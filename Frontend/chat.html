@@ -623,24 +623,41 @@
     }
 
     function displayNewMessage(msg, senderName) {
-        const chatBox = document.getElementById('chat-box'); if (!chatBox) return;
+        const chatBox = document.getElementById('chat-box');
+        if (!chatBox) return;
+
         const isSelf = msg.sender_id === globalUserId;
-        const wrapper = document.createElement('div'); wrapper.className = `message-wrapper ${isSelf ? 'right' : 'left'}`;
-        const bubble = document.createElement('div');
+        const timeStr = timeAgo(msg.created_at || new Date()); // Dùng hàm vừa viết ở trên
+
+        const wrapper = document.createElement('div');
+        wrapper.className = `message-wrapper ${isSelf ? 'right' : 'left'}`;
+
+        // Logic Avatar (Lấy avatar_url từ msg.sender nếu có, không thì dùng tên)
+        const avatarUrl = msg.sender?.avatar_url;
+        const avatarHtml = !isSelf ? (avatarUrl
+            ? `<img src="${avatarUrl}" class="msg-avatar" style="width:30px; height:30px; border-radius:50%; margin-right:8px;">`
+            : `<div class="msg-avatar-placeholder" style="width:30px; height:30px; border-radius:50%; background:var(--border); display:flex; align-items:center; justify-content:center; font-size:12px; margin-right:8px;">${senderName.charAt(0)}</div>`) : '';
+
+        let contentHtml = '';
         if (msg.content.startsWith('[IMG]')) {
             const imgUrl = msg.content.replace('[IMG]', '');
-            bubble.style.padding = '0'; bubble.style.backgroundColor = 'transparent'; bubble.style.border = 'none'; 
-            bubble.innerHTML = `<img src="${imgUrl}" class="chat-image" style="cursor: zoom-in;" onclick="openImageViewer('${imgUrl}')">`;
+            contentHtml = `<img src="${imgUrl}" class="chat-image" style="cursor: zoom-in; max-width: 200px; border-radius: 8px;" onclick="openImageViewer('${imgUrl}')">`;
+        } else {
+            contentHtml = `<div class="message ${isSelf ? 'self' : 'other'}">${msg.content}</div>`;
         }
-        else {
-            bubble.className = `message ${isSelf ? 'self' : 'other'}`; bubble.innerText = msg.content;
-        }
-        if (isSelf) { wrapper.appendChild(bubble); } 
-        else { const nameLabel = document.createElement('div'); nameLabel.className = 'sender-name'; nameLabel.innerText = senderName; wrapper.appendChild(nameLabel); wrapper.appendChild(bubble); }
+
+        wrapper.innerHTML = `
+        ${avatarHtml}
+        <div style="display: flex; flex-direction: column; align-items: ${isSelf ? 'flex-end' : 'flex-start'};">
+            ${!isSelf ? `<span class="sender-name" style="font-size: 11px; color: var(--text-muted); margin-bottom: 2px;">${senderName}</span>` : ''}
+            ${contentHtml}
+            <span class="msg-time" style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">${timeStr}</span>
+        </div>
+    `;
+
         chatBox.appendChild(wrapper);
         setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
     }
-
     function toggleLeftSidebar() {
         const sidebar = document.getElementById('sidebar');
         const logo = document.getElementById('sidebar-logo');
@@ -709,6 +726,23 @@
         }
         viewer.scale = 1; viewer.tx = 0; viewer.ty = 0; img.style.transform = `translate(0px, 0px) scale(1)`; img.src = src;
         viewer.style.display = 'flex'; setTimeout(() => viewer.style.opacity = '1', 10);
+    }
+
+    function timeAgo(date) {
+        if (!date) return "";
+        const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+        let interval = Math.floor(seconds / 31536000);
+
+        if (interval >= 1) return interval + " năm trước";
+        interval = Math.floor(seconds / 2592000);
+        if (interval >= 1) return interval + " tháng trước";
+        interval = Math.floor(seconds / 86400;
+        if (interval >= 1) return interval + " ngày trước";
+        interval = Math.floor(seconds / 3600);
+        if (interval >= 1) return interval + " giờ trước";
+        interval = Math.floor(seconds / 60);
+        if (interval >= 1) return interval + " phút trước";
+        return "vừa xong";
     }
 
     document.getElementById('send-btn').onclick = sendMessage;
