@@ -339,13 +339,72 @@
 
     }
 
-    async function leaveCurrentGroup() {
-        if (!currentGroupId || !globalUserId) return;
-        if (!confirm("Bạn có chắc chắn muốn rời nhóm này không?")) return;
-        const { error } = await mySupabase.from('group_members').delete().match({ group_id: currentGroupId, user_id: globalUserId });
-        if (error) alert("Lỗi khi rời nhóm: " + error.message); else window.location.href = '/main';
+    async function transferAdminAndLeave(newAdminId) {
+        if (!confirm("Xác nhận nhường ngôi và rời nhóm?")) return;
+
+        // 1. Cấp quyền Admin cho người mới
+        const { error: upError } = await mySupabase
+            .from('group_members')
+            .update({ role: 'admin' })
+            .match({ group_id: currentGroupId, user_id: newAdminId });
+
+        if (upError) return alert("Lỗi chuyển quyền: " + upError.message);
+
+        // 2. Tự xóa mình khỏi nhóm
+        const { error: delError } = await mySupabase
+            .from('group_members')
+            .delete()
+            .match({ group_id: currentGroupId, user_id: globalUserId });
+
+        if (delError) alert("Lỗi khi rời đi: " + delError.message);
+        else window.location.href = '/chat';
     }
 
+    async function leaveCurrentGroup() {
+        if (!currentGroupId || !globalUserId || currentChatType === 'dm') return;
+
+        // 1. Lấy thông tin role của mày và tổng số thành viên trong nhóm
+        const { data: members, error: fetchErr } = await mySupabase
+            .from('group_members')
+            .select('user_id, role')
+            .eq('group_id', currentGroupId);
+
+        if (fetchErr) return alert("Lỗi kiểm tra thành viên: " + fetchErr.message);
+
+        const myInfo = members.find(m => m.user_id === globalUserId);
+        const isAdmin = myInfo?.role === 'admin';
+        const memberCount = members.length;
+
+        // --- TRƯỜNG HỢP ADMIN ---
+        if (isAdmin) {
+            if (memberCount === 1) {
+                if (confirm("Bạn là thành viên duy nhất. Nếu rời đi, nhóm này sẽ bị xóa vĩnh viễn. Bạn đã chắc chưa?")) {
+                    const { error } = await mySupabase.from('groups').delete().eq('id', currentGroupId);
+                    if (error) alert("Lỗi xóa nhóm: " + error.message);
+                    else window.location.href = '/chat'; // Hoặc trang main của m
+                }
+
+            } else {
+                alert("Admin không thể rời nhóm khi còn thành viên khác! Hãy nhượng quyền (Admin) cho người khác trước khi đi.");
+
+
+                TransferAdminModal(members.filter(m => m.user_id !== globalUserId));
+                openTransferAdminUI(members.filter(m => m.user_id !== globalUserId));
+            }
+        }
+        // --- TRƯỜNG HỢP THÀNH VIÊN THƯỜNG ---
+        else {
+            if (confirm("Bạn có chắc chắn muốn rời nhóm này không?")) {
+                const { error } = await mySupabase
+                    .from('group_members')
+                    .delete()
+                    .match({ group_id: currentGroupId, user_id: globalUserId });
+
+                if (error) alert("Lỗi khi rời nhóm: " + error.message);
+                else window.location.href = '/chat';
+            }
+        }
+    }
     async function loadChatHistory(groupId) {
         const { data } = await mySupabase.from('messages').select(`*, sender:profiles ( full_name, username )`).eq('group_id', groupId).order('created_at', { ascending: true });
         if (data) data.forEach(msg => { const displayName = msg.sender?.full_name || msg.sender?.username || "User-" + msg.sender_id.substring(0, 4); displayNewMessage(msg, displayName); });
