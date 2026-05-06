@@ -307,6 +307,7 @@
         }
     }
 
+
     async function openChatRoom(targetId, title, coverUrl = null, type = 'group') {
         currentGroupId = targetId;  // Lưu ID (có thể là GroupID hoặc FriendID)
         currentChatType = type;     // Lưu kiểu chat
@@ -333,7 +334,7 @@
             document.getElementById('members-sidebar').style.display = 'none';
             document.getElementById('chat-subtitle').innerText = "Trò chuyện trực tiếp";
 
-            const leaveBtn = document.querySelector('.leave-group-btn');
+            const leaveBtn = document.querySelector('.btn-action');
             if (leaveBtn) {
                 leaveBtn.innerText = "Xóa tin nhắn";
                 leaveBtn.onclick = () => alert("Chẳng có gì ở đây cả..."); //deleteDirectChat(targetId); // Gọi hàm xóa DM
@@ -342,6 +343,23 @@
             await loadDirectChatHistory(targetId); // Hàm mới bên dưới
         }
 
+    }
+
+    async function deleteDirectChat(friendId) { //Cần suy nghĩ lại chút
+        if (!confirm("Mày có chắc chắn muốn xóa toàn bộ tin nhắn với người này không? Hành động này không thể hoàn tác!")) return;
+
+        const { error } = await mySupabase
+            .from('direct_messages')
+            .delete()
+            .or(`and(sender_id.eq.${globalUserId},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${globalUserId})`);
+
+        if (error) {
+            alert("Lỗi khi xóa tin nhắn: " + error.message);
+        } else {
+            alert("Đã xóa sạch dấu vết!");
+            // Load lại lịch sử (lúc này sẽ trắng tinh)
+            document.getElementById('chat-box').innerHTML = '';
+        }
     }
 
     async function transferAdminAndLeave(newAdminId) {
@@ -442,7 +460,7 @@
         // --- TRƯỜNG HỢP ADMIN ---
         if (isAdmin) {
             if (memberCount === 1) {
-                if (confirm("Bạn là thành viên duy nhất. Nếu rời đi, nhóm này sẽ bị xóa vĩnh viễn. Bạn đã chắc chưa?")) {
+                if (confirm("Bạn là thành viên duy nhất. Nếu rời đi, nhóm này sẽ bị xóa vĩnh viễn. Bạn có chắc chưa?")) {
                     const { error } = await mySupabase.from('groups').delete().eq('id', currentGroupId);
                     if (error) alert("Lỗi xóa nhóm: " + error.message);
                     else window.location.href = '/chat'; // Hoặc trang main của m
