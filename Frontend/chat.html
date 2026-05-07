@@ -616,6 +616,40 @@
         //Tôi thấy có vấn đề lắm, nhưng ko giải thích đc.
     }
 
+    async function sendMessage() {
+        const input = document.getElementById('message-input'); const content = input.value.trim();
+        if (!content || !currentGroupId) return;
+        input.value = '';
+
+        displayNewMessage({ content, sender_id: globalUserId }, "Tôi");
+
+        const snippetEl = document.getElementById(`sidebar-snippet-${currentGroupId}`);
+        if (snippetEl) snippetEl.innerText = `Bạn: ${content}`;
+
+        let result;
+
+        if (currentChatType === 'group') {
+            result = await mySupabase.from('messages').insert([{ content, group_id: currentGroupId, sender_id: globalUserId }]).select();
+
+            // Chỉ dọn dẹp thông báo tin nhắn chưa đọc cho NHÓM
+            if (!result.error) resetUnreadCount(currentGroupId);
+            // Đẩy nhóm lên đầu danh sách
+            moveGroupToTop(currentGroupId);
+        } else {
+            // Gửi vào bảng direct_messages cá nhân
+            result = await mySupabase.from('direct_messages').insert([{ content, receiver_id: currentGroupId, sender_id: globalUserId }]).select();
+        }
+
+//        moveGroupToTop(currentGroupId);
+
+        if (result.error) {
+            alert("Lỗi gửi tin: " + result.error.message);
+        } else if (result.data && result.data[0]) {
+            // Chặn Realtime lập lại tin nhắn vừa gửi
+            recentlySentIds.add(result.data[0].id);
+        }
+    }
+
     function displayNewMessage(msg, senderName) {
         const chatBox = document.getElementById('chat-box');
         if (!chatBox) return;
@@ -658,39 +692,6 @@
         chatBox.appendChild(wrapper);
         setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
     }
-
-    function displayNewMessage(msg, senderName) {
-        const chatBox = document.getElementById('chat-box');
-        if (!chatBox) return;
-
-        const isSelf = msg.sender_id === globalUserId;
-        const timeStr = timeAgo(msg.created_at || new Date()); // Dùng hàm vừa viết ở trên
-
-        const wrapper = document.createElement('div');
-        wrapper.className = `message-wrapper ${isSelf ? 'right' : 'left'}`;
-
-        // Logic Avatar (Lấy avatar_url từ msg.sender nếu có, không thì dùng tên)
-        const avatarUrl = msg.sender?.avatar_url;
-        const avatarHtml = !isSelf ? (avatarUrl
-            ? `<img src="${avatarUrl}" class="msg-avatar" style="width:30px; height:30px; border-radius:50%; margin-right:8px;">`
-            : `<div class="msg-avatar-placeholder" style="width:30px; height:30px; border-radius:50%; background:var(--border); display:flex; align-items:center; justify-content:center; font-size:12px; margin-right:8px;">${senderName.charAt(0)}</div>`) : '';
-
-        let contentHtml = '';
-        if (msg.content.startsWith('[IMG]')) {
-            const imgUrl = msg.content.replace('[IMG]', '');
-            contentHtml = `<img src="${imgUrl}" class="chat-image" style="cursor: zoom-in; max-width: 200px; border-radius: 8px;" onclick="openImageViewer('${imgUrl}')">`;
-        } else {
-            contentHtml = `<div class="message ${isSelf ? 'self' : 'other'}">${msg.content}</div>`;
-        }
-
-        wrapper.innerHTML = `
-        ${avatarHtml}
-        <div style="display: flex; flex-direction: column; align-items: ${isSelf ? 'flex-end' : 'flex-start'};">
-            ${!isSelf ? `<span class="sender-name" style="font-size: 11px; color: var(--text-muted); margin-bottom: 2px;">${senderName}</span>` : ''}
-            ${contentHtml}
-            <span class="msg-time" style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">${timeStr}</span>
-        </div>
-    `;
 
         chatBox.appendChild(wrapper);
         setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
