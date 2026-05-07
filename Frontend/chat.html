@@ -616,40 +616,6 @@
         //Tôi thấy có vấn đề lắm, nhưng ko giải thích đc.
     }
 
-    async function sendMessage() {
-        const input = document.getElementById('message-input'); const content = input.value.trim();
-        if (!content || !currentGroupId) return;
-        input.value = '';
-
-        displayNewMessage({ content, sender_id: globalUserId }, "Tôi");
-
-        const snippetEl = document.getElementById(`sidebar-snippet-${currentGroupId}`);
-        if (snippetEl) snippetEl.innerText = `Bạn: ${content}`;
-
-        let result;
-
-        if (currentChatType === 'group') {
-            result = await mySupabase.from('messages').insert([{ content, group_id: currentGroupId, sender_id: globalUserId }]).select();
-
-            // Chỉ dọn dẹp thông báo tin nhắn chưa đọc cho NHÓM
-            if (!result.error) resetUnreadCount(currentGroupId);
-            // Đẩy nhóm lên đầu danh sách
-            moveGroupToTop(currentGroupId);
-        } else {
-            // Gửi vào bảng direct_messages cá nhân
-            result = await mySupabase.from('direct_messages').insert([{ content, receiver_id: currentGroupId, sender_id: globalUserId }]).select();
-        }
-
-//        moveGroupToTop(currentGroupId);
-
-        if (result.error) {
-            alert("Lỗi gửi tin: " + result.error.message);
-        } else if (result.data && result.data[0]) {
-            // Chặn Realtime lập lại tin nhắn vừa gửi
-            recentlySentIds.add(result.data[0].id);
-        }
-    }
-
     function displayNewMessage(msg, senderName) {
         const chatBox = document.getElementById('chat-box');
         if (!chatBox) return;
@@ -693,7 +659,41 @@
         setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
     }
 
-        chatBox.appendChild(wrapper);
+    async function sendMessage() {
+        const input = document.getElementById('message-input'); const content = input.value.trim();
+        if (!content || !currentGroupId) return;
+        input.value = '';
+
+        displayNewMessage({ content, sender_id: globalUserId }, "Tôi");
+
+        const snippetEl = document.getElementById(`sidebar-snippet-${currentGroupId}`);
+        if (snippetEl) snippetEl.innerText = `Bạn: ${content}`;
+
+        let result;
+
+        if (currentChatType === 'group') {
+            result = await mySupabase.from('messages').insert([{ content, group_id: currentGroupId, sender_id: globalUserId }]).select();
+
+            // Chỉ dọn dẹp thông báo tin nhắn chưa đọc cho NHÓM
+            if (!result.error) resetUnreadCount(currentGroupId);
+            // Đẩy nhóm lên đầu danh sách
+            moveGroupToTop(currentGroupId);
+        } else {
+            // Gửi vào bảng direct_messages cá nhân
+            result = await mySupabase.from('direct_messages').insert([{ content, receiver_id: currentGroupId, sender_id: globalUserId }]).select();
+        }
+
+//        moveGroupToTop(currentGroupId);
+
+        if (result.error) {
+            alert("Lỗi gửi tin: " + result.error.message);
+        } else if (result.data && result.data[0]) {
+            // Chặn Realtime lập lại tin nhắn vừa gửi
+            recentlySentIds.add(result.data[0].id);
+        }
+    }
+
+    chatBox.appendChild(wrapper);
         setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
     }
     function toggleLeftSidebar() {
