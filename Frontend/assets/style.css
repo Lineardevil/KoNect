@@ -638,6 +638,7 @@ body.main-page .group-card {
 body.profile-page .desc-fade p { margin: 0; }
 
 .app-layout { display: flex; width: 100%; justify-content: center; position: relative; margin: 0 auto; }
+body.profile-page .app-layout { max-width: 1300px; align-items: stretch; }
 .main-wrapper { width: 100%; max-width: 600px; margin: 0; border-left: 1px solid var(--border); border-right: 1px solid var(--border); min-height: 100vh; flex-shrink: 0; }
 
 .top-nav { display: flex; align-items: center; padding: 0 16px; height: 53px; position: sticky; top: 0; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(12px); z-index: 10; }
@@ -710,13 +711,34 @@ body.profile-page .desc-fade p { margin: 0; }
 .input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; fill: var(--primary); z-index: 2; }
 .input-with-icon .edit-input { padding-left: 38px; margin-bottom: 0; }
 
-.sidebar-logo-container { padding: 20px 0 24px 0; margin-left: 8px; }
 .app-logo { font-size: 24px; font-weight: 800; color: #3b82f6; text-decoration: none; letter-spacing: 0.5px; text-shadow: 0 0 10px rgba(59, 130, 246, 0.4); transition: opacity 0.2s ease; }
 .app-logo:hover { opacity: 0.8; }
 
-.left-sidebar { display: none; width: max-content; margin-top: -8px; position: absolute; right: calc(50% + 300px + 48px); }
-.right-sidebar { display: none; width: 350px; padding-top: 16px; position: absolute; left: calc(50% + 300px + 20px); }
-.sidebar-widget { background: var(--bg-2); border-radius: 16px; border: 1px solid var(--border); padding: 16px; position: sticky; top: 16px; }
+.left-sidebar { display: none; flex: 1; flex-direction: column; align-items: flex-end; padding-right: 32px; position: static; }
+.sidebar-logo-container { padding: 24px 0; margin-left: 8px; position: sticky; top: 0; height: max-content; }
+
+.right-sidebar { 
+    display: none; 
+    flex: 1; 
+    padding-left: 20px; 
+    /* Xóa hết các lệnh khóa, để nó giãn tự nhiên thành một đường ray */
+}
+
+.right-sidebar-inner {
+    position: sticky;
+    top: 24px; /* Vị trí bắt đầu trượt, thẳng hàng tuyệt đối với chữ KoNect */
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sidebar-widget { 
+    background: var(--bg-2); 
+    border-radius: 16px; 
+    border: 1px solid var(--border); 
+    padding: 16px; 
+}
+
 .widget-title { font-size: 20px; font-weight: 800; margin: 0 0 16px 0; color: var(--text); }
 .widget-item { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; cursor: pointer; }
 .widget-item:last-child { margin-bottom: 0; }
@@ -727,7 +749,7 @@ body.profile-page .desc-fade p { margin: 0; }
 .text-primary { color: var(--primary) !important; }
 
 @media (min-width: 1024px) {
-    .left-sidebar, .right-sidebar { display: block; }
+    .left-sidebar, .right-sidebar { display: flex; }
 }
 
 .edit-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7, 37, 77, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease; z-index: 2; color: #ffffff; font-weight: 600; font-size: 14px; gap: 6px; }
@@ -975,4 +997,92 @@ body.create-page .btn:focus { outline: 2px solid var(--primary); outline-offset:
     text-align: center;
     margin-bottom: 20px;
     line-height: 1.6;
+}
+
+/* ============================================================
+   11. DYNAMIC ANIMATIONS & SLIDERS
+============================================================ */
+
+/* --- 1. Sliding Chat Sidebar --- */
+#sidebar {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#sidebar.collapsed {
+    width: 70px !important;
+    min-width: 70px !important;
+}
+#sidebar.collapsed .widget-title,
+#sidebar.collapsed .widget-text,
+#sidebar.collapsed .empty-msg,
+#sidebar.collapsed .logo,
+#sidebar.collapsed #sidebar-home-btn {
+    display: none !important;
+}
+#sidebar.collapsed .sidebar-header { justify-content: center !important; padding: 16px 0 !important; }
+#sidebar.collapsed .sidebar-header > div { justify-content: center !important; width: 100%; gap: 0 !important; }
+#sidebar.collapsed .friend-list { padding: 16px 0 !important; }
+#sidebar.collapsed #friends-list { margin-bottom: 0 !important; }
+#sidebar.collapsed #sidebar-separator { display: block !important; }
+#sidebar.collapsed #hamburger-btn { color: var(--text) !important; margin: 0 auto; }
+#sidebar.collapsed .widget-item { justify-content: center !important; padding: 8px 0 !important; }
+#sidebar.collapsed .widget-item > div { justify-content: center !important; overflow: visible !important; gap: 0 !important; }
+
+/* Ngăn text bị xuống dòng làm nhảy giao diện */
+#sidebar .widget-title,
+#sidebar .empty-msg {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* --- 2. Sliding Members Sidebar --- */
+#members-sidebar {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+    overflow: hidden;
+}
+#members-sidebar.collapsed {
+    width: 0 !important;
+    opacity: 0;
+    border-left: none;
+}
+
+/* --- 3. Smooth Notification Dropdown --- */
+.notif-dropdown {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-15px);
+    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.2s;
+    display: flex !important;
+}
+.notif-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* --- 4. Modal Pop-up Fade & Scale --- */
+.modal-overlay {
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease-out;
+    display: flex !important;
+}
+.modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+.modal-content {
+    transform: scale(0.95) translateY(10px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.modal-overlay.show .modal-content {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+/* --- 5. Group Cards Move Up Fade --- */
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(25px); }
+    to { opacity: 1; transform: translateY(0); }
 }

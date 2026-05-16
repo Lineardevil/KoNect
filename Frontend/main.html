@@ -7,6 +7,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="/assets/style.css" />
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
 </head>
 <body class="main-page">
     <canvas id="starfield" style="position: absolute; top: 0; left: 0; width: 100%; height: 450px; z-index: -1; pointer-events: none; opacity: 0.75; mask-image: linear-gradient(to bottom, black 40%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%); background: radial-gradient(circle at top right, rgba(30, 41, 59, 0.4) 0%, transparent 70%);"></canvas>
@@ -23,7 +28,7 @@
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
                 <span id="notif-badge" style="display: none; position: absolute; top: -5px; right: -5px; background: #ff4d4d; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold;">0</span>
             </div>
-            <div id="notif-dropdown" style="display: none; position: absolute; top: 35px; right: 0; width: 340px; max-width: 90vw; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; padding: 15px; flex-direction: column; gap: 10px; text-align: left;">
+            <div id="notif-dropdown" class="notif-dropdown" style="position: absolute; top: 35px; right: 0; width: 340px; max-width: 90vw; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; padding: 15px; flex-direction: column; gap: 10px; text-align: left;">
                 <h4 style="margin: 0; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text);">Thông báo</h4>
                 <div id="notif-list" style="max-height: 350px; overflow-y: auto;">
                     <p style="font-size: 13px; color: var(--text-muted); margin: 0; text-align: center;">Đang tải...</p>
@@ -58,9 +63,9 @@
     <div class="group-grid" id="group-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;"></div>
 </div>
 
-<div id="group-detail-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
-    <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 800px; overflow: hidden; display: flex; flex-direction: column; max-height: 85vh;">
-        <div style="position: relative; width: 100%; padding-top: 33.33%; background: var(--bg-2); flex-shrink: 0;">
+<div id="group-detail-modal" class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+    <div class="modal-content" style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 800px; overflow: hidden; display: flex; flex-direction: column; max-height: 85vh;">
+        <div style="position: relative; width: 100%; padding-top: 25%; background: var(--bg-2); flex-shrink: 0; overflow: hidden;">
             <img id="modal-cover" src="" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in;" onclick="openImageViewer(this.src)">
             <button onclick="closeGroupDetails()" style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; transition: background 0.2s; z-index: 10;">✕</button>
         </div>
@@ -71,8 +76,8 @@
     </div>
 </div>
 
-<div id="custom-confirm-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
-    <div style="background: var(--bg-2); border: 1px solid #ff4d4f; border-radius: 16px; width: 100%; max-width: 400px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(255, 77, 79, 0.2);">
+<div id="custom-confirm-modal" class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+    <div class="modal-content" style="background: var(--bg-2); border: 1px solid #ff4d4f; border-radius: 16px; width: 100%; max-width: 400px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(255, 77, 79, 0.2);">
         <div style="padding: 24px; text-align: center;">
             <div style="width: 60px; height: 60px; background: rgba(255, 77, 79, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
                 <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#ff4d4f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
@@ -87,6 +92,88 @@
     </div>
 </div>
 
+<div id="edit-group-modal" class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+    <div class="modal-content" style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--shadow-lg);">
+        <div style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg-2);">
+            <h3 style="margin: 0; color: var(--text); font-size: 20px;">Chỉnh sửa Nhóm</h3>
+            <button onclick="closeEditGroupModal()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:24px; line-height: 1;">&times;</button>
+        </div>
+        
+        <div style="padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; background: var(--card);">
+            <input type="hidden" id="edit-group-id">
+            
+            <div class="section" style="margin-bottom: 0;">
+                <div class="label" style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Ảnh bìa nhóm</div>
+                <div class="upload-box" id="edit-cover-box" onclick="document.getElementById('edit-cover-input').click()" style="position: relative;">
+                    <span id="edit-cover-placeholder">Nhấn để tải ảnh bìa mới</span>
+                    <img id="edit-cover-preview" src="" style="display: none; border-radius: 13px; width: 100%; height: 100%; object-fit: cover;">
+                    <div class="remove-img" id="edit-cover-remove" style="display: none;" onclick="removeEditCover(event)">×</div>
+                </div>
+                <input type="file" id="edit-cover-input" accept="image/*" style="display: none;" onchange="handleEditCover(event)">
+            </div>
+
+            <div class="section" style="margin-bottom: 0;">
+                <div class="label" style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Tên Nhóm</div>
+                <input type="text" id="edit-group-title" class="edit-input" style="width: 100%; border-radius: var(--radius-md); background: var(--input-bg);">
+            </div>
+            
+            <div class="section" style="margin-bottom: 0;">
+                <div class="label" style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    Mô Tả (Hỗ trợ in đậm, nghiêng, list...)
+                </div>
+                <textarea id="edit-group-desc"></textarea>
+            </div>
+            
+            <div class="section" style="margin-bottom: 0;">
+                <div class="label" style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M9 14h6"></path><path d="M9 18h6"></path><path d="M9 10h.01"></path></svg>
+                    Yêu Cầu Tham Gia
+                </div>
+                <textarea id="edit-group-reqs"></textarea>
+            </div>
+
+            <div class="section" style="margin-bottom: 0;">
+                <div class="label" style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                    Mục Tiêu Nhóm
+                </div>
+                <textarea id="edit-group-goal"></textarea>
+            </div>
+            
+            <div class="section" style="margin-bottom: 0;">
+                <div class="label" style="font-weight: 600; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Quyền Riêng Tư</div>
+                <div class="privacy-wrapper">
+                    <div id="edit-privacy-public" class="privacy-option active" onclick="setEditPrivacy('public')">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="margin-right: 4px; vertical-align: text-bottom;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg> Công khai
+                    </div>
+                    <div id="edit-privacy-private" class="privacy-option" onclick="setEditPrivacy('private')">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="margin-right: 4px; vertical-align: text-bottom;"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg> Nhóm kín
+                    </div>
+                </div>
+                <input type="hidden" id="edit-group-privacy" value="public">
+            </div>
+        </div>
+
+        <div style="padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; background: var(--bg-2);">
+            <button class="btn-secondary" style="padding: 10px 24px; border-radius: var(--radius-md);" onclick="closeEditGroupModal()">Hủy</button>
+            <button id="save-edit-group-btn" class="btn-primary" style="width: auto; padding: 10px 32px; border-radius: var(--radius-md);" onclick="saveEditedGroup()">Lưu thay đổi</button>
+        </div>
+    </div>
+</div>
+
+<div id="cropModal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index: 10000;">
+    <div class="modal-content" style="background:#222; padding:20px; border-radius:12px; width:90%; max-width:800px; max-height:90vh; display:flex; flex-direction:column;">
+        <div class="crop-container" style="flex:1; min-height:0; background:#000; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+            <img id="cropImage" style="max-width:100%; max-height:100%;">
+        </div>
+        <div style="margin-top:16px; text-align:right; display: flex; justify-content: flex-end; gap: 12px;">
+            <button onclick="closeCrop()" class="btn-secondary" style="padding: 8px 24px; border-radius: 8px;">Hủy</button>
+            <button onclick="confirmCrop()" class="btn-action btn-primary" style="width: auto; padding: 8px 24px; border-radius: 8px;">Crop & OK</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const S_URL = 'https://dfbklcbregcxzngpiorx.supabase.co';
     const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYmtsY2JyZWdjeHpuZ3Bpb3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTI2MTIsImV4cCI6MjA4OTQyODYxMn0.3EOOOodNiaa46ptAksdTY43_vknTIxhejcJCbVN441w';
@@ -96,15 +183,14 @@
     let isSubscribed = false;
     
     function toggleNotifs() {
-        const drop = document.getElementById('notif-dropdown');
-        drop.style.display = drop.style.display === 'none' ? 'flex' : 'none';
+        document.getElementById('notif-dropdown').classList.toggle('show');
     }
 
     document.addEventListener('click', function(event) {
         const wrapper = document.getElementById('notif-wrapper');
         const drop = document.getElementById('notif-dropdown');
-        if (wrapper && !wrapper.contains(event.target) && drop && drop.style.display !== 'none') {
-            drop.style.display = 'none';
+        if (wrapper && !wrapper.contains(event.target) && drop && drop.classList.contains('show')) {
+            drop.classList.remove('show');
         }
     });
     
@@ -133,26 +219,216 @@
         if (searchQuery) { const searchInput = document.getElementById('sInput'); if (searchInput) { searchInput.value = searchQuery; search(); window.history.replaceState({}, document.title, "/main"); } }
     }
 
-    function openGroupDetails(title, cover, desc, goal, reqs) {
-        document.getElementById('modal-title').innerText = title || 'Nhóm không tên';
-        document.getElementById('modal-cover').src = cover || 'https://via.placeholder.com/400x160/222/fff?text=KoNect';
-        
-        let contentHtml = '';
-        if (goal) contentHtml += `<div style="margin-bottom: 12px; background: rgba(74, 144, 226, 0.1); padding: 12px; border-radius: 8px; border-left: 3px solid var(--primary);"><strong>🎯 Mục tiêu:</strong> ${goal}</div>`;
-        if (reqs) contentHtml += `<div style="margin-bottom: 16px; background: rgba(255, 152, 0, 0.1); padding: 12px; border-radius: 8px; border-left: 3px solid var(--warning);"><strong>📋 Yêu cầu:</strong> ${reqs}</div>`;
-        contentHtml += desc ? marked.parse(desc) : 'Chưa có mô tả.';
-
-        document.getElementById('modal-desc').innerHTML = contentHtml;
-        document.getElementById('group-detail-modal').style.display = 'flex';
-    }
-
-    function closeGroupDetails() { document.getElementById('group-detail-modal').style.display = 'none'; }
-    document.getElementById('group-detail-modal').addEventListener('click', function(e) { if (e.target === this) closeGroupDetails(); });
-
+    let editCoverFile = null;
+    let cropper = null;
+    let mdeInstances = [];
+    let editDescMDE, editReqsMDE, editGoalMDE;
     let groupToDelete = null;
 
-    function deleteGroup(groupId, event) { event.stopPropagation(); groupToDelete = groupId; document.getElementById('custom-confirm-modal').style.display = 'flex'; }
-    function closeConfirmModal() { document.getElementById('custom-confirm-modal').style.display = 'none'; groupToDelete = null; }
+    // --- CÁC HÀM BỊ MẤT ĐÃ ĐƯỢC KHÔI PHỤC ---
+    function openGroupDetails(title, cover, markdownContent) {
+        document.getElementById('modal-title').innerText = title || "Chi tiết nhóm";
+        document.getElementById('modal-cover').src = cover || "https://via.placeholder.com/800x200/252525/4a90e2?text=KoNect";
+        document.getElementById('modal-desc').innerHTML = marked.parse(markdownContent);
+        document.getElementById('group-detail-modal').classList.add('show');
+    }
+
+    function closeGroupDetails() {
+        document.getElementById('group-detail-modal').classList.remove('show');
+    }
+
+    function deleteGroup(groupId, event) {
+        event.stopPropagation();
+        groupToDelete = groupId;
+        document.getElementById('custom-confirm-modal').classList.add('show');
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('custom-confirm-modal').classList.remove('show');
+        groupToDelete = null;
+    }
+    // ----------------------------------------
+
+    function initEditor(elementId, limit, placeholderText, editorHeight) {
+        let el = document.getElementById(elementId);
+        let mde = new EasyMDE({ 
+            element: el, spellChecker: false, status: false,
+            hideIcons: ["image", "side-by-side", "fullscreen", "guide"],
+            placeholder: placeholderText, minHeight: editorHeight
+        });
+
+        let container = mde.element.nextElementSibling; 
+        let counter = document.createElement('div');
+        counter.style.cssText = 'text-align: right; font-size: 13px; margin-top: 6px; font-weight: bold; color: #4a90e2;';
+        counter.innerText = limit;
+        container.parentNode.insertBefore(counter, container.nextSibling);
+
+        function updateCounter() {
+            let text = mde.value() || ""; let rem = limit - text.length; counter.innerText = rem;
+            if (rem < 0) { counter.style.color = '#ff4d4f'; container.classList.add('is-invalid'); } 
+            else { counter.style.color = '#4a90e2'; container.classList.remove('is-invalid'); }
+            
+            let isValid = true;
+            for(let inst of mdeInstances) { if ((inst.mde.value() || "").length > inst.limit) { isValid = false; break; } }
+            document.getElementById("save-edit-group-btn").disabled = !isValid;
+        }
+
+        mde.codemirror.on('change', updateCounter);
+        mdeInstances.push({ mde, limit });
+        return mde;
+    }
+
+    function openEditGroupModal(groupId, event) {
+        event.stopPropagation();
+        const group = allGroups.find(g => g.id === groupId);
+        if (!group) return;
+        
+        document.getElementById('edit-group-id').value = group.id;
+        document.getElementById('edit-group-title').value = group.title || '';
+        
+        if (!editDescMDE) {
+            editDescMDE = initEditor('edit-group-desc', 1024, 'Mô tả nhóm...', '120px');
+            editReqsMDE = initEditor('edit-group-reqs', 512, 'Yêu cầu tham gia...', '80px');
+            editGoalMDE = initEditor('edit-group-goal', 512, 'Mục tiêu nhóm...', '80px');
+        }
+
+        editDescMDE.value(group.description || '');
+        editReqsMDE.value(group.requirements || '');
+        editGoalMDE.value(group.goal || '');
+        
+        setEditPrivacy(group.privacy || 'public');
+        
+        editCoverFile = null;
+        if (group.cover_url) {
+            document.getElementById('edit-cover-preview').src = group.cover_url;
+            document.getElementById('edit-cover-preview').style.display = 'block';
+            document.getElementById('edit-cover-placeholder').style.display = 'none';
+            document.getElementById('edit-cover-remove').style.display = 'flex';
+        } else {
+            document.getElementById('edit-cover-preview').src = '';
+            document.getElementById('edit-cover-preview').style.display = 'none';
+            document.getElementById('edit-cover-placeholder').style.display = 'block';
+            document.getElementById('edit-cover-remove').style.display = 'none';
+        }
+
+        document.getElementById('edit-group-modal').classList.add('show');
+        
+        setTimeout(() => {
+            editDescMDE.codemirror.refresh();
+            editReqsMDE.codemirror.refresh();
+            editGoalMDE.codemirror.refresh();
+        }, 10);
+    }
+
+    function closeEditGroupModal() {
+        document.getElementById('edit-group-modal').classList.remove('show');
+    }
+
+    function setEditPrivacy(val) {
+        document.getElementById('edit-group-privacy').value = val;
+        document.getElementById('edit-privacy-public').classList.remove('active');
+        document.getElementById('edit-privacy-private').classList.remove('active');
+        document.getElementById(`edit-privacy-${val}`).classList.add('active');
+    }
+
+    // --- CROPPER LOGIC ---
+    function handleEditCover(event) {
+        let file = event.target.files[0]; if(!file) return;
+        if(file.size > 5 * 1024 * 1024){ alert("Ảnh tối đa 5MB"); return; }
+        let imgURL = URL.createObjectURL(file); 
+        let image = document.getElementById("cropImage");
+        image.src = imgURL; 
+        
+        const cropModal = document.getElementById("cropModal");
+        cropModal.style.display = "flex";
+        setTimeout(() => {
+            cropModal.classList.add('show');
+            if(cropper) cropper.replace(imgURL); 
+            else cropper = new Cropper(image, { aspectRatio: 3, viewMode: 1 }); 
+        }, 10);
+        event.target.value = '';
+    }
+
+    function confirmCrop(){
+        if(!cropper) return;
+        let canvas = cropper.getCroppedCanvas({ width: 1200, height: 400 });
+        if(!canvas) return;
+        canvas.toBlob(blob => {
+            if(!blob) return;
+            editCoverFile = blob;
+            let preview = URL.createObjectURL(blob);
+            document.getElementById('edit-cover-preview').src = preview;
+            document.getElementById('edit-cover-preview').style.display = 'block';
+            document.getElementById('edit-cover-placeholder').style.display = 'none';
+            document.getElementById('edit-cover-remove').style.display = 'flex';
+            closeCrop();
+        }, "image/jpeg", 0.9);
+    }
+
+    function closeCrop() {
+        const cropModal = document.getElementById("cropModal");
+        cropModal.classList.remove('show');
+        setTimeout(() => {
+            cropModal.style.display = "none";
+            if (cropper) { cropper.destroy(); cropper = null; }
+        }, 200);
+    }
+
+    function removeEditCover(event) {
+        event.stopPropagation();
+        editCoverFile = 'remove';
+        document.getElementById('edit-cover-preview').src = '';
+        document.getElementById('edit-cover-preview').style.display = 'none';
+        document.getElementById('edit-cover-placeholder').style.display = 'block';
+        document.getElementById('edit-cover-remove').style.display = 'none';
+    }
+    // ----------------------
+
+    async function saveEditedGroup() {
+        const groupId = document.getElementById('edit-group-id').value;
+        const title = document.getElementById('edit-group-title').value.trim();
+        const description = editDescMDE.value().trim();
+        const goal = editGoalMDE.value().trim();
+        const requirements = editReqsMDE.value().trim();
+        const privacy = document.getElementById('edit-group-privacy').value;
+
+        if (!title) return alert("Tên nhóm không được để trống!");
+        if (!description && !goal && !requirements) return alert("Vui lòng điền ít nhất 1 mục: Mô tả, Yêu cầu hoặc Mục tiêu!");
+
+        const btn = document.getElementById('save-edit-group-btn');
+        const originalText = btn.innerText;
+        btn.innerText = "Đang lưu...";
+        btn.disabled = true;
+
+        try {
+            let finalCoverUrl = undefined;
+
+            if (editCoverFile === 'remove') {
+                finalCoverUrl = null;
+            } else if (editCoverFile) {
+                const fileName = `${loggedInUserId}-${Date.now()}-cover.jpeg`;
+                // Lưu vào đúng bucket như lúc tạo nhóm
+                const { error: uploadErr } = await supabaseClient.storage.from('group-images').upload(fileName, editCoverFile, { contentType: 'image/jpeg', upsert: true });
+                if (uploadErr) throw uploadErr;
+                const { data: { publicUrl } } = supabaseClient.storage.from('group-images').getPublicUrl(fileName);
+                finalCoverUrl = publicUrl;
+            }
+
+            const updatePayload = { title, description, goal, requirements, privacy };
+            if (finalCoverUrl !== undefined) updatePayload.cover_url = finalCoverUrl;
+
+            const { error } = await supabaseClient.from('groups').update(updatePayload).eq('id', groupId);
+            if (error) throw error;
+
+            closeEditGroupModal();
+            await init(); 
+        } catch (error) {
+            alert("Lỗi khi lưu: " + error.message);
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
 
     async function executeGroupDelete() {
         if (!groupToDelete) return;
@@ -168,7 +444,7 @@
 
     function renderGroups(data) {
         const list = document.getElementById('group-list'); list.innerHTML = data.length === 0 ? '<p style="text-align:center; width:100%; color:var(--text-muted); grid-column: 1 / -1;">Không tìm thấy nhóm nào.</p>' : '';
-        data.forEach(g => {
+        data.forEach((g, index) => {
             const creatorName = g.profiles?.full_name || g.profiles?.username || "Ẩn danh";
             const coverImage = g.cover_url || 'https://via.placeholder.com/400x160/252525/4a90e2?text=KoNect';
             const members = g.group_members || []; const activeMemberCount = members.filter(m => ['member', 'admin', 'joined'].includes(m.status)).length;
@@ -177,8 +453,13 @@
             let rawTitle = g.title || 'Nhóm không tên'; let displayTitle = rawTitle.length > 36 ? rawTitle.substring(0, 36) + '...' : rawTitle;
             let actionBtns = '';
 
-            if (isCreator) actionBtns += `<button class="btn-action" style="height: 30px; font-size: 13px; padding: 0 12px; background: rgba(255, 77, 79, 0.15); color: #ff4d4f; border: 1px solid rgba(255, 77, 79, 0.3); border-radius: 8px; transition: all 0.2s ease;" onmouseenter="this.style.background='#ff4d4f'; this.style.color='white'; this.style.borderColor='#ff4d4f';" onmouseleave="this.style.background='rgba(255, 77, 79, 0.15)'; this.style.color='#ff4d4f'; this.style.borderColor='rgba(255, 77, 79, 0.3)';" onclick="deleteGroup('${g.id}', event)">Xóa</button>`;
-            if (isClickable) actionBtns += `<button class="btn-action btn-primary" style="height: 30px; font-size: 13px; padding: 0 12px; background: var(--primary); border: none; margin-left: 8px; border-radius: 8px;" onclick="event.stopPropagation(); window.location.href='/chat?group=${g.id}'">Vào Chat</button>`;
+            if (isCreator) {
+                actionBtns += `<button class="btn-action btn-primary" style="height: 30px; font-size: 13px; padding: 0 12px; border-radius: 8px;" onclick="window.location.href='/chat?group=${g.id}'">Vào Chat</button>`;
+                
+                actionBtns += `<button class="btn-action" style="height: 30px; font-size: 13px; padding: 0 12px; background: rgba(74, 144, 226, 0.15); color: var(--primary); border: 1px solid rgba(74, 144, 226, 0.3); border-radius: 8px; transition: all 0.2s ease; margin-left: 8px;" onmouseenter="this.style.background='var(--primary)'; this.style.color='white'; this.style.borderColor='var(--primary)';" onmouseleave="this.style.background='rgba(74, 144, 226, 0.15)'; this.style.color='var(--primary)'; this.style.borderColor='rgba(74, 144, 226, 0.3)';" onclick="openEditGroupModal('${g.id}', event)">Sửa</button>`;
+                
+                actionBtns += `<button class="btn-action" style="height: 30px; font-size: 13px; padding: 0 12px; background: rgba(255, 77, 79, 0.15); color: #ff4d4f; border: 1px solid rgba(255, 77, 79, 0.3); border-radius: 8px; transition: all 0.2s ease; margin-left: 8px;" onmouseenter="this.style.background='#ff4d4f'; this.style.color='white'; this.style.borderColor='#ff4d4f';" onmouseleave="this.style.background='rgba(255, 77, 79, 0.15)'; this.style.color='#ff4d4f'; this.style.borderColor='rgba(255, 77, 79, 0.3)';" onclick="deleteGroup('${g.id}', event)">Xóa</button>`;
+            }
             else if (myStatus === 'pending') actionBtns += `<button class="btn-action" style="height: 30px; font-size: 13px; padding: 0 12px; background: #333; color: orange; border: none; margin-left: 8px; border-radius: 8px;" disabled onclick="event.stopPropagation();">Đang chờ...</button>`;
             else { const btnText = g.privacy === 'public' ? 'Vào Nhóm' : 'Xin vào'; actionBtns += `<button class="btn-action btn-primary" style="height: 30px; font-size: 13px; padding: 0 12px; margin-left: 8px; border-radius: 8px;" onclick="requestJoin('${g.id}', '${g.privacy}', event)">${btnText}</button>`; }
 
@@ -220,7 +501,7 @@
                 : `<svg viewBox="0 0 24 24" width="14" height="14" fill="var(--primary)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg> <span style="color: var(--primary); margin-left: 4px;">Công khai</span>`;
 
             const card = document.createElement('div'); card.className = 'group-card';
-            card.style.cssText = `border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--bg-2); display: flex; flex-direction: column; transition: all 0.2s ease; cursor: pointer;`;
+            card.style.cssText = `border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--bg-2); display: flex; flex-direction: column; transition: all 0.2s ease; cursor: pointer; animation: fadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards; animation-delay: ${index * 0.05}s;`;
             card.onmouseenter = () => { card.style.transform = 'translateY(-3px)'; card.style.borderColor = 'var(--primary)'; card.style.boxShadow = '0 8px 24px rgba(7, 37, 77, 0.4)'; };
             card.onmouseleave = () => { card.style.transform = 'translateY(0)'; card.style.borderColor = 'var(--border)'; card.style.boxShadow = 'none'; };
             card.onclick = () => openGroupDetails(g.title, coverImage, modalMarkdown);
@@ -408,19 +689,33 @@
 
         groupJoinReqs.forEach(req => {
             const user = req.profiles; const name = user.full_name || user.username || "Ẩn danh";
-            const avatarHtml = user.avatar_url ? `<div class="widget-avatar" style="background-image: url(${user.avatar_url}); background-size: cover; flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px;"></div>` : `<div class="widget-avatar" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary);">${name.charAt(0).toUpperCase()}</div>`;
+            
+            // Đã thêm cursor: pointer và link tới profile vào Avatar
+            const avatarHtml = user.avatar_url 
+                ? `<div class="widget-avatar" style="background-image: url(${user.avatar_url}); background-size: cover; flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; cursor: pointer;" onclick="window.location.href='/profile?id=${req.user_id}'"></div>` 
+                : `<div class="widget-avatar" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary); cursor: pointer;" onclick="window.location.href='/profile?id=${req.user_id}'">${name.charAt(0).toUpperCase()}</div>`;
+            
             const notifItem = document.createElement('div');
             notifItem.style.cssText = "display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px;";
-            notifItem.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div style="font-size: 13px; color: var(--text);"><strong>${name}</strong> xin vào nhóm <strong>${req.groups.title}</strong>.</div></div><div style="display: flex; gap: 8px;"><button class="btn-action btn-primary" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="approveGroupReq('${req.group_id}', '${req.user_id}')">Duyệt</button><button class="btn-action" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="rejectGroupReq('${req.group_id}', '${req.user_id}')">Từ chối</button></div>`;
+            
+            // Đã thêm thẻ <strong> có style hover và link tới profile cho Tên người dùng
+            notifItem.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div style="font-size: 13px; color: var(--text);"><strong style="color: var(--primary); cursor: pointer;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" onclick="window.location.href='/profile?id=${req.user_id}'">${name}</strong> xin vào nhóm <strong>${req.groups.title}</strong>.</div></div><div style="display: flex; gap: 8px;"><button class="btn-action btn-primary" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="approveGroupReq('${req.group_id}', '${req.user_id}')">Duyệt</button><button class="btn-action" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="rejectGroupReq('${req.group_id}', '${req.user_id}')">Từ chối</button></div>`;
             list.appendChild(notifItem);
         });
 
         (friendReqs || []).forEach(req => {
             const user = req.profiles; const name = user.full_name || user.username || "Ẩn danh";
-            const avatarHtml = user.avatar_url ? `<div class="widget-avatar" style="background-image: url(${user.avatar_url}); background-size: cover; flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px;"></div>` : `<div class="widget-avatar" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary);">${name.charAt(0).toUpperCase()}</div>`;
+            
+            // Đã thêm cursor: pointer và link tới profile vào Avatar
+            const avatarHtml = user.avatar_url 
+                ? `<div class="widget-avatar" style="background-image: url(${user.avatar_url}); background-size: cover; flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; cursor: pointer;" onclick="window.location.href='/profile?id=${req.user_id}'"></div>` 
+                : `<div class="widget-avatar" style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary); cursor: pointer;" onclick="window.location.href='/profile?id=${req.user_id}'">${name.charAt(0).toUpperCase()}</div>`;
+            
             const notifItem = document.createElement('div');
             notifItem.style.cssText = "display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px;";
-            notifItem.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div style="font-size: 13px; color: var(--text);"><strong>${name}</strong> đã gửi yêu cầu kết bạn.</div></div><div style="display: flex; gap: 8px;"><button class="btn-action btn-primary" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="acceptFriendReq('${req.user_id}')">Chấp nhận</button><button class="btn-action" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="rejectFriendReq('${req.user_id}')">Từ chối</button></div>`;
+            
+            // Đã thêm thẻ <strong> có style hover và link tới profile cho Tên người dùng
+            notifItem.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div style="font-size: 13px; color: var(--text);"><strong style="color: var(--primary); cursor: pointer;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" onclick="window.location.href='/profile?id=${req.user_id}'">${name}</strong> đã gửi yêu cầu kết bạn.</div></div><div style="display: flex; gap: 8px;"><button class="btn-action btn-primary" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="acceptFriendReq('${req.user_id}')">Chấp nhận</button><button class="btn-action" style="flex: 1; padding: 4px; height: 30px; font-size: 12px;" onclick="rejectFriendReq('${req.user_id}')">Từ chối</button></div>`;
             list.appendChild(notifItem);
         });
     }
