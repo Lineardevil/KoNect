@@ -28,6 +28,9 @@
         <div class="friend-list" style="overflow-y: auto; flex: 1; padding: 16px;">
             <h3 class="widget-title text-primary" style="font-size: 14px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">BẠN BÈ - FRIENDS</h3>
             <div id="friends-list" style="margin-bottom: 24px;"><p style="font-size: 13px; color: var(--text-muted); text-align: center;">Đang tải...</p></div>
+            
+            <div id="sidebar-separator" style="display: none; border-top: 1px solid var(--border); margin: 0 10px 12px 10px;"></div>
+            
             <h3 class="widget-title text-primary" style="font-size: 14px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">CÁC NHÓM - GROUPS</h3>
             <div id="groups-list"><p style="font-size: 13px; color: var(--text-muted); text-align: center;">Đang tải...</p></div>
         </div>
@@ -288,7 +291,8 @@
                             const isSelf = item.latestMsg.sender_id === globalUserId;
                             const senderName = isSelf ? "Bạn" : (item.latestMsg.profiles?.full_name || item.latestMsg.profiles?.username || "Ai đó");
                             let text = item.latestMsg.content.startsWith('[IMG]') ? '[Hình ảnh]' : item.latestMsg.content;
-                            snippetText = `${senderName}: ${text}`;
+                            const timeStr = timeAgo(item.latestMsg.created_at);
+                            snippetText = `${senderName}: ${text} • ${timeStr}`;
                         }
                         
                         div.innerHTML = `<div style="display:flex; gap: 10px; align-items:center;">${avatarHtml}<div class="widget-text" style="flex: 1; min-width: 0;"><h4 style="margin:0; color:var(--text); font-size:14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${group.title || "Nhóm ẩn danh"}</h4><p id="sidebar-snippet-${group.id}" style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${snippetText}</p></div></div>`;
@@ -370,7 +374,15 @@
     async function transferAdminAndLeave(newAdminId) {
         if (!confirm("Xác nhận nhường quyền và rời nhóm?")) return;
 
-        // 1. Cấp quyền Admin cho người mới
+        // Bổ sung: Cập nhật chủ sở hữu mới trong bảng groups để chuyển nút "Xóa" sang cho họ
+        const { error: groupErr } = await mySupabase
+            .from('groups')
+            .update({ creator_id: newAdminId })
+            .eq('id', currentGroupId);
+
+        if (groupErr) return alert("Lỗi cập nhật chủ nhóm: " + groupErr.message);
+
+        // 1. Cấp quyền Admin cho người mới trong group_members
         const { error: upError } = await mySupabase
             .from('group_members')
             .update({ role: 'admin' })
@@ -384,8 +396,12 @@
             .delete()
             .match({ group_id: currentGroupId, user_id: globalUserId });
 
-        if (delError) alert("Lỗi khi rời đi: " + delError.message);
-        else window.location.href = '/chat';
+        if (delError) {
+            alert("Lỗi khi rời đi: " + delError.message);
+        } else {
+            // Điều hướng về main.html để thấy nút UI đã được sửa
+            window.location.href = '/main'; 
+        }
     }
 
     async function showAdminTransferList(otherMembers) {
@@ -466,9 +482,20 @@
         if (isAdmin) {
             if (memberCount === 1) {
                 if (confirm("Bạn là thành viên duy nhất. Nếu rời đi, nhóm này sẽ bị xóa vĩnh viễn. Bạn có chắc chưa?")) {
-                    const { error } = await mySupabase.from('groups').delete().eq('id', currentGroupId);
-                    if (error) alert("Lỗi xóa nhóm: " + error.message);
-                    else window.location.href = '/chat'; // Hoặc trang main của m
+                    try {
+                        const { error: msgErr } = await mySupabase.from('messages').delete().eq('group_id', currentGroupId); 
+                        if (msgErr) throw msgErr;
+                        
+                        const { error: memErr } = await mySupabase.from('group_members').delete().eq('group_id', currentGroupId); 
+                        if (memErr) throw memErr;
+                        
+                        const { error: grpErr } = await mySupabase.from('groups').delete().eq('id', currentGroupId); 
+                        if (grpErr) throw grpErr;
+                        
+                        window.location.href = '/main';
+                    } catch (err) {
+                        alert("Lỗi xóa nhóm: " + (err.message || "Lỗi không xác định từ máy chủ."));
+                    }
                 }
             } else {
                 showAdminTransferList(members.filter(m => m.user_id !== globalUserId));
@@ -533,7 +560,8 @@
                     
                     const snippetEl = document.getElementById(`sidebar-snippet-${msg.group_id}`);
                     if (snippetEl) {
-                        snippetEl.innerText = `${senderName}: ${text}`;
+                        const timeStr = timeAgo(msg.created_at);
+                        snippetEl.innerText = `${senderName}: ${text} • ${timeStr}`;
                         moveGroupToTop(msg.group_id); 
                     }
                     
@@ -562,7 +590,8 @@
                         // Cập nhật Snippet ở Sidebar Bạn bè
                         const snippetEl = document.getElementById(`sidebar-snippet-friend-${partnerId}`);
                         if (snippetEl) {
-                            snippetEl.innerText = `${senderName}: ${text}`;
+                            const timeStr = timeAgo(msg.created_at);
+                            snippetEl.innerText = `${senderName}: ${text} • ${timeStr}`;
                         }
 
                         // Nếu đang mở đúng phòng chat với người này thì hiện tin nhắn
@@ -588,8 +617,9 @@
         //This one for "vẫn hiện dù lỗi"
         displayNewMessage({ content: imgContent, sender_id: globalUserId }, "Tôi");
         
-        const snippetEl = document.getElementById(`sidebar-snippet-${currentGroupId}`);
-        if (snippetEl) snippetEl.innerText = `Bạn: [Hình ảnh]`;
+        const snippetId = currentChatType === 'group' ? `sidebar-snippet-${currentGroupId}` : `sidebar-snippet-friend-${currentGroupId}`;
+        const snippetEl = document.getElementById(snippetId);
+        if (snippetEl) snippetEl.innerText = `Bạn: [Hình ảnh] • vừa xong`;
 
         let dbResult;
         if (currentChatType === 'group') {  // Gửi vào bảng tin nhắn nhóm
@@ -632,8 +662,8 @@
         if (!isSelf) {
             const avatarUrl = msg.sender?.avatar_url;
             avatarHtml = avatarUrl
-                ? `<img src="${avatarUrl}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; margin-bottom: 18px;">`
-                : `<div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; flex-shrink: 0; margin-bottom: 18px;">${senderName.charAt(0).toUpperCase()}</div>`;
+                ? `<img src="${avatarUrl}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; margin-bottom: 18px; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1" onclick="window.location.href='/profile?id=${msg.sender_id}'">`
+                : `<div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; flex-shrink: 0; margin-bottom: 18px; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1" onclick="window.location.href='/profile?id=${msg.sender_id}'">${senderName.charAt(0).toUpperCase()}</div>`;
         }
 
         // 2. Tạo nội dung tin nhắn (Tên, Bubble, Giờ)
@@ -649,7 +679,7 @@
         wrapper.innerHTML = `
         ${avatarHtml}
         <div style="display: flex; flex-direction: column; align-items: ${isSelf ? 'flex-end' : 'flex-start'}; max-width: 70%;">
-            ${!isSelf ? `<span style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-left: 4px; margin-bottom: 4px;">${senderName}</span>` : ''}
+            ${!isSelf ? `<span style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-left: 4px; margin-bottom: 4px; cursor: pointer;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" onclick="window.location.href='/profile?id=${msg.sender_id}'">${senderName}</span>` : ''}
             ${contentHtml}
             <span style="font-size: 10px; color: var(--text-muted); margin-top: 4px; margin-left: 4px; margin-right: 4px;">${timeStr}</span>
         </div>
@@ -666,8 +696,9 @@
 
         displayNewMessage({ content, sender_id: globalUserId }, "Tôi");
 
-        const snippetEl = document.getElementById(`sidebar-snippet-${currentGroupId}`);
-        if (snippetEl) snippetEl.innerText = `Bạn: ${content}`;
+        const snippetId = currentChatType === 'group' ? `sidebar-snippet-${currentGroupId}` : `sidebar-snippet-friend-${currentGroupId}`;
+        const snippetEl = document.getElementById(snippetId);
+        if (snippetEl) snippetEl.innerText = `Bạn: ${content} • vừa xong`;
 
         let result;
 
@@ -701,6 +732,7 @@
         const contentList = sidebar.querySelector('.friend-list');
         const friendsList = document.getElementById('friends-list');
         const hamburgerBtn = document.getElementById('hamburger-btn');
+        const separator = document.getElementById('sidebar-separator');
         
         if (sidebar.style.width !== '70px') {
             sidebar.style.width = '70px';
@@ -712,6 +744,7 @@
             if (contentList) { contentList.style.padding = '16px 0'; } 
             if (friendsList) { friendsList.style.marginBottom = '0'; }
             if (hamburgerBtn) { hamburgerBtn.style.color = 'var(--text)'; } 
+            if (separator) { separator.style.display = 'block'; }
             sidebar.querySelectorAll('.widget-item').forEach(el => {
                 el.style.justifyContent = 'center';
                 el.style.padding = '8px 0'; 
@@ -727,6 +760,7 @@
             if (contentList) { contentList.style.padding = '16px'; }
             if (friendsList) { friendsList.style.marginBottom = '24px'; }
             if (hamburgerBtn) { hamburgerBtn.style.color = 'var(--primary)'; } 
+            if (separator) { separator.style.display = 'none'; }
             sidebar.querySelectorAll('.widget-item').forEach(el => {
                 el.style.justifyContent = 'flex-start';
                 el.style.padding = '8px';
