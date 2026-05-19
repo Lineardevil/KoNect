@@ -619,6 +619,17 @@
             .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, (payload) => {
                 loadSidebar();
             })
+            // THÊM ĐOẠN NÀY ĐỂ NGHE THU HỒI TIN NHÓM
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, (payload) => {
+                const oldMsg = payload.old;
+                removeMessageFromUI(oldMsg.id);
+            })
+
+            // THÊM ĐOẠN NÀY ĐỂ NGHE THU HỒI TIN CÁ NHÂN (DM)
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'direct_messages' }, (payload) => {
+                const oldMsg = payload.old;
+                removeMessageFromUI(oldMsg.id);
+            })
             .subscribe();
     }
 
@@ -662,7 +673,19 @@
         const timeStr = timeAgo(msg.created_at || new Date());
 
         const wrapper = document.createElement('div');
+        // GẮN ID CHO WRAPPER ĐỂ DỄ XÓA VỀ SAU
+        wrapper.id = `msg-wrapper-${msg.id || 'temp'}`;
         wrapper.style.cssText = `display: flex; margin-bottom: 15px; width: 100%; justify-content: ${isSelf ? 'flex-end' : 'flex-start'}; align-items: flex-start; gap: 8px;`;
+
+        // Nếu là tin nhắn của CHÍNH MÀY, cài sự kiện click chuột phải để thu hồi
+        if (isSelf && msg.id) {
+            wrapper.style.cursor = "context-menu";
+            wrapper.title = "Click chuột phải để thu hồi tin nhắn";
+            wrapper.oncontextmenu = (e) => {
+                e.preventDefault(); // Chặn menu mặc định của trình duyệt
+                deleteMessage(msg.id, currentChatType);
+            };
+        }
 
         let avatarHtml = '';
         if (!isSelf) {
@@ -717,6 +740,44 @@
             alert("Lỗi gửi tin: " + result.error.message);
         } else if (result.data && result.data[0]) {
             recentlySentIds.add(result.data[0].id);
+        }
+    }
+
+    async function deleteMessage(messageId, tableType) {
+        if (!confirm("Mày muốn thu hồi tin nhắn này hả?")) return;
+
+        const tableName = (tableType === 'group') ? 'messages' : 'direct_messages';
+
+        // Xóa trên Supabase
+        const { error } = await mySupabase
+            .from(tableName)
+            .delete()
+            .eq('id', messageId)
+            .eq('sender_id', globalUserId); // Đảm bảo chỉ xóa được tin của chính mình
+
+        if (error) {
+            alert("Lỗi thu hồi: " + error.message);
+        } else {
+            // Tự xóa trên màn hình của mình trước cho mượt
+            removeMessageFromUI(messageId);
+        }
+    }
+
+    function removeMessageFromUI(messageId) {
+        const msgWrapper = document.getElementById(`msg-wrapper-${messageId}`);
+        if (msgWrapper) {
+            // Thay vì xóa hẳn làm giật khung chat, mình đổi nội dung thành "Tin nhắn đã bị thu hồi" cho giống Messenger
+            const msgBubble = msgWrapper.querySelector('.message');
+            if (msgBubble) {
+                msgBubble.innerText = "Tin nhắn đã bị thu hồi";
+                msgBubble.style.fontStyle = "italic";
+                msgBubble.style.opacity = "0.5";
+                // Xóa sự kiện click/thu hồi nếu có
+                msgWrapper.oncontextmenu = null;
+            } else {
+                // Nếu là ảnh thì xóa hẳn cái wrapper
+                msgWrapper.remove();
+            }
         }
     }
 
