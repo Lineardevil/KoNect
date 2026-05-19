@@ -623,7 +623,7 @@
             // 1. Nghe thu hồi tin nhắn nhóm
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
                 const updatedMsg = payload.new;
-                if (updatedMsg.content === '[REVOKED]') {
+                if (updatedMsg.content && updatedMsg.content.startsWith('[REVOKED]:')) {
                     updateMessageToRevokedUI(updatedMsg.id);
 
                     // Cập nhật luôn cái dòng tin nhắn ngắn ở Sidebar cho đồng bộ
@@ -634,7 +634,7 @@
             // 2. Nghe thu hồi tin nhắn cá nhân (DM)
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'direct_messages' }, (payload) => {
                 const updatedMsg = payload.new;
-                if (updatedMsg.content === '[REVOKED]') {
+                if (updatedMsg.content && updatedMsg.content.startsWith('[REVOKED]:')) {
                     updateMessageToRevokedUI(updatedMsg.id);
 
                     const partnerId = (updatedMsg.sender_id === globalUserId) ? updatedMsg.receiver_id : updatedMsg.sender_id;
@@ -685,7 +685,7 @@
                 tempWrapper.title = "Click chuột phải để thu hồi tin nhắn";
                 tempWrapper.oncontextmenu = (e) => {
                     e.preventDefault();
-                    revokeMessage(realId, currentChatType);
+                    revokeMessage(realId, currentChatType, imgContent);
                 };
             }
         }
@@ -704,26 +704,25 @@
         wrapper.style.cssText = `display: flex; margin-bottom: 15px; width: 100%; justify-content: ${isSelf ? 'flex-end' : 'flex-start'}; align-items: flex-start; gap: 8px;`;
 
         // 2. Xử lý logic hiển thị Nội dung (Chỉ khai báo MỘT LẦN duy nhất ở đây)
+
         let contentHtml = '';
-        if (msg.content === '[REVOKED]') {
-            // Trường hợp: Tin nhắn đã bị thu hồi
+        if (msg.content && msg.content.startsWith('[REVOKED]:')) {
+            // NẾU LÀ TIN ĐÃ THU HỒI
             contentHtml = `<div class="message ${isSelf ? 'self' : 'other'}" style="margin: 0; max-width: fit-content; word-break: break-word; font-style: italic; opacity: 0.5;">Tin nhắn đã bị thu hồi</div>`;
-        } else if (msg.content.startsWith('[IMG]')) {
-            // Trường hợp: Tin nhắn là hình ảnh
+        } else if (msg.content && msg.content.startsWith('[IMG]')) {
             const imgUrl = msg.content.replace('[IMG]', '');
             contentHtml = `<img src="${imgUrl}" class="chat-image" style="cursor: zoom-in; max-width: 250px; border-radius: 12px; display: block;" onclick="openImageViewer('${imgUrl}')">`;
         } else {
-            // Trường hợp: Tin nhắn văn bản thông thường
             contentHtml = `<div class="message ${isSelf ? 'self' : 'other'}" style="margin: 0; max-width: fit-content; word-break: break-word;">${msg.content}</div>`;
         }
 
-        // 3. Gán sự kiện Chuột phải để thu hồi (Chỉ áp dụng cho tin của mình và chưa bị thu hồi)
-        if (isSelf && msg.id && msg.content !== '[REVOKED]') {
+        // SỬA LẠI SỰ KIỆN CHUỘT PHẢI:
+        if (isSelf && msg.id && msg.content && !msg.content.startsWith('[REVOKED]:')) {
             wrapper.style.cursor = "context-menu";
             wrapper.title = "Click chuột phải để thu hồi tin nhắn";
             wrapper.oncontextmenu = (e) => {
                 e.preventDefault();
-                revokeMessage(msg.id, currentChatType);
+                revokeMessage(msg.id, currentChatType, msg.content); // Truyền thêm msg.content vào đây
             };
         }
 
@@ -786,7 +785,7 @@
                 tempWrapper.title = "Click chuột phải để thu hồi tin nhắn";
                 tempWrapper.oncontextmenu = (e) => {
                     e.preventDefault();
-                    revokeMessage(realId, currentChatType);
+                    revokeMessage(realId, currentChatType, content);
                 };
             }
         }
@@ -796,20 +795,19 @@
         if (!confirm("Chắc chắn muốn thu hồi tin nhắn này không?")) return;
 
         const tableName = (tableType === 'group') ? 'messages' : 'direct_messages';
+        const newContent = '[REVOKED]:' + oldContent; // Gắn cờ thu hồi nhưng GIỮ NGUYÊN text gốc
 
-        // Thay vì DELETE, mình UPDATE nội dung thành [REVOKED]
         const { error } = await mySupabase
             .from(tableName)
-            .update({ content: '[REVOKED]' })
+            .update({ content: newContent })
             .eq('id', messageId)
             .eq('sender_id', globalUserId);
 
         if (error) {
             alert("Lỗi thu hồi: " + error.message);
         }
-        // Không cần gọi hàm xóa UI ở đây nữa, vì chính lệnh UPDATE này
-        // sẽ kích hoạt Realtime và tự cập nhật màn hình luôn!
     }
+
     function updateMessageToRevokedUI(messageId) {
         const msgWrapper = document.getElementById(`msg-wrapper-${messageId}`);
         if (msgWrapper) {
