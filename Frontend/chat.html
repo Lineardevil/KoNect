@@ -791,7 +791,7 @@
         }
     }
 
-    async function revokeMessage(messageId, tableType) {
+    async function revokeMessage(messageId, tableType, oldContent) {
         if (!confirm("Chắc chắn muốn thu hồi tin nhắn này không?")) return;
 
         const tableName = (tableType === 'group') ? 'messages' : 'direct_messages';
