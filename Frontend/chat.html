@@ -619,17 +619,29 @@
             .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, (payload) => {
                 loadSidebar();
             })
-            // THÊM ĐOẠN NÀY ĐỂ NGHE THU HỒI TIN NHÓM
-            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, (payload) => {
-                const oldMsg = payload.old;
-                removeMessageFromUI(oldMsg.id);
+
+            // 1. Nghe thu hồi tin nhắn nhóm
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
+                const updatedMsg = payload.new;
+                if (updatedMsg.content === '[REVOKED]') {
+                    updateMessageToRevokedUI(updatedMsg.id);
+
+                    // Cập nhật luôn cái dòng tin nhắn ngắn ở Sidebar cho đồng bộ
+                    updateSidebarSnippet(`sidebar-snippet-${updatedMsg.group_id}`, `Tin nhắn đã bị thu hồi`, timeAgo(updatedMsg.created_at));
+                }
             })
 
-            // THÊM ĐOẠN NÀY ĐỂ NGHE THU HỒI TIN CÁ NHÂN (DM)
-            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'direct_messages' }, (payload) => {
-                const oldMsg = payload.old;
-                removeMessageFromUI(oldMsg.id);
+            // 2. Nghe thu hồi tin nhắn cá nhân (DM)
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'direct_messages' }, (payload) => {
+                const updatedMsg = payload.new;
+                if (updatedMsg.content === '[REVOKED]') {
+                    updateMessageToRevokedUI(updatedMsg.id);
+
+                    const partnerId = (updatedMsg.sender_id === globalUserId) ? updatedMsg.receiver_id : updatedMsg.sender_id;
+                    updateSidebarSnippet(`sidebar-snippet-friend-${partnerId}`, `Tin nhắn đã bị thu hồi`, timeAgo(updatedMsg.created_at));
+                }
             })
+
             .subscribe();
     }
 
@@ -673,7 +685,7 @@
                 tempWrapper.title = "Click chuột phải để thu hồi tin nhắn";
                 tempWrapper.oncontextmenu = (e) => {
                     e.preventDefault();
-                    deleteMessage(realId, currentChatType);
+                    revokeMessage(realId, currentChatType);
                 };
             }
         }
@@ -687,20 +699,35 @@
         const timeStr = timeAgo(msg.created_at || new Date());
 
         const wrapper = document.createElement('div');
-        // GẮN ID CHO WRAPPER ĐỂ DỄ XÓA VỀ SAU
+        // 1. Gắn ID cho wrapper (temp cho tin nhắn vừa gửi, chính thức nếu đã có id từ DB)
         wrapper.id = msg.id ? `msg-wrapper-${msg.id}` : 'msg-wrapper-temp';
         wrapper.style.cssText = `display: flex; margin-bottom: 15px; width: 100%; justify-content: ${isSelf ? 'flex-end' : 'flex-start'}; align-items: flex-start; gap: 8px;`;
 
-        // Nếu là tin nhắn của CHÍNH MÀY, cài sự kiện click chuột phải để thu hồi
-        if (isSelf && msg.id) {
+        // 2. Xử lý logic hiển thị Nội dung (Chỉ khai báo MỘT LẦN duy nhất ở đây)
+        let contentHtml = '';
+        if (msg.content === '[REVOKED]') {
+            // Trường hợp: Tin nhắn đã bị thu hồi
+            contentHtml = `<div class="message ${isSelf ? 'self' : 'other'}" style="margin: 0; max-width: fit-content; word-break: break-word; font-style: italic; opacity: 0.5;">Tin nhắn đã bị thu hồi</div>`;
+        } else if (msg.content.startsWith('[IMG]')) {
+            // Trường hợp: Tin nhắn là hình ảnh
+            const imgUrl = msg.content.replace('[IMG]', '');
+            contentHtml = `<img src="${imgUrl}" class="chat-image" style="cursor: zoom-in; max-width: 250px; border-radius: 12px; display: block;" onclick="openImageViewer('${imgUrl}')">`;
+        } else {
+            // Trường hợp: Tin nhắn văn bản thông thường
+            contentHtml = `<div class="message ${isSelf ? 'self' : 'other'}" style="margin: 0; max-width: fit-content; word-break: break-word;">${msg.content}</div>`;
+        }
+
+        // 3. Gán sự kiện Chuột phải để thu hồi (Chỉ áp dụng cho tin của mình và chưa bị thu hồi)
+        if (isSelf && msg.id && msg.content !== '[REVOKED]') {
             wrapper.style.cursor = "context-menu";
             wrapper.title = "Click chuột phải để thu hồi tin nhắn";
             wrapper.oncontextmenu = (e) => {
-                e.preventDefault(); // Chặn menu mặc định của trình duyệt
-                deleteMessage(msg.id, currentChatType);
+                e.preventDefault();
+                revokeMessage(msg.id, currentChatType);
             };
         }
 
+        // 4. Xử lý logic hiển thị Avatar (Chỉ hiện cho người khác)
         let avatarHtml = '';
         if (!isSelf) {
             const avatarUrl = msg.sender?.avatar_url;
@@ -709,14 +736,7 @@
                 : `<div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; flex-shrink: 0; margin-bottom: 18px; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1" onclick="window.location.href='/profile?id=${msg.sender_id}'">${senderName.charAt(0).toUpperCase()}</div>`;
         }
 
-        let contentHtml = '';
-        if (msg.content.startsWith('[IMG]')) {
-            const imgUrl = msg.content.replace('[IMG]', '');
-            contentHtml = `<img src="${imgUrl}" class="chat-image" style="cursor: zoom-in; max-width: 250px; border-radius: 12px; display: block;" onclick="openImageViewer('${imgUrl}')">`;
-        } else {
-            contentHtml = `<div class="message ${isSelf ? 'self' : 'other'}" style="margin: 0; max-width: fit-content; word-break: break-word;">${msg.content}</div>`;
-        }
-
+        // 5. Ráp toàn bộ HTML vào khung chat
         wrapper.innerHTML = `
         ${avatarHtml}
         <div style="display: flex; flex-direction: column; align-items: ${isSelf ? 'flex-end' : 'flex-start'}; max-width: 70%;">
@@ -766,47 +786,56 @@
                 tempWrapper.title = "Click chuột phải để thu hồi tin nhắn";
                 tempWrapper.oncontextmenu = (e) => {
                     e.preventDefault();
-                    deleteMessage(realId, currentChatType);
+                    revokeMessage(realId, currentChatType);
                 };
             }
         }
     }
 
-    async function deleteMessage(messageId, tableType) {
-        if (!confirm("Mày muốn thu hồi tin nhắn này hả?")) return;
+    async function revokeMessage(messageId, tableType) {
+        if (!confirm("Chắc chắn muốn thu hồi tin nhắn này không?")) return;
 
         const tableName = (tableType === 'group') ? 'messages' : 'direct_messages';
 
-        // Xóa trên Supabase
+        // Thay vì DELETE, mình UPDATE nội dung thành [REVOKED]
         const { error } = await mySupabase
             .from(tableName)
-            .delete()
+            .update({ content: '[REVOKED]' })
             .eq('id', messageId)
-            .eq('sender_id', globalUserId); // Đảm bảo chỉ xóa được tin của chính mình
+            .eq('sender_id', globalUserId);
 
         if (error) {
             alert("Lỗi thu hồi: " + error.message);
-        } else {
-            // Tự xóa trên màn hình của mình trước cho mượt
-            removeMessageFromUI(messageId);
         }
+        // Không cần gọi hàm xóa UI ở đây nữa, vì chính lệnh UPDATE này
+        // sẽ kích hoạt Realtime và tự cập nhật màn hình luôn!
     }
-
-    function removeMessageFromUI(messageId) {
+    function updateMessageToRevokedUI(messageId) {
         const msgWrapper = document.getElementById(`msg-wrapper-${messageId}`);
         if (msgWrapper) {
-            // Thay vì xóa hẳn làm giật khung chat, mình đổi nội dung thành "Tin nhắn đã bị thu hồi" cho giống Messenger
-            const msgBubble = msgWrapper.querySelector('.message');
-            if (msgBubble) {
-                msgBubble.innerText = "Tin nhắn đã bị thu hồi rồi";
-                msgBubble.style.fontStyle = "italic";
-                msgBubble.style.opacity = "0.5";
-                // Xóa sự kiện click/thu hồi nếu có
-                msgWrapper.oncontextmenu = null;
-            } else {
-                // Nếu là ảnh thì xóa hẳn cái wrapper
-                msgWrapper.remove();
+            // Tìm cái vùng chứa nội dung tin nhắn (chữ hoặc ảnh)
+            const msgContainer = msgWrapper.querySelector('.message') || msgWrapper.querySelector('.chat-image');
+
+            if (msgContainer) {
+                // Biến đổi nó thành bọt chat thông thường chứa chữ Thu hồi
+                if (msgContainer.tagName === 'IMG') {
+                    // Nếu là ảnh, mình thay thế thẻ IMG bằng một thẻ DIV chứa chữ
+                    const textBubble = document.createElement('div');
+                    textBubble.className = msgWrapper.querySelector('.message-wrapper')?.classList.contains('right') ? 'message self' : 'message other';
+                    msgContainer.replaceWith(textBubble);
+                    textBubble.innerText = "Chắc gửi nhầm ảnh sếch nên vừa thu hồi mất rồi.";
+                    textBubble.style.cssText = "font-style: italic; opacity: 0.5; margin: 0; max-width: fit-content; word-break: break-word;";
+                } else {
+                    // Nếu là chữ sẵn rồi thì đổi ruột luôn
+                    msgContainer.innerText = "Nhắn không chịu xem kỹ nên thu hồi lại rồi.";
+                    msgContainer.style.fontStyle = "italic";
+                    msgContainer.style.opacity = "0.5";
+                }
             }
+            // Khóa luôn, không cho click chuột phải để thu hồi nữa
+            msgWrapper.oncontextmenu = null;
+            msgWrapper.title = "";
+            msgWrapper.style.cursor = "default";
         }
     }
 
