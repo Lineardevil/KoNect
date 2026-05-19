@@ -739,7 +739,22 @@
         if (result.error) {
             alert("Lỗi gửi tin: " + result.error.message);
         } else if (result.data && result.data[0]) {
-            recentlySentIds.add(result.data[0].id);
+            // Lấy ra ID chính thức vừa được sinh ra trong Database
+            const realId = result.data[0].id;
+
+            // Tìm cái wrapper "tạm thời" lúc nãy trên màn hình
+            const tempWrapper = document.getElementById('msg-wrapper-temp');
+            if (tempWrapper) {
+                tempWrapper.id = `msg-wrapper-${realId}`; // Đổi ID tạm thành ID thật
+
+                // Gắn sự kiện chuột phải ngay lập tức cho nó, không cần bắt người dùng F5!
+                tempWrapper.style.cursor = "context-menu";
+                tempWrapper.title = "Click chuột phải để thu hồi tin nhắn";
+                tempWrapper.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    deleteMessage(realId, currentChatType);
+                };
+            }
         }
     }
 
