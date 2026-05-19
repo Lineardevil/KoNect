@@ -663,6 +663,20 @@
         }
 
         if (dbResult.error) {alert("Lỗi lưu ảnh vào Database: " + dbResult.error.message);}
+        else if (dbResult.data && dbResult.data[0]) {
+            const realId = dbResult.data[0].id;
+
+            const tempWrapper = document.getElementById('msg-wrapper-temp');
+            if (tempWrapper) {
+                tempWrapper.id = `msg-wrapper-${realId}`;
+                tempWrapper.style.cursor = "context-menu";
+                tempWrapper.title = "Click chuột phải để thu hồi tin nhắn";
+                tempWrapper.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    deleteMessage(realId, currentChatType);
+                };
+            }
+        }
     }
 
     function displayNewMessage(msg, senderName) {
@@ -674,7 +688,7 @@
 
         const wrapper = document.createElement('div');
         // GẮN ID CHO WRAPPER ĐỂ DỄ XÓA VỀ SAU
-        wrapper.id = `msg-wrapper-${msg.id || 'temp'}`;
+        wrapper.id = msg.id ? `msg-wrapper-${msg.id}` : 'msg-wrapper-temp';
         wrapper.style.cssText = `display: flex; margin-bottom: 15px; width: 100%; justify-content: ${isSelf ? 'flex-end' : 'flex-start'}; align-items: flex-start; gap: 8px;`;
 
         // Nếu là tin nhắn của CHÍNH MÀY, cài sự kiện click chuột phải để thu hồi
