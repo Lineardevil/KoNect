@@ -568,46 +568,50 @@
     function setupGlobalRealtimeListener() {
         if (globalMessagesChannel) return;
         globalMessagesChannel = mySupabase.channel('global-messages')
+            // 1. LẮNG NGHE TIN NHẮN NHÓM
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
                 const msg = payload.new;
+                // Nếu là chính mình gửi thì bỏ qua (vì hàm sendMessage đã render Lạc quan rồi)
                 if (msg.sender_id === globalUserId) return;
 
-                const isSelf = msg.sender_id === globalUserId;
-                
-                mySupabase.from('profiles').select('full_name, username').eq('id', msg.sender_id).single()
-                .then(({data}) => {
-                    const senderName = isSelf ? "Bạn" : (data?.full_name || data?.username || "User");
-                    let text = msg.content.startsWith('[IMG]') ? '[Hình ảnh]' : msg.content;
-                    
-                    const timeStr = timeAgo(msg.created_at);
-                    updateSidebarSnippet(`sidebar-snippet-${msg.group_id}`, `${senderName}: ${text}`, timeStr);
-                    moveGroupToTop(msg.group_id);
-                    
-                    if (String(msg.group_id) === String(currentGroupId)) {
-                        msg.sender = { avatar_url: data?.avatar_url };
-                        displayNewMessage(msg, senderName);
-                        resetUnreadCount(currentGroupId); 
-                    } 
-                });
+                // Lấy thông tin profile người gửi (Bổ sung đầy đủ avatar_url để không bị crash)
+                mySupabase.from('profiles').select('full_name, username, avatar_url').eq('id', msg.sender_id).single()
+                    .then(({ data }) => {
+                        const senderName = data?.full_name || data?.username || "User";
+                        let text = msg.content.startsWith('[IMG]') ? '[Hình ảnh]' : msg.content;
+
+                        const timeStr = timeAgo(msg.created_at);
+                        updateSidebarSnippet(`sidebar-snippet-${msg.group_id}`, `${senderName}: ${text}`, timeStr);
+                        moveGroupToTop(msg.group_id);
+
+                        // Nếu đang mở đúng phòng chat nhóm này thì nổ tin nhắn lên màn hình ngay
+                        if (String(msg.group_id) === String(currentGroupId) && currentChatType === 'group') {
+                            msg.sender = { avatar_url: data?.avatar_url }; // Đã an toàn vì select có avatar_url
+                            displayNewMessage(msg, senderName);
+                            resetUnreadCount(currentGroupId);
+                        }
+                    });
             })
+            // 2. LẮNG NGHE TIN NHẮN CÁ NHÂN (CHAT 1-1)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'direct_messages' }, (payload) => {
                 const msg = payload.new;
                 if (msg.sender_id === globalUserId) return;
 
-                const isSelf = msg.sender_id === globalUserId;
-                const partnerId = isSelf ? msg.receiver_id : msg.sender_id;
+                const partnerId = msg.sender_id; // Vì mình không phải người gửi, nên người gửi chính là partner
 
                 mySupabase.from('profiles').select('full_name, username, avatar_url').eq('id', msg.sender_id).single()
-                    .then(({data}) => {
-                        const senderName = isSelf ? "Bạn" : (data?.full_name || data?.username || "Bạn");
+                    .then(({ data }) => {
+                        const senderName = data?.full_name || data?.username || "Bạn";
                         let text = msg.content.startsWith('[IMG]') ? '[Hình ảnh]' : msg.content;
 
                         const timeStr = timeAgo(msg.created_at);
                         updateSidebarSnippet(`sidebar-snippet-friend-${partnerId}`, `${senderName}: ${text}`, timeStr);
 
+                        // Nếu đang mở đúng phòng chat cá nhân với người này thì nổ bong bóng chat
                         if (currentChatType === 'dm' && String(partnerId) === String(currentGroupId)) {
                             msg.sender = { avatar_url: data?.avatar_url };
                             displayNewMessage(msg, senderName);
+                            // Đánh dấu đã xem tin nhắn này luôn vì mình đang mở khung chat
                             mySupabase.from('direct_messages').update({ is_read: true }).eq('id', msg.id).then();
                         }
                     });
